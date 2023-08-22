@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator erd {
+  provider = "prisma-erd-generator"
+  output   = "./ERD.png"
+}
+
+model User {
+  id            String        @id @default(uuid())
+  name          String        @unique
+  email         String        @unique
+  birthdate     DateTime
+  image         String?
+  emailVerified DateTime?
+  createdAt     DateTime      @default(now())
+  password      String
+  posts         Post[]
+  comments      PostComment[]
+  likedPosts    LikedPost[]
+  followers     Follows[]     @relation("following")
+  following     Follows[]     @relation("follower")
+}
+
+model Follows {
+  id          String @id @default(uuid())
+  follower    User   @relation("follower", fields: [followerId], references: [id])
+  followerId  String
+  following   User   @relation("following", fields: [followingId], references: [id])
+  followingId String
+}
+
+model Post {
+  id             String        @id @default(uuid())
+  title          String?
+  message        String?
+  videoUrl       String?
+  thumbnailUrl   String?
+  commentsAmount Int           @default(0)
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String
+  createdAt      DateTime      @default(now())
+  likedBy        LikedPost[]
+  postComments   PostComment[]
+}
+
+model LikedPost {
+  id        String    @id @default(uuid())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String    @unique
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    String    @unique
+  createdAt DateTime? @default(now())
+}
+
+model PostComment {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String   @unique
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    String   @unique
+  message   String
+  createdAt DateTime @default(now())
+}

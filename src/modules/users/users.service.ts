@@ -65,8 +65,6 @@ export class UsersService implements UsersRepository {
       user.password,
     );
 
-    console.log(validPassword);
-
     if (!validPassword) {
       throw new UnauthorizedException('A senha antiga está incorreta');
     }

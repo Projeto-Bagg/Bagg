@@ -14,7 +14,7 @@ generator erd {
 
 model User {
   id            String        @id @default(uuid())
-  name          String        @unique
+  name          String
   email         String        @unique
   birthdate     DateTime
   image         String?

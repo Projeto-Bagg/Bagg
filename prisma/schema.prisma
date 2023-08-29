@@ -7,64 +7,158 @@ datasource db {
   url      = "file:./dev.db"
 }
 
-generator erd {
-  provider = "prisma-erd-generator"
-  output   = "./ERD.png"
-}
-
 model User {
-  id            String        @id @default(uuid())
-  name          String
-  email         String        @unique
-  birthdate     DateTime
-  image         String?
-  emailVerified DateTime?
-  createdAt     DateTime      @default(now())
-  password      String
-  posts         Post[]
-  comments      PostComment[]
-  likedPosts    LikedPost[]
-  followers     Follows[]     @relation("following")
-  following     Follows[]     @relation("follower")
+  id              Int               @id @default(autoincrement())
+  name            String
+  email           String            @unique
+  birthdate       DateTime
+  image           String?
+  emailVerified   DateTime?
+  createdAt       DateTime          @default(now())
+  password        String
+  bio             String
+  dayPosts        DayPost[]
+  followers       Follows[]         @relation("following")
+  following       Follows[]         @relation("follower")
+  TipLikes        TipLike[]
+  Tip             Tip[]
+  TipComment      TipComment?
+  DayPostLike     DayPostLike?
+  TripDiary       TripDiary[]
+  VisitaCidade    VisitaCidade[]
+  InteresseCidade InteresseCidade[]
 }
 
 model Follows {
-  id          String @id @default(uuid())
-  follower    User   @relation("follower", fields: [followerId], references: [id])
-  followerId  String
-  following   User   @relation("following", fields: [followingId], references: [id])
-  followingId String
+  id          Int      @id @default(autoincrement())
+  follower    User     @relation("follower", fields: [followerId], references: [id])
+  followerId  Int
+  following   User     @relation("following", fields: [followingId], references: [id])
+  followingId Int
+  createdAt   DateTime @default(now())
 }
 
-model Post {
-  id             String        @id @default(uuid())
-  title          String?
-  message        String?
-  videoUrl       String?
-  thumbnailUrl   String?
-  commentsAmount Int           @default(0)
-  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId         String
-  createdAt      DateTime      @default(now())
-  likedBy        LikedPost[]
-  postComments   PostComment[]
+model DayPost {
+  id           Int            @id @default(autoincrement())
+  title        String?
+  message      String?
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       Int
+  createdAt    DateTime       @default(now())
+  likedBy      DayPostLike[]
+  DayPostMedia DayPostMedia[]
+  TripDiary    TripDiary[]
 }
 
-model LikedPost {
-  id        String    @id @default(uuid())
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String    @unique
-  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  postId    String    @unique
-  createdAt DateTime? @default(now())
-}
-
-model PostComment {
-  id        String   @id @default(uuid())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String   @unique
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  postId    String   @unique
+model TripDiary {
+  id        Int      @id @default(autoincrement())
+  title     String
+  createdAt DateTime @default(now())
   message   String
+  dayPost   DayPost  @relation(fields: [dayPostId], references: [id])
+  dayPostId Int
+  User      User?    @relation(fields: [userId], references: [id])
+  userId    Int?
+}
+
+model DayPostMedia {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  url       String
+  dayPost   DayPost  @relation(fields: [dayPostId], references: [id])
+  dayPostId Int
+}
+
+model TipMedia {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  url       String
+  tip       Tip      @relation(fields: [tipId], references: [id])
+  tipId     Int
+}
+
+model DayPostLike {
+  id        Int       @id @default(autoincrement())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int       @unique
+  post      DayPost   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    Int       @unique
+  createdAt DateTime? @default(now())
+  Tip       Tip       @relation(fields: [tipId], references: [id])
+  tipId     Int
+}
+
+model TipLike {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  tip       Tip      @relation(fields: [tipId], references: [id], onDelete: Cascade)
+  tipId     Int
+  createdAt DateTime @default(now())
+}
+
+model Tip {
+  id          Int           @id @default(autoincrement())
+  title       String?
+  message     String?
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      Int
+  createdAt   DateTime      @default(now())
+  likedBy     TipLike[]
+  tipComments TipComment[]
+  TipMedia    TipMedia[]
+  DayPostLike DayPostLike[]
+}
+
+model Country {
+  id     Int      @id @default(autoincrement())
+  name   String
+  code   String
+  Region Region[]
+}
+
+model Region {
+  id        Int     @id @default(autoincrement())
+  name      String
+  country   Country @relation(fields: [countryId], references: [id])
+  countryId Int
+  City      City[]
+}
+
+model City {
+  id              Int               @id @default(autoincrement())
+  name            String
+  region          Region            @relation(fields: [regionId], references: [id], onDelete: Cascade)
+  regionId        Int
+  VisitaCidade    VisitaCidade[]
+  InteresseCidade InteresseCidade[]
+}
+
+model TipComment {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int      @unique
+  tip       Tip      @relation(fields: [tipId], references: [id], onDelete: Cascade)
+  tipId     Int      @unique
+  message   String
+  createdAt DateTime @default(now())
+}
+
+model VisitaCidade {
+  id      Int    @id @default(autoincrement())
+  user    User   @relation(fields: [userId], references: [id])
+  userId  Int
+  city    City   @relation(fields: [cityId], references: [id])
+  cityId  Int
+  nota    Int
+  message String
+}
+
+model InteresseCidade {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  city      City     @relation(fields: [cityId], references: [id])
+  cityId    Int
   createdAt DateTime @default(now())
 }

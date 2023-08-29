@@ -42,7 +42,7 @@ export class UsersService implements UsersRepository {
     return await this.prisma.user.findUnique({ where: { email } });
   }
 
-  async findById(id: string): Promise<User> {
+  async findById(id: number): Promise<User> {
     return await this.prisma.user.findUnique({ where: { id } });
   }
 

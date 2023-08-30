@@ -11,6 +11,9 @@ export class User {
   email: string;
 
   @ApiProperty()
+  bio: string;
+
+  @ApiProperty()
   emailVerified: Date;
 
   @ApiProperty()

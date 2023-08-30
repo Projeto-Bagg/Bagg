@@ -8,11 +8,11 @@ export abstract class UsersRepository {
   abstract create(createUserDto: CreateUserDto): Promise<void>;
   abstract findMany(): Promise<User[]>;
   abstract findByEmail(email: string): Promise<User>;
-  abstract findById(id: string): Promise<User>;
-  abstract update(UpdateUserDto: UpdateUserDto, id: string): Promise<void>;
+  abstract findById(id: number): Promise<User>;
+  abstract update(UpdateUserDto: UpdateUserDto, id: number): Promise<void>;
   abstract updatePassword(
     UpdatePasswordDto: UpdatePasswordDto,
-    id: string,
+    id: number,
   ): Promise<void>;
-  abstract delete(DeleteUserDto: DeleteUserDto, id: string): Promise<void>;
+  abstract delete(DeleteUserDto: DeleteUserDto, id: number): Promise<void>;
 }

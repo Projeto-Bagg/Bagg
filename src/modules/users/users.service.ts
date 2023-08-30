@@ -46,7 +46,7 @@ export class UsersService implements UsersRepository {
     return await this.prisma.user.findUnique({ where: { id } });
   }
 
-  async update(UpdateUserDto: UpdateUserDto, id: string): Promise<void> {
+  async update(UpdateUserDto: UpdateUserDto, id: number): Promise<void> {
     const data: Prisma.UserUpdateInput = {
       ...UpdateUserDto,
       password: UpdateUserDto.password
@@ -57,7 +57,7 @@ export class UsersService implements UsersRepository {
     await this.prisma.user.update({ data, where: { id } });
   }
 
-  async delete(DeleteUserDto: DeleteUserDto, id: string): Promise<void> {
+  async delete(DeleteUserDto: DeleteUserDto, id: number): Promise<void> {
     const user = await this.prisma.user.findUnique({ where: { id } });
 
     const validPassword = await bcrypt.compare(
@@ -74,7 +74,7 @@ export class UsersService implements UsersRepository {
 
   async updatePassword(
     UpdatePasswordDto: UpdatePasswordDto,
-    id: string,
+    id: number,
   ): Promise<void> {
     const user = await this.prisma.user.findUnique({ where: { id } });
 

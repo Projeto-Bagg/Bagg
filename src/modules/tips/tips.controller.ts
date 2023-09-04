@@ -1,7 +1,17 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { TipsService } from './tips.service';
 import { CreateTipDto } from './dto/create-tip.dto';
 import { UpdateTipDto } from './dto/update-tip.dto';
+import { ApiResponse } from '@nestjs/swagger';
+import { Tip } from './entities/tip.entity';
 
 @Controller('tips')
 export class TipsController {
@@ -13,13 +23,15 @@ export class TipsController {
   }
 
   @Get()
+  @ApiResponse({ type: Tip, isArray: true })
   findAll() {
-    return this.tipsService.findAll();
+    return this.tipsService.findMany();
   }
 
   @Get(':id')
+  @ApiResponse({ type: Tip, isArray: false })
   findOne(@Param('id') id: string) {
-    return this.tipsService.findOne(+id);
+    return this.tipsService.findUnique(+id);
   }
 
   @Patch(':id')
@@ -29,6 +41,6 @@ export class TipsController {
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.tipsService.remove(+id);
+    return this.tipsService.delete(+id);
   }
 }

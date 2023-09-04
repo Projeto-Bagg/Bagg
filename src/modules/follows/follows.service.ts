@@ -1,26 +1,35 @@
 import { Injectable } from '@nestjs/common';
 import { CreateFollowDto } from './dto/create-follow.dto';
 import { UpdateFollowDto } from './dto/update-follow.dto';
+import { FollowsRepository } from './follows-repository';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
-export class FollowsService {
+export class FollowsService implements FollowsRepository {
+  constructor(private readonly prisma: PrismaService) {}
+
   create(createFollowDto: CreateFollowDto) {
-    return 'This action adds a new follow';
+    return this.prisma.follows.create({
+      data: {
+        followerId: createFollowDto.followerId,
+        followingId: createFollowDto.followingId,
+      },
+    });
   }
 
-  findAll() {
-    return `This action returns all follows`;
+  findMany() {
+    return this.prisma.follows.findMany();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} follow`;
+  findUnique(id: number) {
+    return this.prisma.follows.findUnique({ where: { id } });
   }
 
-  update(id: number, updateFollowDto: UpdateFollowDto) {
-    return `This action updates a #${id} follow`;
+  update(id: number, UpdateFollowDto: UpdateFollowDto) {
+    return this.prisma.follows.update({ where: { id }, data: UpdateFollowDto });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} follow`;
+  delete(id: number) {
+    return this.prisma.follows.delete({ where: { id } });
   }
 }

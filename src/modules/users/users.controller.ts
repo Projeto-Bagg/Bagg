@@ -38,7 +38,8 @@ export class UsersController {
 
     return {
       id: user.id,
-      name: user.name,
+      displayName: user.displayName,
+      username: user.username,
       email:
         user.email.substring(0, 3) +
         '*********' +

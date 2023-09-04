@@ -8,25 +8,26 @@ datasource db {
 }
 
 model User {
-  id              Int               @id @default(autoincrement())
-  name            String
-  email           String            @unique
-  birthdate       DateTime
-  image           String?
-  emailVerified   DateTime?
-  createdAt       DateTime          @default(now())
-  password        String
-  bio             String?
-  diaryPosts        DiaryPost[]
-  followers       Follows[]         @relation("following")
-  following       Follows[]         @relation("follower")
-  TipLikes        TipLike[]
-  Tip             Tip[]
-  TipComment      TipComment?
-  DiaryPostLike     DiaryPostLike?
-  TripDiary       TripDiary[]
-  CityVisit    CityVisit[]
-  CityInterest CityInterest[]
+  id            Int            @id @default(autoincrement())
+  displayName   String
+  username      String         @unique
+  email         String         @unique
+  birthdate     DateTime
+  image         String?
+  emailVerified DateTime?
+  createdAt     DateTime       @default(now())
+  password      String
+  bio           String?
+  diaryPosts    DiaryPost[]
+  followers     Follows[]      @relation("following")
+  following     Follows[]      @relation("follower")
+  TipLikes      TipLike[]
+  Tip           Tip[]
+  TipComment    TipComment?
+  DiaryPostLike DiaryPostLike?
+  TripDiary     TripDiary[]
+  CityVisit     CityVisit[]
+  CityInterest  CityInterest[]
 }
 
 model Follows {
@@ -39,33 +40,33 @@ model Follows {
 }
 
 model DiaryPost {
-  id           Int            @id @default(autoincrement())
-  title        String?
-  message      String?
-  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId       Int
-  createdAt    DateTime       @default(now())
-  likedBy      DiaryPostLike[]
+  id             Int              @id @default(autoincrement())
+  title          String?
+  message        String?
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         Int
+  createdAt      DateTime         @default(now())
+  likedBy        DiaryPostLike[]
   DiaryPostMedia DiaryPostMedia[]
-  TripDiary    TripDiary[]
+  TripDiary      TripDiary[]
 }
 
 model TripDiary {
-  id        Int      @id @default(autoincrement())
-  title     String
-  createdAt DateTime @default(now())
-  message   String
-  diaryPost   DiaryPost  @relation(fields: [diaryPostId], references: [id])
+  id          Int       @id @default(autoincrement())
+  title       String
+  createdAt   DateTime  @default(now())
+  message     String
+  diaryPost   DiaryPost @relation(fields: [diaryPostId], references: [id])
   diaryPostId Int
-  User      User?    @relation(fields: [userId], references: [id])
-  userId    Int?
+  User        User?     @relation(fields: [userId], references: [id])
+  userId      Int?
 }
 
 model DiaryPostMedia {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  url       String
-  diaryPost   DiaryPost  @relation(fields: [diaryPostId], references: [id])
+  id          Int       @id @default(autoincrement())
+  createdAt   DateTime  @default(now())
+  url         String
+  diaryPost   DiaryPost @relation(fields: [diaryPostId], references: [id])
   diaryPostId Int
 }
 
@@ -81,7 +82,7 @@ model DiaryPostLike {
   id        Int       @id @default(autoincrement())
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    Int       @unique
-  post      DiaryPost   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  post      DiaryPost @relation(fields: [postId], references: [id], onDelete: Cascade)
   postId    Int       @unique
   createdAt DateTime? @default(now())
   Tip       Tip       @relation(fields: [tipId], references: [id])
@@ -98,15 +99,15 @@ model TipLike {
 }
 
 model Tip {
-  id          Int           @id @default(autoincrement())
-  title       String?
-  message     String?
-  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      Int
-  createdAt   DateTime      @default(now())
-  likedBy     TipLike[]
-  tipComments TipComment[]
-  TipMedia    TipMedia[]
+  id            Int             @id @default(autoincrement())
+  title         String?
+  message       String?
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        Int
+  createdAt     DateTime        @default(now())
+  likedBy       TipLike[]
+  tipComments   TipComment[]
+  TipMedia      TipMedia[]
   DiaryPostLike DiaryPostLike[]
 }
 
@@ -126,10 +127,10 @@ model Region {
 }
 
 model City {
-  id              Int               @id @default(autoincrement())
-  name            String
-  region          Region            @relation(fields: [regionId], references: [id], onDelete: Cascade)
-  regionId        Int
+  id           Int            @id @default(autoincrement())
+  name         String
+  region       Region         @relation(fields: [regionId], references: [id], onDelete: Cascade)
+  regionId     Int
   CityVisit    CityVisit[]
   CityInterest CityInterest[]
 }
@@ -150,7 +151,7 @@ model CityVisit {
   userId  Int
   city    City   @relation(fields: [cityId], references: [id])
   cityId  Int
-  rating    Int
+  rating  Int
   message String
 }
 

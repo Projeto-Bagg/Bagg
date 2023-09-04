@@ -11,8 +11,8 @@ export class DiaryPost {
   message: string;
 
   @ApiProperty()
-  userId: string;
+  userId: number;
 
   @ApiProperty()
-  createdAt: string;
+  createdAt: Date;
 }

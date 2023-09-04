@@ -5,8 +5,17 @@ export class UserClient {
   id: number;
 
   @ApiProperty()
-  name: string;
+  displayName: string;
 
   @ApiProperty()
-  email: string;
+  username: string;
+
+  @ApiProperty()
+  image: string;
+
+  @ApiProperty()
+  createdAt: string;
+
+  @ApiProperty()
+  bio: string;
 }

@@ -5,7 +5,10 @@ export class User {
   id: number;
 
   @ApiProperty()
-  name: string;
+  displayName: string;
+
+  @ApiProperty()
+  username: string;
 
   @ApiProperty()
   email: string;

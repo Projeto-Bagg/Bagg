@@ -1,26 +1,33 @@
 import { Injectable } from '@nestjs/common';
 import { CreateDiaryPostDto } from './dto/create-diary-post.dto';
 import { UpdateDiaryPostDto } from './dto/update-diary-post.dto';
+import { DiaryPostsRepository } from './diary-posts-repository';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
-export class DiaryPostsService {
-  create(createDiaryPostDto: CreateDiaryPostDto) {
-    return 'This action adds a new diaryPost';
+export class DiaryPostsService implements DiaryPostsRepository {
+  constructor(private readonly prisma: PrismaService) {}
+
+  create(CreateDiaryPostDto: CreateDiaryPostDto) {
+    return this.prisma.diaryPost.create({ data: CreateDiaryPostDto });
   }
 
-  findAll() {
-    return `This action returns all diaryPosts`;
+  findMany() {
+    return this.prisma.diaryPost.findMany();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} diaryPost`;
+  findUnique(id: number) {
+    return this.prisma.diaryPost.findUnique({ where: { id } });
   }
 
-  update(id: number, updateDiaryPostDto: UpdateDiaryPostDto) {
-    return `This action updates a #${id} diaryPost`;
+  update(id: number, UpdateDiaryPostDto: UpdateDiaryPostDto) {
+    return this.prisma.diaryPost.update({
+      where: { id },
+      data: UpdateDiaryPostDto,
+    });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} diaryPost`;
+  delete(id: number) {
+    return this.prisma.diaryPost.delete({ where: { id } });
   }
 }

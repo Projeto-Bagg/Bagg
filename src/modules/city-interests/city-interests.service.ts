@@ -1,26 +1,32 @@
 import { Injectable } from '@nestjs/common';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateCityInterestDto } from './dto/create-city-interest.dto';
 import { UpdateCityInterestDto } from './dto/update-city-interest.dto';
 
 @Injectable()
 export class CityInterestsService {
+  constructor(private readonly prisma: PrismaService) {}
+
   create(createCityInterestDto: CreateCityInterestDto) {
-    return 'This action adds a new cityInterest';
+    return this.prisma.cityInterest.create({ data: createCityInterestDto });
   }
 
   findAll() {
-    return `This action returns all cityInterests`;
+    return this.prisma.cityInterest.findMany();
   }
 
   findOne(id: number) {
-    return `This action returns a #${id} cityInterest`;
+    return this.prisma.cityInterest.findUnique({ where: { id: id } });
   }
 
   update(id: number, updateCityInterestDto: UpdateCityInterestDto) {
-    return `This action updates a #${id} cityInterest`;
+    return this.prisma.cityInterest.update({
+      data: updateCityInterestDto,
+      where: { id: id },
+    });
   }
 
   remove(id: number) {
-    return `This action removes a #${id} cityInterest`;
+    return this.prisma.cityInterest.delete({ where: { id: id } });
   }
 }

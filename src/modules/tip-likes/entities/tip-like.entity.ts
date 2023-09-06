@@ -8,5 +8,5 @@ export class tipLike {
   userId: number;
 
   @ApiProperty()
-  tipId: string;
+  tipId: number;
 }

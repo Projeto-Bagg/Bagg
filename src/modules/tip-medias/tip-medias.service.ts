@@ -1,26 +1,32 @@
 import { Injectable } from '@nestjs/common';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateTipMediaDto } from './dto/create-tip-media.dto';
 import { UpdateTipMediaDto } from './dto/update-tip-media.dto';
 
 @Injectable()
 export class TipMediasService {
+  constructor(private readonly prisma: PrismaService) {}
+
   create(createTipMediaDto: CreateTipMediaDto) {
-    return 'This action adds a new tipMedia';
+    return this.prisma.tipMedia.create({ data: createTipMediaDto });
   }
 
   findAll() {
-    return `This action returns all tipMedias`;
+    return this.prisma.tipMedia.findMany();
   }
 
   findOne(id: number) {
-    return `This action returns a #${id} tipMedia`;
+    return this.prisma.tipMedia.findUnique({ where: { id: id } });
   }
 
   update(id: number, updateTipMediaDto: UpdateTipMediaDto) {
-    return `This action updates a #${id} tipMedia`;
+    return this.prisma.tipMedia.update({
+      data: updateTipMediaDto,
+      where: { id: id },
+    });
   }
 
   remove(id: number) {
-    return `This action removes a #${id} tipMedia`;
+    return this.prisma.tipMedia.delete({ where: { id: id } });
   }
 }

@@ -23,8 +23,8 @@ model User {
   following     Follows[]      @relation("follower")
   TipLikes      TipLike[]
   Tip           Tip[]
-  TipComment    TipComment?
-  DiaryPostLike DiaryPostLike?
+  TipComment    TipComment[]
+  DiaryPostLike DiaryPostLike[]
   TripDiary     TripDiary[]
   CityVisit     CityVisit[]
   CityInterest  CityInterest[]
@@ -58,8 +58,8 @@ model TripDiary {
   message     String
   diaryPost   DiaryPost @relation(fields: [diaryPostId], references: [id])
   diaryPostId Int
-  User        User?     @relation(fields: [userId], references: [id])
-  userId      Int?
+  user        User     @relation(fields: [userId], references: [id])
+  userId      Int
 }
 
 model DiaryPostMedia {
@@ -81,11 +81,11 @@ model TipMedia {
 model DiaryPostLike {
   id        Int       @id @default(autoincrement())
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    Int       @unique
+  userId    Int       
   post      DiaryPost @relation(fields: [postId], references: [id], onDelete: Cascade)
-  postId    Int       @unique
+  postId    Int       
   createdAt DateTime? @default(now())
-  Tip       Tip       @relation(fields: [tipId], references: [id])
+  tip       Tip       @relation(fields: [tipId], references: [id])
   tipId     Int
 }
 

@@ -1,26 +1,34 @@
 import { Injectable } from '@nestjs/common';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateDiaryPostMediaDto } from './dto/create-diary-post-media.dto';
 import { UpdateDiaryPostMediaDto } from './dto/update-diary-post-media.dto';
 
 @Injectable()
 export class DiaryPostMediasService {
+  constructor(private readonly prisma: PrismaService) {}
+
   create(createDiaryPostMediaDto: CreateDiaryPostMediaDto) {
-    return 'This action adds a new diaryPostMedia';
+    return this.prisma.diaryPostMedia.create({
+      data: createDiaryPostMediaDto,
+    });
   }
 
   findAll() {
-    return `This action returns all diaryPostMedias`;
+    return this.prisma.diaryPostMedia.findMany();
   }
 
   findOne(id: number) {
-    return `This action returns a #${id} diaryPostMedia`;
+    return this.prisma.diaryPostMedia.findUnique({ where: { id: id } });
   }
 
   update(id: number, updateDiaryPostMediaDto: UpdateDiaryPostMediaDto) {
-    return `This action updates a #${id} diaryPostMedia`;
+    return this.prisma.diaryPostMedia.update({
+      data: updateDiaryPostMediaDto,
+      where: { id: id },
+    });
   }
 
   remove(id: number) {
-    return `This action removes a #${id} diaryPostMedia`;
+    return this.prisma.country.delete({ where: { id: id } });
   }
 }

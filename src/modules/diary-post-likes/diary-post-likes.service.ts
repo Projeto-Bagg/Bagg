@@ -1,26 +1,44 @@
 import { Injectable } from '@nestjs/common';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateDiaryPostLikeDto } from './dto/create-diary-post-like.dto';
 import { UpdateDiaryPostLikeDto } from './dto/update-diary-post-like.dto';
 
 @Injectable()
 export class DiaryPostLikesService {
+  constructor(private readonly prisma: PrismaService) {}
+
   create(createDiaryPostLikeDto: CreateDiaryPostLikeDto) {
-    return 'This action adds a new diaryPostLike';
+    return this.prisma.diaryPostLike.create({
+      data: {
+        user: {
+          connect: { id: createDiaryPostLikeDto.userId },
+        },
+        post: {
+          connect: { id: createDiaryPostLikeDto.postId },
+        },
+        tip: {
+          connect: { id: createDiaryPostLikeDto.tipId },
+        },
+      },
+    });
   }
 
   findAll() {
-    return `This action returns all diaryPostLikes`;
+    return this.prisma.diaryPostLike.findMany();
   }
 
   findOne(id: number) {
-    return `This action returns a #${id} diaryPostLike`;
+    return this.prisma.diaryPostLike.findUnique({ where: { id: id } });
   }
 
   update(id: number, updateDiaryPostLikeDto: UpdateDiaryPostLikeDto) {
-    return `This action updates a #${id} diaryPostLike`;
+    return this.prisma.diaryPostLike.update({
+      data: updateDiaryPostLikeDto,
+      where: { id: id },
+    });
   }
 
   remove(id: number) {
-    return `This action removes a #${id} diaryPostLike`;
+    return this.prisma.diaryPostLike.delete({ where: { id: id } });
   }
 }

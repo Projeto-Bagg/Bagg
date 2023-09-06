@@ -8,5 +8,5 @@ export class TipMedia {
   url: string;
 
   @ApiProperty()
-  tipId: string;
+  tipId: number;
 }

@@ -8,5 +8,8 @@ export class DiaryPostLike {
   userId: number;
 
   @ApiProperty()
-  diaryPostId: string;
+  postId: number;
+
+  @ApiProperty()
+  tipId: number;
 }

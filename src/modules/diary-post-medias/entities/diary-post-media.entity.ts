@@ -8,5 +8,5 @@ export class DiaryPostMedia {
   url: string;
 
   @ApiProperty()
-  diaryPostId: string;
+  diaryPostId: number;
 }

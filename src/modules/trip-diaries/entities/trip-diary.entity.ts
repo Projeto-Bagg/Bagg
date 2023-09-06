@@ -11,8 +11,8 @@ export class TripDiary {
   message: string;
 
   @ApiProperty()
-  userId: string;
+  userId: number;
 
   @ApiProperty()
-  diaryPostId: string;
+  diaryPostId: number;
 }

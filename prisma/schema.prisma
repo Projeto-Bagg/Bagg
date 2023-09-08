@@ -14,7 +14,7 @@ model User {
   email         String         @unique
   birthdate     DateTime
   image         String?
-  emailVerified DateTime?
+  emailVerified Boolean        @default(false)
   createdAt     DateTime       @default(now())
   password      String
   bio           String?

@@ -17,7 +17,7 @@ export class User {
   bio: string;
 
   @ApiProperty()
-  emailVerified: Date;
+  emailVerified: boolean;
 
   @ApiProperty()
   birthdate: Date;

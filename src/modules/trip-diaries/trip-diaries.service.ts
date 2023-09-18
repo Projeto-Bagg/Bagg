@@ -4,7 +4,7 @@ import { CreateTripDiaryDto } from './dto/create-trip-diary.dto';
 import { UpdateTripDiaryDto } from './dto/update-trip-diary.dto';
 
 @Injectable()
-export class TripDiarysService {
+export class TripDiariesService {
   constructor(private readonly prisma: PrismaService) {}
 
   create(createTripDiaryDto: CreateTripDiaryDto) {

@@ -17,12 +17,12 @@ import jwt from 'jsonwebtoken';
 import { userInfo } from 'os';
 
 interface JwtPayload {
-  email: string
+  email: string;
 }
 
 @Injectable()
 export class UsersService implements UsersRepository {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(createUserDto: CreateUserDto): Promise<void> {
     const alreadyExist = await this.prisma.user.findUnique({

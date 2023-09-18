@@ -4,6 +4,6 @@ import { CityVisitsController } from './city-visits.controller';
 
 @Module({
   controllers: [CityVisitsController],
-  providers: [CityVisitsService]
+  providers: [CityVisitsService],
 })
 export class CityVisitsModule {}

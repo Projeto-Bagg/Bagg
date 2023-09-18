@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { DiaryPostLike } from '@prisma/client';
 
-export class DiaryPostLike {
+export class DiaryPostLikeEntity implements DiaryPostLike {
   @ApiProperty()
   id: number;
 
@@ -12,4 +13,7 @@ export class DiaryPostLike {
 
   @ApiProperty()
   tipId: number;
+
+  @ApiProperty()
+  createdAt: Date;
 }

@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { TipMedia } from '@prisma/client';
 
-export class TipMedia {
+export class TipMediaEntity implements TipMedia {
   @ApiProperty()
   id: number;
 
@@ -9,4 +10,7 @@ export class TipMedia {
 
   @ApiProperty()
   tipId: number;
+
+  @ApiProperty()
+  createdAt: Date;
 }

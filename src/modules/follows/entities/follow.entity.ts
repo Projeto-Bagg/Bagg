@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Follow } from '@prisma/client';
 
-export class Follow {
+export class FollowEntity implements Follow {
   @ApiProperty()
   id: number;
 
@@ -9,4 +10,7 @@ export class Follow {
 
   @ApiProperty()
   followingId: number;
+
+  @ApiProperty()
+  createdAt: Date;
 }

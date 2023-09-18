@@ -4,37 +4,39 @@ import {
   Post,
   Get,
   Query,
-  Request,
   Put,
   UseGuards,
   Delete,
 } from '@nestjs/common';
 import { CreateUserDto } from './dtos/create-user.dto';
-import { ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { UserClient } from './entities/user-client.entity';
-import { User } from './entities/user.entity';
+import { UserEntity } from './entities/user.entity';
 import { UpdateUserDto } from './dtos/update-user.dto';
-import { UsersRepository } from './users-repository';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UpdatePasswordDto } from './dtos/update-password.dto';
 import { DeleteUserDto } from './dtos/delete-user.dto';
+import { UsersService } from './users.service';
+import { UserFromJwt } from '../auth/models/UserFromJwt';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @Controller('users')
+@ApiTags('users')
 export class UsersController {
-  constructor(private readonly usersRepository: UsersRepository) {}
+  constructor(private readonly usersService: UsersService) {}
 
   @Get()
-  @ApiResponse({ type: User, isArray: true })
+  @ApiResponse({ type: UserEntity, isArray: true })
   findMany() {
-    return this.usersRepository.findMany();
+    return this.usersService.findMany();
   }
 
   @Get('me')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiResponse({ type: UserClient })
-  async me(@Request() req) {
-    const user = await this.usersRepository.findById(req.user.id);
+  async me(@CurrentUser() userReq: UserFromJwt) {
+    const user = await this.usersService.findById(userReq.id);
 
     return {
       id: user.id,
@@ -49,30 +51,36 @@ export class UsersController {
 
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
-    return this.usersRepository.create(createUserDto);
+    return this.usersService.create(createUserDto);
   }
 
   @Put()
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  async update(@Body() UpdateUserDto: UpdateUserDto, @Request() req) {
-    return await this.usersRepository.update(UpdateUserDto, req.user.id);
+  async update(
+    @Body() UpdateUserDto: UpdateUserDto,
+    @CurrentUser() user: UserFromJwt,
+  ) {
+    return await this.usersService.update(UpdateUserDto, user.id);
   }
 
   @Put('password')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  async password(@Body() UpdatePasswordDto: UpdatePasswordDto, @Request() req) {
-    return await this.usersRepository.updatePassword(
-      UpdatePasswordDto,
-      req.user.id,
-    );
+  async password(
+    @Body() UpdatePasswordDto: UpdatePasswordDto,
+    @CurrentUser() user: UserFromJwt,
+  ) {
+    return await this.usersService.updatePassword(UpdatePasswordDto, user.id);
   }
 
   @Delete()
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  async delete(@Query() DeleteUserDto: DeleteUserDto, @Request() req) {
-    return await this.usersRepository.delete(DeleteUserDto, req.user.id);
+  async delete(
+    @Query() DeleteUserDto: DeleteUserDto,
+    @CurrentUser() user: UserFromJwt,
+  ) {
+    return await this.usersService.delete(DeleteUserDto, user.id);
   }
 }

@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { TripDiary } from '@prisma/client';
 
-export class TripDiary {
+export class TripDiaryEntity implements TripDiary {
   @ApiProperty()
   id: number;
 
@@ -15,4 +16,7 @@ export class TripDiary {
 
   @ApiProperty()
   diaryPostId: number;
+
+  @ApiProperty()
+  createdAt: Date;
 }

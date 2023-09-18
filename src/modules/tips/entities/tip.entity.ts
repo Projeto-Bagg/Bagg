@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Tip } from '@prisma/client';
 
-export class Tip {
+export class TipEntity implements Tip {
   @ApiProperty()
   id: number;
 
@@ -12,4 +13,7 @@ export class Tip {
 
   @ApiProperty()
   userId: number;
+
+  @ApiProperty()
+  createdAt: Date;
 }

@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { DiaryPost } from '@prisma/client';
 
-export class DiaryPost {
+export class DiaryPostEntity implements DiaryPost {
   @ApiProperty()
   id: number;
 

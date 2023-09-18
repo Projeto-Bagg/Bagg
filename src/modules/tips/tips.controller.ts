@@ -10,10 +10,11 @@ import {
 import { TipsService } from './tips.service';
 import { CreateTipDto } from './dto/create-tip.dto';
 import { UpdateTipDto } from './dto/update-tip.dto';
-import { ApiResponse } from '@nestjs/swagger';
-import { Tip } from './entities/tip.entity';
+import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import { TipEntity } from './entities/tip.entity';
 
 @Controller('tips')
+@ApiTags('tips')
 export class TipsController {
   constructor(private readonly tipsService: TipsService) {}
 
@@ -23,13 +24,13 @@ export class TipsController {
   }
 
   @Get()
-  @ApiResponse({ type: Tip, isArray: true })
+  @ApiResponse({ type: TipEntity, isArray: true })
   findAll() {
     return this.tipsService.findMany();
   }
 
   @Get(':id')
-  @ApiResponse({ type: Tip, isArray: false })
+  @ApiResponse({ type: TipEntity, isArray: false })
   findOne(@Param('id') id: string) {
     return this.tipsService.findUnique(+id);
   }

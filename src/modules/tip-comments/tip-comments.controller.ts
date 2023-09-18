@@ -1,9 +1,19 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { TipCommentsService } from './tip-comments.service';
 import { CreateTipCommentDto } from './dto/create-tip-comment.dto';
 import { UpdateTipCommentDto } from './dto/update-tip-comment.dto';
+import { ApiTags } from '@nestjs/swagger';
 
 @Controller('tip-comments')
+@ApiTags('tip comments')
 export class TipCommentsController {
   constructor(private readonly tipCommentsService: TipCommentsService) {}
 
@@ -23,7 +33,10 @@ export class TipCommentsController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTipCommentDto: UpdateTipCommentDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateTipCommentDto: UpdateTipCommentDto,
+  ) {
     return this.tipCommentsService.update(+id, updateTipCommentDto);
   }
 

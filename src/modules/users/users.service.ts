@@ -8,7 +8,7 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UsersRepository } from './users-repository';
-import { User } from './entities/user.entity';
+import { UserEntity } from './entities/user.entity';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { UpdatePasswordDto } from './dtos/update-password.dto';
 import { DeleteUserDto } from './dtos/delete-user.dto';
@@ -17,12 +17,12 @@ import jwt from 'jsonwebtoken';
 import { userInfo } from 'os';
 
 interface JwtPayload {
-  email: string
+  email: string;
 }
 
 @Injectable()
 export class UsersService implements UsersRepository {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(createUserDto: CreateUserDto): Promise<void> {
     const alreadyExist = await this.prisma.user.findUnique({
@@ -41,15 +41,15 @@ export class UsersService implements UsersRepository {
     await this.prisma.user.create({ data });
   }
 
-  async findMany(): Promise<User[]> {
+  async findMany(): Promise<UserEntity[]> {
     return await this.prisma.user.findMany();
   }
 
-  async findByEmail(email: string): Promise<User> {
+  async findByEmail(email: string): Promise<UserEntity> {
     return await this.prisma.user.findUnique({ where: { email } });
   }
 
-  async findById(id: number): Promise<User> {
+  async findById(id: number): Promise<UserEntity> {
     return await this.prisma.user.findUnique({ where: { id } });
   }
 

@@ -1,11 +1,23 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { DiaryPostMediasService } from './diary-post-medias.service';
 import { CreateDiaryPostMediaDto } from './dto/create-diary-post-media.dto';
 import { UpdateDiaryPostMediaDto } from './dto/update-diary-post-media.dto';
+import { ApiTags } from '@nestjs/swagger';
 
 @Controller('diary-post-medias')
+@ApiTags('diary post medias')
 export class DiaryPostMediasController {
-  constructor(private readonly diaryPostMediasService: DiaryPostMediasService) {}
+  constructor(
+    private readonly diaryPostMediasService: DiaryPostMediasService,
+  ) {}
 
   @Post()
   create(@Body() createDiaryPostMediaDto: CreateDiaryPostMediaDto) {
@@ -23,7 +35,10 @@ export class DiaryPostMediasController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateDiaryPostMediaDto: UpdateDiaryPostMediaDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateDiaryPostMediaDto: UpdateDiaryPostMediaDto,
+  ) {
     return this.diaryPostMediasService.update(+id, updateDiaryPostMediaDto);
   }
 

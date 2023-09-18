@@ -1,11 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { CreateDiaryPostDto } from './dto/create-diary-post.dto';
 import { UpdateDiaryPostDto } from './dto/update-diary-post.dto';
-import { DiaryPostsRepository } from './diary-posts-repository';
 import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
-export class DiaryPostsService implements DiaryPostsRepository {
+export class DiaryPostsService {
   constructor(private readonly prisma: PrismaService) {}
 
   create(CreateDiaryPostDto: CreateDiaryPostDto) {

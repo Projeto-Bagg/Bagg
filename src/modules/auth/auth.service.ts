@@ -6,11 +6,10 @@ import { UsersService } from '../users/users.service';
 import { UserPayload } from './models/UserPayload';
 import { UserToken } from './models/UserToken';
 import { UserFromJwt } from './models/UserFromJwt';
-import { AuthRepository } from './auth-repository';
-import { User } from '../users/entities/user.entity';
+import { UserEntity } from '../users/entities/user.entity';
 
 @Injectable()
-export class AuthService implements AuthRepository {
+export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly usersService: UsersService,
@@ -29,7 +28,7 @@ export class AuthService implements AuthRepository {
   async validateUser(
     email: string,
     password: string,
-  ): Promise<Omit<User, 'password'>> {
+  ): Promise<Omit<UserEntity, 'password'>> {
     const user = await this.usersService.findByEmail(email);
 
     if (user) {

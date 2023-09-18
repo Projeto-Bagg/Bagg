@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { TipComment } from '@prisma/client';
 
-export class TipComment {
+export class TipCommentEntity implements TipComment {
   @ApiProperty()
   id: number;
 
@@ -12,4 +13,7 @@ export class TipComment {
 
   @ApiProperty()
   message: string;
+
+  @ApiProperty()
+  createdAt: Date;
 }

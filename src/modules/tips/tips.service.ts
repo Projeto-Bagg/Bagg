@@ -1,11 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { CreateTipDto } from './dto/create-tip.dto';
 import { UpdateTipDto } from './dto/update-tip.dto';
-import { TipsRepository } from './tips-repository';
 import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
-export class TipsService implements TipsRepository {
+export class TipsService {
   constructor(private readonly prisma: PrismaService) {}
 
   create(CreateTipDto: CreateTipDto) {

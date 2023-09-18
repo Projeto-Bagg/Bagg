@@ -1,9 +1,19 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { DiaryPostLikesService } from './diary-post-likes.service';
 import { CreateDiaryPostLikeDto } from './dto/create-diary-post-like.dto';
 import { UpdateDiaryPostLikeDto } from './dto/update-diary-post-like.dto';
+import { ApiTags } from '@nestjs/swagger';
 
 @Controller('diary-post-likes')
+@ApiTags('diary post likes')
 export class DiaryPostLikesController {
   constructor(private readonly diaryPostLikesService: DiaryPostLikesService) {}
 
@@ -23,7 +33,10 @@ export class DiaryPostLikesController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateDiaryPostLikeDto: UpdateDiaryPostLikeDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateDiaryPostLikeDto: UpdateDiaryPostLikeDto,
+  ) {
     return this.diaryPostLikesService.update(+id, updateDiaryPostLikeDto);
   }
 

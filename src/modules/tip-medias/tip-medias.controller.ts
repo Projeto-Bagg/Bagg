@@ -1,9 +1,19 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { TipMediasService } from './tip-medias.service';
 import { CreateTipMediaDto } from './dto/create-tip-media.dto';
 import { UpdateTipMediaDto } from './dto/update-tip-media.dto';
+import { ApiTags } from '@nestjs/swagger';
 
 @Controller('tip-medias')
+@ApiTags('tip medias')
 export class TipMediasController {
   constructor(private readonly tipMediasService: TipMediasService) {}
 
@@ -23,7 +33,10 @@ export class TipMediasController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTipMediaDto: UpdateTipMediaDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateTipMediaDto: UpdateTipMediaDto,
+  ) {
     return this.tipMediasService.update(+id, updateTipMediaDto);
   }
 

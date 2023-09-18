@@ -1,9 +1,19 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { TipLikesService } from './tip-likes.service';
 import { CreateTipLikeDto } from './dto/create-tip-like.dto';
 import { UpdateTipLikeDto } from './dto/update-tip-like.dto';
+import { ApiTags } from '@nestjs/swagger';
 
 @Controller('tip-likes')
+@ApiTags('tip likes')
 export class TipLikesController {
   constructor(private readonly tipLikesService: TipLikesService) {}
 

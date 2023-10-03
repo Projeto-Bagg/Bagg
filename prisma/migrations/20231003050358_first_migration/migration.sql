@@ -10,7 +10,7 @@ CREATE TABLE [dbo].[User] (
     [email] NVARCHAR(1000) NOT NULL,
     [birthdate] DATETIME2 NOT NULL,
     [image] NVARCHAR(1000),
-    [emailVerified] DATETIME2,
+    [emailVerified] BIT NOT NULL CONSTRAINT [User_emailVerified_df] DEFAULT 0,
     [createdAt] DATETIME2 NOT NULL CONSTRAINT [User_createdAt_df] DEFAULT CURRENT_TIMESTAMP,
     [password] NVARCHAR(1000) NOT NULL,
     [bio] NVARCHAR(1000),
@@ -72,7 +72,7 @@ CREATE TABLE [dbo].[DiaryPostLike] (
     [id] INT NOT NULL IDENTITY(1,1),
     [userId] INT NOT NULL,
     [postId] INT NOT NULL,
-    [createdAt] DATETIME2 NOT NULL CONSTRAINT [DiaryPostLike_createdAt_df] DEFAULT CURRENT_TIMESTAMP,
+    [createdAt] DATETIME2 CONSTRAINT [DiaryPostLike_createdAt_df] DEFAULT CURRENT_TIMESTAMP,
     [tipId] INT NOT NULL,
     CONSTRAINT [DiaryPostLike_pkey] PRIMARY KEY CLUSTERED ([id])
 );
@@ -155,10 +155,10 @@ CREATE TABLE [dbo].[CityInterest] (
 ALTER TABLE [dbo].[Follow] ADD CONSTRAINT [Follow_followerId_fkey] FOREIGN KEY ([followerId]) REFERENCES [dbo].[User]([id]) ON DELETE NO ACTION ON UPDATE NO ACTION;
 
 -- AddForeignKey
-ALTER TABLE [dbo].[Follow] ADD CONSTRAINT [Follow_followingId_fkey] FOREIGN KEY ([followingId]) REFERENCES [dbo].[User]([id]) ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE [dbo].[Follow] ADD CONSTRAINT [Follow_followingId_fkey] FOREIGN KEY ([followingId]) REFERENCES [dbo].[User]([id]) ON DELETE NO ACTION ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE [dbo].[DiaryPost] ADD CONSTRAINT [DiaryPost_userId_fkey] FOREIGN KEY ([userId]) REFERENCES [dbo].[User]([id]) ON DELETE NO ACTION ON UPDATE CASCADE;
+ALTER TABLE [dbo].[DiaryPost] ADD CONSTRAINT [DiaryPost_userId_fkey] FOREIGN KEY ([userId]) REFERENCES [dbo].[User]([id]) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE [dbo].[TripDiary] ADD CONSTRAINT [TripDiary_diaryPostId_fkey] FOREIGN KEY ([diaryPostId]) REFERENCES [dbo].[DiaryPost]([id]) ON DELETE NO ACTION ON UPDATE NO ACTION;
@@ -179,7 +179,7 @@ ALTER TABLE [dbo].[DiaryPostLike] ADD CONSTRAINT [DiaryPostLike_userId_fkey] FOR
 ALTER TABLE [dbo].[DiaryPostLike] ADD CONSTRAINT [DiaryPostLike_postId_fkey] FOREIGN KEY ([postId]) REFERENCES [dbo].[DiaryPost]([id]) ON DELETE NO ACTION ON UPDATE NO ACTION;
 
 -- AddForeignKey
-ALTER TABLE [dbo].[DiaryPostLike] ADD CONSTRAINT [DiaryPostLike_tipId_fkey] FOREIGN KEY ([tipId]) REFERENCES [dbo].[Tip]([id]) ON DELETE NO ACTION ON UPDATE CASCADE;
+ALTER TABLE [dbo].[DiaryPostLike] ADD CONSTRAINT [DiaryPostLike_tipId_fkey] FOREIGN KEY ([tipId]) REFERENCES [dbo].[Tip]([id]) ON DELETE NO ACTION ON UPDATE NO ACTION;
 
 -- AddForeignKey
 ALTER TABLE [dbo].[TipLike] ADD CONSTRAINT [TipLike_userId_fkey] FOREIGN KEY ([userId]) REFERENCES [dbo].[User]([id]) ON DELETE NO ACTION ON UPDATE NO ACTION;
@@ -194,7 +194,7 @@ ALTER TABLE [dbo].[Tip] ADD CONSTRAINT [Tip_userId_fkey] FOREIGN KEY ([userId]) 
 ALTER TABLE [dbo].[Region] ADD CONSTRAINT [Region_countryId_fkey] FOREIGN KEY ([countryId]) REFERENCES [dbo].[Country]([id]) ON DELETE NO ACTION ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE [dbo].[City] ADD CONSTRAINT [City_regionId_fkey] FOREIGN KEY ([regionId]) REFERENCES [dbo].[Region]([id]) ON DELETE NO ACTION ON UPDATE CASCADE;
+ALTER TABLE [dbo].[City] ADD CONSTRAINT [City_regionId_fkey] FOREIGN KEY ([regionId]) REFERENCES [dbo].[Region]([id]) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE [dbo].[TipComment] ADD CONSTRAINT [TipComment_userId_fkey] FOREIGN KEY ([userId]) REFERENCES [dbo].[User]([id]) ON DELETE NO ACTION ON UPDATE NO ACTION;

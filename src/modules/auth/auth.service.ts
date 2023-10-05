@@ -26,10 +26,16 @@ export class AuthService {
   }
 
   async validateUser(
-    email: string,
+    login: string,
     password: string,
   ): Promise<Omit<UserEntity, 'password'>> {
-    const user = await this.usersService.findByEmail(email);
+    let user: UserEntity;
+
+    if (/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(login)) {
+      user = await this.usersService.findByEmail(login);
+    } else {
+      user = await this.usersService.findByUsername(login);
+    }
 
     if (user) {
       const isPasswordValid = await bcrypt.compare(password, user.password);

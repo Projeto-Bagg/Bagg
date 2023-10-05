@@ -14,7 +14,6 @@ import { UpdatePasswordDto } from './dtos/update-password.dto';
 import { DeleteUserDto } from './dtos/delete-user.dto';
 import nodemailer from 'nodemailer';
 import jwt from 'jsonwebtoken';
-import { userInfo } from 'os';
 
 interface JwtPayload {
   email: string;
@@ -25,12 +24,29 @@ export class UsersService implements UsersRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createUserDto: CreateUserDto): Promise<void> {
-    const alreadyExist = await this.prisma.user.findUnique({
+    const emailAlreadyExist = await this.prisma.user.findUnique({
       where: { email: createUserDto.email },
     });
 
-    if (!!alreadyExist) {
-      throw new ConflictException('Email not available');
+    const usernameAlreadyExist = await this.prisma.user.findUnique({
+      where: { username: createUserDto.username },
+    });
+
+    if (!!emailAlreadyExist || !!usernameAlreadyExist) {
+      throw new ConflictException({
+        ...(!!usernameAlreadyExist && {
+          username: {
+            description: 'Username not available',
+            code: 'username_not_available',
+          },
+        }),
+        ...(!!emailAlreadyExist && {
+          email: {
+            description: 'Email not available',
+            code: 'email_not_available',
+          },
+        }),
+      });
     }
 
     const data: Prisma.UserCreateInput = {
@@ -51,6 +67,10 @@ export class UsersService implements UsersRepository {
 
   async findById(id: number): Promise<UserEntity> {
     return await this.prisma.user.findUnique({ where: { id } });
+  }
+
+  async findByUsername(username: string): Promise<UserEntity> {
+    return await this.prisma.user.findUnique({ where: { username } });
   }
 
   async update(UpdateUserDto: UpdateUserDto, id: number): Promise<void> {

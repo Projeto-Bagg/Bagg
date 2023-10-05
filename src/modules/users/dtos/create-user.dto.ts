@@ -11,7 +11,7 @@ import {
 export class CreateUserDto {
   @ApiProperty()
   @IsString()
-  displayName: string;
+  fullName: string;
 
   @ApiProperty()
   username: string;

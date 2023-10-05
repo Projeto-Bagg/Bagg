@@ -5,7 +5,7 @@ export class UserClient {
   id: number;
 
   @ApiProperty()
-  displayName: string;
+  fullName: string;
 
   @ApiProperty()
   username: string;

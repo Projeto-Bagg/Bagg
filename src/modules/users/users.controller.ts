@@ -40,7 +40,7 @@ export class UsersController {
 
     return {
       id: user.id,
-      displayName: user.displayName,
+      fullName: user.fullName,
       username: user.username,
       email:
         user.email.substring(0, 3) +

@@ -11,11 +11,20 @@ export class UserClient {
   username: string;
 
   @ApiProperty()
+  birthdate: Date;
+
+  @ApiProperty()
   image: string;
 
   @ApiProperty()
-  createdAt: string;
+  createdAt: Date;
 
   @ApiProperty()
   bio: string;
+
+  @ApiProperty()
+  followers: number;
+
+  @ApiProperty()
+  following: number;
 }

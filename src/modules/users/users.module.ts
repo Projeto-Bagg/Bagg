@@ -4,9 +4,10 @@ import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { JwtModule } from '@nestjs/jwt';
 import { UsersRepository } from './users-repository';
+import { MediaModule } from '../media/media.module';
 
 @Module({
-  imports: [PrismaModule, JwtModule],
+  imports: [PrismaModule, JwtModule, MediaModule],
   controllers: [UsersController],
   providers: [
     UsersService,

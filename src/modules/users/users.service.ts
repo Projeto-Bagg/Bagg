@@ -13,7 +13,7 @@ import { UpdateUserDto } from './dtos/update-user.dto';
 import { UpdatePasswordDto } from './dtos/update-password.dto';
 import { DeleteUserDto } from './dtos/delete-user.dto';
 import nodemailer from 'nodemailer';
-import jwt from 'jsonwebtoken';
+import { JwtService } from '@nestjs/jwt';
 
 interface JwtPayload {
   email: string;
@@ -21,7 +21,10 @@ interface JwtPayload {
 
 @Injectable()
 export class UsersService implements UsersRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly jwt: JwtService,
+  ) {}
 
   async create(createUserDto: CreateUserDto): Promise<void> {
     const emailAlreadyExist = await this.prisma.user.findUnique({
@@ -55,10 +58,6 @@ export class UsersService implements UsersRepository {
     };
 
     await this.prisma.user.create({ data });
-  }
-
-  async findMany(): Promise<UserEntity[]> {
-    return await this.prisma.user.findMany();
   }
 
   async findByEmail(email: string): Promise<UserEntity> {
@@ -124,13 +123,9 @@ export class UsersService implements UsersRepository {
 
     if (!user.emailVerified) {
       //usar alguma biblioteca de template para passar o token para o html que vai ter no email
-      const verificationToken = jwt.sign(
-        {
-          email: user.email,
-        },
-        process.env.JWT_SECRET,
-        { expiresIn: 60 * 60 * 24 },
-      );
+      const verificationToken = this.jwt.sign({
+        email: user.email,
+      });
       //precisa permitir que apps menos seguros usem seu gmail por conta da falta do oauth, se não não vai funcionar
       const mailTransporter = nodemailer.createTransport({
         service: 'gmail',
@@ -161,21 +156,131 @@ export class UsersService implements UsersRepository {
   }
 
   async verifyConfirmationEmail(token: string): Promise<boolean> {
-    jwt.verify(
-      token,
-      process.env.JWT_SECRET,
-      async function (err, decoded: JwtPayload) {
-        if (err) {
-          return false;
-        } else {
-          await this.prisma.user.update({
-            data: { emailVerified: true },
-            where: { email: decoded.email },
-          });
-          return true;
-        }
+    const decoded = this.jwt.decode(token) as JwtPayload;
+
+    await this.prisma.user.update({
+      data: { emailVerified: true },
+      where: { email: decoded.email },
+    });
+
+    return true;
+  }
+
+  async follow(followingUsername: string, userId: number) {
+    return await this.prisma.follow.create({
+      data: {
+        following: {
+          connect: {
+            username: followingUsername,
+          },
+        },
+        follower: {
+          connect: {
+            id: userId,
+          },
+        },
       },
-    );
-    return false;
+    });
+  }
+
+  async unfollow(followingUsername: string, userId: number) {
+    return await this.prisma.follow.deleteMany({
+      where: {
+        following: {
+          username: followingUsername,
+        },
+        follower: {
+          id: userId,
+        },
+      },
+    });
+  }
+
+  async following(userId: number) {
+    return await this.prisma.user.findMany({
+      where: {
+        followers: {
+          some: {
+            followerId: userId,
+          },
+        },
+      },
+      select: {
+        id: true,
+        bio: true,
+        createdAt: true,
+        username: true,
+        fullName: true,
+        image: true,
+        birthdate: true,
+      },
+    });
+  }
+
+  async isFollowing(followingUsername: string, userId) {
+    return await this.prisma.follow.count({
+      where: {
+        followerId: userId,
+        following: {
+          username: followingUsername,
+        },
+      },
+    });
+  }
+
+  async followers(userId: number) {
+    return await this.prisma.user.findMany({
+      where: {
+        following: {
+          some: {
+            followingId: userId,
+          },
+        },
+      },
+      select: {
+        id: true,
+        bio: true,
+        createdAt: true,
+        username: true,
+        fullName: true,
+        image: true,
+        birthdate: true,
+      },
+    });
+  }
+
+  async friendshipStatus(followingUsername: string, userId: number) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        username: followingUsername,
+      },
+      select: {
+        followers: true,
+        following: true,
+      },
+    });
+
+    return {
+      following: user.followers.some(
+        (follower) => follower.followerId === userId,
+      ),
+      followedBy: user.following.some(
+        (following) => following.followingId === userId,
+      ),
+    };
+  }
+
+  async friendshipCount(userId: number) {
+    const followers = await this.prisma.follow.count({
+      where: { followingId: userId },
+    });
+    const following = await this.prisma.follow.count({
+      where: { followerId: userId },
+    });
+
+    return {
+      followers,
+      following,
+    };
   }
 }

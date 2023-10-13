@@ -6,7 +6,7 @@ import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { AuthService } from './modules/auth/auth.service';
 import { JwtService } from '@nestjs/jwt';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 // import { UsersModule } from './users/users.module';
 import { DiaryPostsModule } from './modules/diary-posts/diary-posts.module';
 import { CityInterestsModule } from './modules/city-interests/city-interests.module';
@@ -21,28 +21,28 @@ import { DiaryPostLikesModule } from './modules/diary-post-likes/diary-post-like
 import { TipMediasModule } from './modules/tip-medias/tip-medias.module';
 import { DiaryPostMediasModule } from './modules/diary-post-medias/diary-post-medias.module';
 import { TripDiariesModule } from './modules/trip-diaries/trip-diaries.module';
-import { FollowsModule } from './modules/follows/follows.module';
+import { MediaModule } from './modules/media/media.module';
 
 @Module({
   imports: [
-    PrismaModule,
-    UsersModule,
     AuthModule,
-    ConfigModule.forRoot(),
+    UsersModule,
+    TipsModule,
+    TipLikesModule,
+    TipCommentsModule,
+    TipMediasModule,
     DiaryPostsModule,
+    DiaryPostLikesModule,
+    DiaryPostMediasModule,
+    TripDiariesModule,
     CityInterestsModule,
     CityVisitsModule,
-    TipCommentsModule,
     CitiesModule,
     RegionsModule,
     CountriesModule,
-    TipsModule,
-    TipLikesModule,
-    DiaryPostLikesModule,
-    TipMediasModule,
-    DiaryPostMediasModule,
-    TripDiariesModule,
-    FollowsModule,
+    PrismaModule,
+    MediaModule,
+    ConfigModule.forRoot(),
   ],
   providers: [AuthService, JwtService],
 })

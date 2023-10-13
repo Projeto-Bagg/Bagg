@@ -6,7 +6,6 @@ import { UserEntity } from './entities/user.entity';
 
 export abstract class UsersRepository {
   abstract create(createUserDto: CreateUserDto): Promise<void>;
-  abstract findMany(): Promise<UserEntity[]>;
   abstract findByEmail(email: string): Promise<UserEntity>;
   abstract findById(id: number): Promise<UserEntity>;
   abstract update(UpdateUserDto: UpdateUserDto, id: number): Promise<void>;

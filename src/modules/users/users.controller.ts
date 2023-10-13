@@ -3,15 +3,22 @@ import {
   Controller,
   Post,
   Get,
+  Param,
   Query,
   Put,
   UseGuards,
   Delete,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { CreateUserDto } from './dtos/create-user.dto';
-import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { UserClient } from './entities/user-client.entity';
-import { UserEntity } from './entities/user.entity';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UpdatePasswordDto } from './dtos/update-password.dto';
@@ -19,16 +26,68 @@ import { DeleteUserDto } from './dtos/delete-user.dto';
 import { UsersService } from './users.service';
 import { UserFromJwt } from '../auth/models/UserFromJwt';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { MediaService } from '../media/media.service';
 
 @Controller('users')
 @ApiTags('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly mediaService: MediaService,
+  ) {}
+  @Post()
+  create(@Body() createUserDto: CreateUserDto) {
+    return this.usersService.create(createUserDto);
+  }
 
-  @Get()
-  @ApiResponse({ type: UserEntity, isArray: true })
-  findMany() {
-    return this.usersService.findMany();
+  @Put()
+  @ApiBearerAuth()
+  @UseInterceptors(FileInterceptor('profile-pic'))
+  @ApiConsumes('multipart/form-data')
+  @UseGuards(JwtAuthGuard)
+  async update(
+    @Body() updateUserDto: UpdateUserDto,
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() userFromJwt: UserFromJwt,
+  ) {
+    let imageUrl: string | undefined;
+
+    if (file) {
+      const user = await this.usersService.findById(userFromJwt.id);
+      if (user.image) {
+        this.mediaService.deleteFile(
+          user.image.split('/').pop(),
+          'profile-pics',
+        );
+      }
+      imageUrl = await this.mediaService.uploadFile(file, 'profile-pics');
+    }
+
+    return await this.usersService.update(
+      { ...updateUserDto, image: imageUrl },
+      userFromJwt.id,
+    );
+  }
+
+  @Delete()
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  delete(
+    @Query() DeleteUserDto: DeleteUserDto,
+    @CurrentUser() user: UserFromJwt,
+  ) {
+    return this.usersService.delete(DeleteUserDto, user.id);
+  }
+
+  @Put('password')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  password(
+    @Body() UpdatePasswordDto: UpdatePasswordDto,
+    @CurrentUser() user: UserFromJwt,
+  ) {
+    return this.usersService.updatePassword(UpdatePasswordDto, user.id);
   }
 
   @Get('me')
@@ -37,50 +96,106 @@ export class UsersController {
   @ApiResponse({ type: UserClient })
   async me(@CurrentUser() userReq: UserFromJwt) {
     const user = await this.usersService.findById(userReq.id);
+    const follows = await this.usersService.friendshipCount(user.id);
+
+    const { email, password, emailVerified, ...rest } = user;
 
     return {
-      id: user.id,
-      fullName: user.fullName,
-      username: user.username,
-      email:
-        user.email.substring(0, 3) +
-        '*********' +
-        user.email.substring(user.email.indexOf('@'), user.email.length),
+      ...rest,
+      ...follows,
     };
   }
 
-  @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
-  }
-
-  @Put()
+  @Get('/followers')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  async update(
-    @Body() UpdateUserDto: UpdateUserDto,
-    @CurrentUser() user: UserFromJwt,
-  ) {
-    return await this.usersService.update(UpdateUserDto, user.id);
+  @ApiResponse({ type: UserClient, isArray: true })
+  followers(@CurrentUser() user: UserFromJwt) {
+    return this.usersService.followers(user.id);
   }
 
-  @Put('password')
+  @Get('/following')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  async password(
-    @Body() UpdatePasswordDto: UpdatePasswordDto,
-    @CurrentUser() user: UserFromJwt,
-  ) {
-    return await this.usersService.updatePassword(UpdatePasswordDto, user.id);
+  @ApiResponse({ type: UserClient, isArray: true })
+  following(@CurrentUser() user: UserFromJwt) {
+    return this.usersService.following(user.id);
   }
 
-  @Delete()
+  @Get('friendship/:username')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  async delete(
-    @Query() DeleteUserDto: DeleteUserDto,
+  friendshipStatus(
+    @Param('username') username: string,
     @CurrentUser() user: UserFromJwt,
   ) {
-    return await this.usersService.delete(DeleteUserDto, user.id);
+    return this.usersService.friendshipStatus(username, user.id);
+  }
+
+  // @Get('friendship-count')
+  // @ApiBearerAuth()
+  // @UseGuards(JwtAuthGuard)
+  // async friendshipStatus(@CurrentUser() user: UserFromJwt) {
+  //   return this.usersService.friendshipCount(user.id);
+  // }
+
+  @Get(':username')
+  @ApiResponse({ type: UserClient })
+  async findByUsername(@Param('username') username: string) {
+    const user = await this.usersService.findByUsername(username);
+    const follows = await this.usersService.friendshipCount(user.id);
+
+    const { email, password, emailVerified, ...rest } = user;
+
+    return {
+      ...rest,
+      ...follows,
+    };
+  }
+
+  @Get('following/:username')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  isFollowing(
+    @Param('username') username: string,
+    @CurrentUser() user: UserFromJwt,
+  ) {
+    return this.usersService.isFollowing(username, user.id);
+  }
+
+  @Post('following/:username')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  follow(
+    @Param('username') username: string,
+    @CurrentUser() user: UserFromJwt,
+  ) {
+    return this.usersService.follow(username, user.id);
+  }
+
+  @Delete('following/:username')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  unfollow(
+    @Param('username') username: string,
+    @CurrentUser() user: UserFromJwt,
+  ) {
+    return this.usersService.unfollow(username, user.id);
+  }
+
+  @Delete('profile-pic')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  async deleteProfilePic(@CurrentUser() userFromJwt: UserFromJwt) {
+    const user = await this.usersService.findById(userFromJwt.id);
+
+    if (!user.image) {
+      return;
+    }
+
+    const imageUrl = user.image.split('/').pop();
+
+    this.mediaService.deleteFile(imageUrl, 'profile-pics');
+    this.usersService.update({ image: null }, userFromJwt.id);
   }
 }

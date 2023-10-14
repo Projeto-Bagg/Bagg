@@ -7,20 +7,20 @@ import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateUserDto } from './dtos/create-user.dto';
-import { UsersRepository } from './users-repository';
 import { UserEntity } from './entities/user.entity';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { UpdatePasswordDto } from './dtos/update-password.dto';
 import { DeleteUserDto } from './dtos/delete-user.dto';
 import nodemailer from 'nodemailer';
 import { JwtService } from '@nestjs/jwt';
+import { UserClient } from './entities/user-client.entity';
 
 interface JwtPayload {
   email: string;
 }
 
 @Injectable()
-export class UsersService implements UsersRepository {
+export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
@@ -72,7 +72,7 @@ export class UsersService implements UsersRepository {
     return await this.prisma.user.findUnique({ where: { username } });
   }
 
-  async update(UpdateUserDto: UpdateUserDto, id: number): Promise<void> {
+  async update(UpdateUserDto: UpdateUserDto, id: number): Promise<UserClient> {
     const data: Prisma.UserUpdateInput = {
       ...UpdateUserDto,
       password: UpdateUserDto.password
@@ -80,7 +80,26 @@ export class UsersService implements UsersRepository {
         : undefined,
     };
 
-    await this.prisma.user.update({ data, where: { id } });
+    const user = await this.prisma.user.update({
+      data,
+      where: { id },
+      select: {
+        id: true,
+        bio: true,
+        createdAt: true,
+        username: true,
+        fullName: true,
+        image: true,
+        birthdate: true,
+      },
+    });
+
+    const follows = await this.friendshipCount(user.id);
+
+    return {
+      ...user,
+      ...follows,
+    };
   }
 
   async delete(DeleteUserDto: DeleteUserDto, id: number): Promise<void> {

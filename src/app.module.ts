@@ -6,7 +6,7 @@ import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { AuthService } from './modules/auth/auth.service';
 import { JwtService } from '@nestjs/jwt';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 // import { UsersModule } from './users/users.module';
 import { DiaryPostsModule } from './modules/diary-posts/diary-posts.module';
 import { CityInterestsModule } from './modules/city-interests/city-interests.module';

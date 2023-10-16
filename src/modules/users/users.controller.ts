@@ -10,6 +10,7 @@ import {
   Delete,
   UseInterceptors,
   UploadedFile,
+  NotFoundException,
 } from '@nestjs/common';
 import { CreateUserDto } from './dtos/create-user.dto';
 import {
@@ -143,6 +144,11 @@ export class UsersController {
   @ApiResponse({ type: UserClient })
   async findByUsername(@Param('username') username: string) {
     const user = await this.usersService.findByUsername(username);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
     const follows = await this.usersService.friendshipCount(user.id);
 
     const { email, password, emailVerified, ...rest } = user;
@@ -151,16 +157,6 @@ export class UsersController {
       ...rest,
       ...follows,
     };
-  }
-
-  @Get('following/:username')
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
-  isFollowing(
-    @Param('username') username: string,
-    @CurrentUser() user: UserFromJwt,
-  ) {
-    return this.usersService.isFollowing(username, user.id);
   }
 
   @Post('following/:username')

@@ -40,13 +40,13 @@ export class UsersService {
         ...(!!usernameAlreadyExist && {
           username: {
             description: 'Username not available',
-            code: 'username_not_available',
+            code: 'usernameNotAvailable',
           },
         }),
         ...(!!emailAlreadyExist && {
           email: {
             description: 'Email not available',
-            code: 'email_not_available',
+            code: 'emailNotAvailable',
           },
         }),
       });
@@ -111,7 +111,7 @@ export class UsersService {
     );
 
     if (!validPassword) {
-      throw new UnauthorizedException('A senha antiga está incorreta');
+      throw new UnauthorizedException('Wrong password');
     }
 
     await this.prisma.user.delete({ where: { id } });
@@ -129,7 +129,7 @@ export class UsersService {
     );
 
     if (!validPassword) {
-      throw new UnauthorizedException('A senha antiga está incorreta');
+      throw new UnauthorizedException('Wrong password');
     }
 
     const password = await bcrypt.hash(UpdatePasswordDto.newPassword, 10);
@@ -232,17 +232,6 @@ export class UsersService {
         fullName: true,
         image: true,
         birthdate: true,
-      },
-    });
-  }
-
-  async isFollowing(followingUsername: string, userId) {
-    return await this.prisma.follow.count({
-      where: {
-        followerId: userId,
-        following: {
-          username: followingUsername,
-        },
       },
     });
   }

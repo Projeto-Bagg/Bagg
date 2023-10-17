@@ -72,27 +72,36 @@ export class UsersService {
     return await this.prisma.user.findUnique({ where: { username } });
   }
 
-  async update(UpdateUserDto: UpdateUserDto, id: number): Promise<UserClient> {
+  async update(updateUserDto: UpdateUserDto, id: number): Promise<UserClient> {
     const data: Prisma.UserUpdateInput = {
-      ...UpdateUserDto,
-      password: UpdateUserDto.password
-        ? await bcrypt.hash(UpdateUserDto.password, 10)
+      ...updateUserDto,
+      password: updateUserDto.password
+        ? await bcrypt.hash(updateUserDto.password, 10)
         : undefined,
     };
 
-    const user = await this.prisma.user.update({
-      data,
-      where: { id },
-      select: {
-        id: true,
-        bio: true,
-        createdAt: true,
-        username: true,
-        fullName: true,
-        image: true,
-        birthdate: true,
-      },
-    });
+    const user = await this.prisma.user
+      .update({
+        data,
+        where: { id },
+        select: {
+          id: true,
+          bio: true,
+          createdAt: true,
+          username: true,
+          fullName: true,
+          image: true,
+          birthdate: true,
+        },
+      })
+      .catch(() => {
+        throw new ConflictException({
+          username: {
+            description: 'Username not available',
+            code: 'usernameNotAvailable',
+          },
+        });
+      });
 
     const follows = await this.friendshipCount(user.id);
 

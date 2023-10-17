@@ -1,19 +1,27 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsDate, IsEmail, IsString, Matches } from 'class-validator';
+import {
+  IsDate,
+  IsEmail,
+  IsString,
+  Matches,
+  MinLength,
+  MaxLength,
+} from 'class-validator';
 
 export class CreateUserDto {
   @ApiProperty()
   @IsString()
-  @Matches(/^([a-zA-Z]{2,}\s[a-zA-Z]{1,}'?-?[a-zA-Z]{2,}\s?([a-zA-Z]{1,})?)/, {
-    message: 'Invalid name',
-  })
+  @MinLength(3)
+  @MaxLength(64)
   fullName: string;
 
   @ApiProperty()
-  @Matches(/^(?=.{3,16}$)(?![_.])(?!.*[_.]{2})[a-zA-Z0-9._]+(?<![.])$/, {
+  @Matches(/^(?![_.])(?!.*[_.]{2})[a-zA-Z0-9._]+(?<![.])$/, {
     message: 'Invalid username',
   })
+  @MinLength(3)
+  @MaxLength(20)
   username: string;
 
   @ApiProperty()
@@ -27,6 +35,7 @@ export class CreateUserDto {
 
   @ApiProperty()
   @IsString()
+  @MinLength(8)
   @Matches(
     /^(?=(.*[a-z]){1,})(?=(.*[A-Z]){1,})(?=(.*[0-9]){1,})(?=(.*[!@#$%^&*()\-__+.]){1,}).{8,}$/,
     { message: 'Password too weak' },

@@ -9,5 +9,5 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   bio?: string;
 
   @ApiPropertyOptional({ type: 'string', format: 'binary' })
-  'profile-pic'?: Express.Multer.File;
+  profilePic?: Express.Multer.File;
 }

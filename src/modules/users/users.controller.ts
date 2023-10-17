@@ -44,7 +44,7 @@ export class UsersController {
 
   @Put()
   @ApiBearerAuth()
-  @UseInterceptors(FileInterceptor('profile-pic'))
+  @UseInterceptors(FileInterceptor('profilePic'))
   @ApiConsumes('multipart/form-data')
   @UseGuards(JwtAuthGuard)
   async update(
@@ -179,7 +179,7 @@ export class UsersController {
     return this.usersService.unfollow(username, user.id);
   }
 
-  @Delete('profile-pic')
+  @Delete('profilePic')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   async deleteProfilePic(@CurrentUser() userFromJwt: UserFromJwt) {

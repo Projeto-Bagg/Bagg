@@ -14,6 +14,9 @@ import { DeleteUserDto } from './dtos/delete-user.dto';
 import nodemailer from 'nodemailer';
 import { JwtService } from '@nestjs/jwt';
 import { UserClient } from './entities/user-client.entity';
+import { FriendshipStatusDto } from 'src/modules/users/dtos/friendship-status.dto';
+import { FriendshipCountDto } from 'src/modules/users/dtos/friendship-count.dto';
+import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 
 interface JwtPayload {
   email: string;
@@ -72,7 +75,10 @@ export class UsersService {
     return await this.prisma.user.findUnique({ where: { username } });
   }
 
-  async update(updateUserDto: UpdateUserDto, id: number): Promise<UserClient> {
+  async update(
+    updateUserDto: UpdateUserDto,
+    username: string,
+  ): Promise<UserClient> {
     const data: Prisma.UserUpdateInput = {
       ...updateUserDto,
       password: updateUserDto.password
@@ -83,16 +89,7 @@ export class UsersService {
     const user = await this.prisma.user
       .update({
         data,
-        where: { id },
-        select: {
-          id: true,
-          bio: true,
-          createdAt: true,
-          username: true,
-          fullName: true,
-          image: true,
-          birthdate: true,
-        },
+        where: { username },
       })
       .catch(() => {
         throw new ConflictException({
@@ -103,16 +100,18 @@ export class UsersService {
         });
       });
 
-    const follows = await this.friendshipCount(user.id);
-
     return {
       ...user,
-      ...follows,
+      ...(await this.friendshipCount(username)),
+      ...{
+        isFollowing: false,
+        followedBy: false,
+      },
     };
   }
 
-  async delete(DeleteUserDto: DeleteUserDto, id: number): Promise<void> {
-    const user = await this.prisma.user.findUnique({ where: { id } });
+  async delete(DeleteUserDto: DeleteUserDto, username: string): Promise<void> {
+    const user = await this.prisma.user.findUnique({ where: { username } });
 
     const validPassword = await bcrypt.compare(
       DeleteUserDto.currentPassword,
@@ -123,14 +122,14 @@ export class UsersService {
       throw new UnauthorizedException('Wrong password');
     }
 
-    await this.prisma.user.delete({ where: { id } });
+    await this.prisma.user.delete({ where: { username } });
   }
 
   async updatePassword(
     UpdatePasswordDto: UpdatePasswordDto,
-    id: number,
+    username: string,
   ): Promise<void> {
-    const user = await this.prisma.user.findUnique({ where: { id } });
+    const user = await this.prisma.user.findUnique({ where: { username } });
 
     const validPassword = await bcrypt.compare(
       UpdatePasswordDto.currentPassword,
@@ -143,7 +142,7 @@ export class UsersService {
 
     const password = await bcrypt.hash(UpdatePasswordDto.newPassword, 10);
 
-    await this.prisma.user.update({ data: { password }, where: { id } });
+    await this.prisma.user.update({ data: { password }, where: { username } });
   }
 
   async sendConfirmationEmail(id: number): Promise<boolean> {
@@ -194,8 +193,11 @@ export class UsersService {
     return true;
   }
 
-  async follow(followingUsername: string, userId: number) {
-    return await this.prisma.follow.create({
+  async follow(
+    followingUsername: string,
+    currentUser: UserFromJwt,
+  ): Promise<void> {
+    await this.prisma.follow.create({
       data: {
         following: {
           connect: {
@@ -204,69 +206,33 @@ export class UsersService {
         },
         follower: {
           connect: {
-            id: userId,
+            username: currentUser.username,
           },
         },
       },
     });
   }
 
-  async unfollow(followingUsername: string, userId: number) {
-    return await this.prisma.follow.deleteMany({
+  async unfollow(
+    followingUsername: string,
+    currentUser: UserFromJwt,
+  ): Promise<void> {
+    await this.prisma.follow.deleteMany({
       where: {
         following: {
           username: followingUsername,
         },
         follower: {
-          id: userId,
+          username: currentUser.username,
         },
       },
     });
   }
 
-  async following(userId: number) {
-    return await this.prisma.user.findMany({
-      where: {
-        followers: {
-          some: {
-            followerId: userId,
-          },
-        },
-      },
-      select: {
-        id: true,
-        bio: true,
-        createdAt: true,
-        username: true,
-        fullName: true,
-        image: true,
-        birthdate: true,
-      },
-    });
-  }
-
-  async followers(userId: number) {
-    return await this.prisma.user.findMany({
-      where: {
-        following: {
-          some: {
-            followingId: userId,
-          },
-        },
-      },
-      select: {
-        id: true,
-        bio: true,
-        createdAt: true,
-        username: true,
-        fullName: true,
-        image: true,
-        birthdate: true,
-      },
-    });
-  }
-
-  async friendshipStatus(followingUsername: string, userId: number) {
+  async friendshipStatus(
+    followingUsername: string,
+    currentUser: UserFromJwt,
+  ): Promise<FriendshipStatusDto> {
     const user = await this.prisma.user.findUnique({
       where: {
         username: followingUsername,
@@ -278,26 +244,90 @@ export class UsersService {
     });
 
     return {
-      following: user.followers.some(
-        (follower) => follower.followerId === userId,
+      isFollowing: user.followers.some(
+        (follower) => follower.followerId === currentUser.id,
       ),
       followedBy: user.following.some(
-        (following) => following.followingId === userId,
+        (following) => following.followingId === currentUser.id,
       ),
     };
   }
 
-  async friendshipCount(userId: number) {
+  async friendshipCount(username: string): Promise<FriendshipCountDto> {
     const followers = await this.prisma.follow.count({
-      where: { followingId: userId },
+      where: { following: { username } },
     });
     const following = await this.prisma.follow.count({
-      where: { followerId: userId },
+      where: { follower: { username } },
     });
 
     return {
       followers,
       following,
     };
+  }
+
+  async following(
+    username: string,
+    currentUser?: UserFromJwt,
+  ): Promise<UserClient[]> {
+    const users = await this.prisma.user.findMany({
+      where: {
+        followers: {
+          some: {
+            follower: {
+              username,
+            },
+          },
+        },
+      },
+    });
+
+    return await Promise.all(
+      users.map(async (user) => {
+        return {
+          ...user,
+          ...(currentUser
+            ? await this.friendshipStatus(user.username, currentUser)
+            : {
+                isFollowing: false,
+                followedBy: false,
+              }),
+          ...(await this.friendshipCount(user.username)),
+        };
+      }),
+    );
+  }
+
+  async followers(
+    username: string,
+    currentUser?: UserFromJwt,
+  ): Promise<UserClient[]> {
+    const users = await this.prisma.user.findMany({
+      where: {
+        following: {
+          some: {
+            following: {
+              username,
+            },
+          },
+        },
+      },
+    });
+
+    return await Promise.all(
+      users.map(async (user) => {
+        return {
+          ...user,
+          ...(currentUser
+            ? await this.friendshipStatus(user.username, currentUser)
+            : {
+                isFollowing: false,
+                followedBy: false,
+              }),
+          ...(await this.friendshipCount(user.username)),
+        };
+      }),
+    );
   }
 }

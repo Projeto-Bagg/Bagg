@@ -12,6 +12,7 @@ import { AuthRequest } from './models/AuthRequest';
 import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { UserToken } from './models/UserToken';
 import { LoginRequestBody } from './models/LoginRequestBody';
+import { IsPublic } from 'src/modules/auth/decorators/is-public.decorator';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -20,6 +21,7 @@ export class AuthController {
 
   @Post('login')
   @UseGuards(LocalAuthGuard)
+  @IsPublic()
   @HttpCode(HttpStatus.OK)
   @ApiResponse({ type: UserToken })
   @ApiBody({ type: LoginRequestBody })

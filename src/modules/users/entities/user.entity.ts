@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { User } from '@prisma/client';
+import { Exclude } from 'class-transformer';
 
 export class UserEntity implements User {
   @ApiProperty()
@@ -11,13 +12,13 @@ export class UserEntity implements User {
   @ApiProperty()
   username: string;
 
-  @ApiProperty()
+  @Exclude()
   email: string;
 
   @ApiProperty()
   bio: string;
 
-  @ApiProperty()
+  @Exclude()
   emailVerified: boolean;
 
   @ApiProperty()
@@ -26,9 +27,13 @@ export class UserEntity implements User {
   @ApiProperty()
   image: string;
 
-  @ApiProperty()
+  @Exclude()
   password: string;
 
   @ApiProperty()
   createdAt: Date;
+
+  constructor(partial: UserEntity) {
+    Object.assign(this, partial);
+  }
 }

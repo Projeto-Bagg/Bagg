@@ -1,9 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class UserFromJwt {
+export class FriendshipCountDto {
   @ApiProperty()
-  id: number;
+  following: number;
 
   @ApiProperty()
-  username: string;
+  followers: number;
 }

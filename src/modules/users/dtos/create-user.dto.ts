@@ -17,11 +17,11 @@ export class CreateUserDto {
   fullName: string;
 
   @ApiProperty()
-  @Matches(/^(?![_.])(?!.*[_.]{2})[a-zA-Z0-9._]+(?<![.])$/, {
-    message: 'Invalid username',
-  })
   @MinLength(3)
   @MaxLength(20)
+  @Matches(/^[a-zA-Z0-9_]+$/, {
+    message: 'Invalid username',
+  })
   username: string;
 
   @ApiProperty()
@@ -37,7 +37,7 @@ export class CreateUserDto {
   @IsString()
   @MinLength(8)
   @Matches(
-    /^(?=(.*[a-z]){1,})(?=(.*[A-Z]){1,})(?=(.*[0-9]){1,})(?=(.*[!@#$%^&*()\-__+.]){1,}).{8,}$/,
+    /^(?=(.*[a-z]){1,})(?=(.*[A-Z]){1,})(?=(.*[0-9]){1,})(?=(.*[-!$%^&*()_+|~=`{}\[\]:\/;<>?,.@#]){1,}).{8,}$/,
     { message: 'Password too weak' },
   )
   password: string;

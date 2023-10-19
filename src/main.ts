@@ -19,9 +19,9 @@ async function bootstrap() {
     .addBearerAuth({
       description: `[just text field] Please enter token in following format: Bearer <JWT>`,
       name: 'Authorization',
-      bearerFormat: 'Bearer', // I`ve tested not to use this field, but the result was the same
+      bearerFormat: 'Bearer',
       scheme: 'Bearer',
-      type: 'http', // I`ve attempted type: 'apiKey' too
+      type: 'http',
       in: 'Header',
     })
     .build();

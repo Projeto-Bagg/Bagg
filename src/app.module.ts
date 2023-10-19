@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from './prisma/prisma.module';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, Reflector } from '@nestjs/core';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -42,8 +42,17 @@ import { MediaModule } from './modules/media/media.module';
     CountriesModule,
     PrismaModule,
     MediaModule,
+
     ConfigModule.forRoot(),
   ],
-  providers: [AuthService, JwtService],
+  providers: [
+    AuthService,
+    JwtService,
+    {
+      provide: APP_GUARD,
+      useFactory: (ref) => new JwtAuthGuard(ref),
+      inject: [Reflector],
+    },
+  ],
 })
 export class AppModule {}

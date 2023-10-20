@@ -15,8 +15,5 @@ export class TripDiaryEntity implements TripDiary {
   userId: number;
 
   @ApiProperty()
-  diaryPostId: number;
-
-  @ApiProperty()
   createdAt: Date;
 }

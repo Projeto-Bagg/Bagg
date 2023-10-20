@@ -12,5 +12,5 @@ export class CityEntity implements City {
   regionId: number;
 
   @ApiProperty()
-  message: string;
+  countryId: number;
 }

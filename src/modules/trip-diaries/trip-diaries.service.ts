@@ -13,10 +13,10 @@ export class TripDiariesService {
         message: createTripDiaryDto.message,
         title: createTripDiaryDto.title,
         user: { connect: { id: createTripDiaryDto.userId } },
-        diaryPost: { connect: { id: createTripDiaryDto.diaryPostId } },
       },
     });
   }
+
   findAll() {
     return this.prisma.tripDiary.findMany();
   }

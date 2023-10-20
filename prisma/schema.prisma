@@ -119,6 +119,7 @@ model Country {
   capital  String
   region   Region @relation(fields: [regionId], references: [id])
   regionId Int
+  City     City[]
 }
 
 model Region {
@@ -140,7 +141,9 @@ model State {
 model City {
   id            Int            @id @default(autoincrement())
   name          String
-  region        Region         @relation(fields: [regionId], references: [id])
+  country       Country        @relation(fields: [countryId], references: [id], onUpdate: NoAction)
+  countryId     Int
+  region        Region         @relation(fields: [regionId], references: [id], onUpdate: NoAction)
   regionId      Int
   cityVisits    CityVisit[]
   cityInterests CityInterest[]

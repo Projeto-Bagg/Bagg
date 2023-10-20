@@ -11,6 +11,7 @@ import { TripDiariesService } from './trip-diaries.service';
 import { CreateTripDiaryDto } from './dto/create-trip-diary.dto';
 import { UpdateTripDiaryDto } from './dto/update-trip-diary.dto';
 import { ApiTags } from '@nestjs/swagger';
+import { IsPublic } from 'src/modules/auth/decorators/is-public.decorator';
 
 @Controller('trip-diaries')
 @ApiTags('trip diaries')
@@ -18,11 +19,13 @@ export class TripDiariesController {
   constructor(private readonly tripDiariesService: TripDiariesService) {}
 
   @Post()
+  @IsPublic()
   create(@Body() createTripDiaryDto: CreateTripDiaryDto) {
     return this.tripDiariesService.create(createTripDiaryDto);
   }
 
   @Get()
+  @IsPublic()
   findAll() {
     return this.tripDiariesService.findAll();
   }

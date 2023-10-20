@@ -8,5 +8,5 @@ export class CreateDiaryPostDto {
   message: string;
 
   @ApiProperty()
-  userId: number;
+  tripDiaryId: number;
 }

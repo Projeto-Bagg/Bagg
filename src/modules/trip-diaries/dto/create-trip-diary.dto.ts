@@ -9,7 +9,4 @@ export class CreateTripDiaryDto {
 
   @ApiProperty()
   userId: number;
-
-  @ApiProperty()
-  diaryPostId: number;
 }

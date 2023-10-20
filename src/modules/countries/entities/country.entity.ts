@@ -9,8 +9,11 @@ export class CountryEntity implements Country {
   name: string;
 
   @ApiProperty()
-  message: string;
+  capital: string;
 
   @ApiProperty()
-  code: string;
+  iso2: string;
+
+  @ApiProperty()
+  regionId: number;
 }

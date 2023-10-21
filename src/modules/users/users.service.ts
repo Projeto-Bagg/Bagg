@@ -75,6 +75,15 @@ export class UsersService {
     return await this.prisma.user.findUnique({ where: { username } });
   }
 
+  async search(query: string): Promise<UserEntity[]> {
+    return (await this.prisma.$queryRaw`
+      SELECT *
+      FROM [dbo].[User]
+      WHERE CONTAINS(username, ${'"' + query + '*"'})
+         OR CONTAINS(fullName, ${'"' + query + '*"'})
+    `) as UserEntity[];
+  }
+
   async update(
     updateUserDto: UpdateUserDto,
     username: string,

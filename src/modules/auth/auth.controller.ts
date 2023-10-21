@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   HttpCode,
   HttpStatus,
@@ -11,8 +12,9 @@ import { LocalAuthGuard } from './guards/local-auth.guard';
 import { AuthRequest } from './models/AuthRequest';
 import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { UserToken } from './models/UserToken';
-import { LoginRequestBody } from './models/LoginRequestBody';
 import { IsPublic } from 'src/modules/auth/decorators/is-public.decorator';
+import { LoginRequestDto } from 'src/modules/auth/dtos/login-request.dto';
+import { RefreshTokenDto } from 'src/modules/auth/dtos/refresh-token.dto';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -24,8 +26,21 @@ export class AuthController {
   @IsPublic()
   @HttpCode(HttpStatus.OK)
   @ApiResponse({ type: UserToken })
-  @ApiBody({ type: LoginRequestBody })
+  @ApiBody({ type: LoginRequestDto })
   async login(@Request() req: AuthRequest) {
     return this.authService.login(req.user);
+  }
+
+  @Post('refresh')
+  @IsPublic()
+  @ApiResponse({ type: UserToken })
+  @ApiBody({ type: RefreshTokenDto })
+  async refreshToken(@Body() body: RefreshTokenDto) {
+    const user = await this.authService.checkRefreshToken(body.refreshToken);
+
+    return this.authService.getTokens({
+      sub: user.id,
+      username: user.username,
+    });
   }
 }

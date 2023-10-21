@@ -106,6 +106,16 @@ export class UsersController {
     return new UserEntity(user);
   }
 
+  @Get('search/:query')
+  @IsPublic()
+  @UseInterceptors(ClassSerializerInterceptor)
+  @ApiResponse({ type: UserEntity, isArray: true })
+  async search(@Param('query') query: string): Promise<UserEntity[]> {
+    const users = await this.usersService.search(query);
+
+    return users.map((user) => new UserEntity(user));
+  }
+
   @Get(':username')
   @ApiResponse({ type: UserClient })
   @UseInterceptors(ClassSerializerInterceptor)

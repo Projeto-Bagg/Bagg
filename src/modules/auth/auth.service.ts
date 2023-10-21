@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UnauthorizedError } from './errors/unauthorized.error';
@@ -21,9 +25,61 @@ export class AuthService {
       username: user.username,
     };
 
+    return await this.getTokens(payload);
+  }
+
+  async getTokens(payload: UserPayload) {
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(
+        {
+          sub: payload.sub,
+          username: payload.username,
+        },
+        {
+          secret: process.env.JWT_ACCESS_TOKEN_SECRET,
+          expiresIn: '1h',
+        },
+      ),
+      this.jwtService.signAsync(
+        {
+          sub: payload.sub,
+          username: payload.username,
+        },
+        {
+          secret: process.env.JWT_REFRESH_TOKEN_SECRET,
+          expiresIn: '7d',
+        },
+      ),
+    ]);
+
     return {
-      access_token: this.jwtService.sign(payload),
+      accessToken,
+      refreshToken,
     };
+  }
+
+  async checkRefreshToken(refreshToken: string) {
+    const id = this.jwtService.decode(refreshToken)['sub'];
+    const user = await this.usersService.findById(id);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    try {
+      this.jwtService.verify(refreshToken, {
+        secret: process.env.JWT_REFRESH_TOKEN_SECRET,
+      });
+      return user;
+    } catch (err) {
+      if (err.name === 'JsonWebTokenError') {
+        throw new UnauthorizedException('JWT Error');
+      }
+      if (err.name === 'TokenExpiredError') {
+        throw new UnauthorizedException('Expired Token');
+      }
+      throw new UnauthorizedException(err.name);
+    }
   }
 
   async validateUser(

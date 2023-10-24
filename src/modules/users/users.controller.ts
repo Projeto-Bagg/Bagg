@@ -69,7 +69,7 @@ export class UsersController {
 
     const user = await this.usersService.update(
       { ...updateUserDto, image: imageUrl },
-      currentUser.username,
+      currentUser,
     );
 
     return new UserClient(user);
@@ -203,6 +203,6 @@ export class UsersController {
     const imageUrl = user.image.split('/').pop();
 
     this.mediaService.deleteFile(imageUrl, 'profile-pics');
-    this.usersService.update({ image: null }, currentUser.username);
+    this.usersService.update({ image: null }, currentUser);
   }
 }

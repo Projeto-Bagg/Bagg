@@ -86,7 +86,7 @@ export class UsersService {
 
   async update(
     updateUserDto: UpdateUserDto,
-    username: string,
+    currentUser: UserFromJwt,
   ): Promise<UserClient> {
     const data: Prisma.UserUpdateInput = {
       ...updateUserDto,
@@ -98,7 +98,7 @@ export class UsersService {
     const user = await this.prisma.user
       .update({
         data,
-        where: { username },
+        where: { id: currentUser.id },
       })
       .catch(() => {
         throw new ConflictException({
@@ -111,7 +111,7 @@ export class UsersService {
 
     return {
       ...user,
-      ...(await this.friendshipCount(username)),
+      ...(await this.friendshipCount(currentUser.username)),
       ...{
         isFollowing: false,
         followedBy: false,

@@ -10,24 +10,31 @@ import {
 import { TripDiariesService } from './trip-diaries.service';
 import { CreateTripDiaryDto } from './dto/create-trip-diary.dto';
 import { UpdateTripDiaryDto } from './dto/update-trip-diary.dto';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { IsPublic } from 'src/modules/auth/decorators/is-public.decorator';
+import { CurrentUser } from 'src/modules/auth/decorators/current-user.decorator';
+import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
+import { TripDiaryEntity } from 'src/modules/trip-diaries/entities/trip-diary.entity';
 
-@Controller('trip-diaries')
+@Controller('tripDiaries')
 @ApiTags('trip diaries')
 export class TripDiariesController {
   constructor(private readonly tripDiariesService: TripDiariesService) {}
 
   @Post()
-  @IsPublic()
-  create(@Body() createTripDiaryDto: CreateTripDiaryDto) {
-    return this.tripDiariesService.create(createTripDiaryDto);
+  @ApiBearerAuth()
+  @ApiResponse({ type: TripDiaryEntity })
+  create(
+    @Body() createTripDiaryDto: CreateTripDiaryDto,
+    @CurrentUser() currentUser: UserFromJwt,
+  ) {
+    return this.tripDiariesService.create(createTripDiaryDto, currentUser);
   }
 
-  @Get()
+  @Get('user/:username')
   @IsPublic()
-  findAll() {
-    return this.tripDiariesService.findAll();
+  findByUsername(@Param('username') username: string) {
+    return this.tripDiariesService.findByUsername(username);
   }
 
   @Get(':id')

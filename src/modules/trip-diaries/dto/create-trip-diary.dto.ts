@@ -6,7 +6,4 @@ export class CreateTripDiaryDto {
 
   @ApiProperty()
   message: string;
-
-  @ApiProperty()
-  userId: number;
 }

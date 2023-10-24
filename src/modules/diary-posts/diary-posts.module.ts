@@ -2,9 +2,10 @@ import { Module } from '@nestjs/common';
 import { DiaryPostsService } from './diary-posts.service';
 import { DiaryPostsController } from './diary-posts.controller';
 import { PrismaModule } from '../../prisma/prisma.module';
+import { MediaModule } from 'src/modules/media/media.module';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, MediaModule],
   controllers: [DiaryPostsController],
   providers: [DiaryPostsService],
 })

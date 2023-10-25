@@ -9,10 +9,10 @@ export class DiaryPostEntity implements DiaryPost {
   id: number;
 
   @ApiProperty()
-  title: string;
+  title: string | null;
 
   @ApiProperty()
-  message: string;
+  message: string | null;
 
   @ApiProperty()
   userId: number;

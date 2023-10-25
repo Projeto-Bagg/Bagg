@@ -60,7 +60,7 @@ export class UsersController {
       const user = await this.usersService.findById(currentUser.id);
       if (user.image) {
         this.mediaService.deleteFile(
-          user.image.split('/').pop(),
+          user.image.split('/').pop() as string,
           'profile-pics',
         );
       }
@@ -200,7 +200,7 @@ export class UsersController {
       return;
     }
 
-    const imageUrl = user.image.split('/').pop();
+    const imageUrl = user.image.split('/').pop() as string;
 
     this.mediaService.deleteFile(imageUrl, 'profile-pics');
     this.usersService.update({ image: null }, currentUser);

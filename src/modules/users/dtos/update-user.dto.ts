@@ -3,10 +3,10 @@ import { CreateUserDto } from './create-user.dto';
 
 export class UpdateUserDto extends PartialType(CreateUserDto) {
   @ApiPropertyOptional()
-  image?: string;
+  image?: string | null;
 
   @ApiPropertyOptional()
-  bio?: string;
+  bio?: string | undefined;
 
   @ApiPropertyOptional({ type: 'string', format: 'binary' })
   profilePic?: Express.Multer.File;

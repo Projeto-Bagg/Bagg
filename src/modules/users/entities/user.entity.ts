@@ -16,7 +16,7 @@ export class UserEntity implements User {
   email: string;
 
   @ApiProperty()
-  bio: string;
+  bio: string | null;
 
   @Exclude()
   emailVerified: boolean;
@@ -25,7 +25,7 @@ export class UserEntity implements User {
   birthdate: Date;
 
   @ApiProperty()
-  image: string;
+  image: string | null;
 
   @Exclude()
   password: string;

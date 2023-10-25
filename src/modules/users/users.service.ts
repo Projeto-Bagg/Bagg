@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import {
   ConflictException,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common/exceptions';
 import { Prisma } from '@prisma/client';
@@ -64,15 +65,33 @@ export class UsersService {
   }
 
   async findByEmail(email: string): Promise<UserEntity> {
-    return await this.prisma.user.findUnique({ where: { email } });
+    const user = await this.prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      throw new NotFoundException();
+    }
+
+    return user;
   }
 
   async findById(id: number): Promise<UserEntity> {
-    return await this.prisma.user.findUnique({ where: { id } });
+    const user = await this.prisma.user.findUnique({ where: { id } });
+
+    if (!user) {
+      throw new NotFoundException();
+    }
+
+    return user;
   }
 
   async findByUsername(username: string): Promise<UserEntity> {
-    return await this.prisma.user.findUnique({ where: { username } });
+    const user = await this.prisma.user.findUnique({ where: { username } });
+
+    if (!user) {
+      throw new NotFoundException();
+    }
+
+    return user;
   }
 
   async search(query: string): Promise<UserEntity[]> {
@@ -122,6 +141,10 @@ export class UsersService {
   async delete(DeleteUserDto: DeleteUserDto, username: string): Promise<void> {
     const user = await this.prisma.user.findUnique({ where: { username } });
 
+    if (!user) {
+      throw new NotFoundException();
+    }
+
     const validPassword = await bcrypt.compare(
       DeleteUserDto.currentPassword,
       user.password,
@@ -140,6 +163,10 @@ export class UsersService {
   ): Promise<void> {
     const user = await this.prisma.user.findUnique({ where: { username } });
 
+    if (!user) {
+      throw new NotFoundException();
+    }
+
     const validPassword = await bcrypt.compare(
       UpdatePasswordDto.currentPassword,
       user.password,
@@ -156,6 +183,10 @@ export class UsersService {
 
   async sendConfirmationEmail(id: number): Promise<boolean> {
     const user = await this.prisma.user.findUnique({ where: { id } });
+
+    if (!user) {
+      throw new NotFoundException();
+    }
 
     if (!user.emailVerified) {
       //usar alguma biblioteca de template para passar o token para o html que vai ter no email
@@ -240,7 +271,7 @@ export class UsersService {
 
   async friendshipStatus(
     followingUsername: string,
-    currentUser: UserFromJwt,
+    currentUser?: UserFromJwt,
   ): Promise<FriendshipStatusDto> {
     const user = await this.prisma.user.findUnique({
       where: {
@@ -252,12 +283,16 @@ export class UsersService {
       },
     });
 
+    if (!user) {
+      throw new NotFoundException();
+    }
+
     return {
       isFollowing: user.followers.some(
-        (follower) => follower.followerId === currentUser.id,
+        (follower) => follower.followerId === currentUser?.id,
       ),
       followedBy: user.following.some(
-        (following) => following.followingId === currentUser.id,
+        (following) => following.followingId === currentUser?.id,
       ),
     };
   }

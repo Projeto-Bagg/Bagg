@@ -59,7 +59,7 @@ export class AuthService {
   }
 
   async checkRefreshToken(refreshToken: string) {
-    const id = this.jwtService.decode(refreshToken)['sub'];
+    const id = this.jwtService.decode(refreshToken)?.['sub'];
     const user = await this.usersService.findById(id);
 
     if (!user) {
@@ -71,7 +71,7 @@ export class AuthService {
         secret: process.env.JWT_REFRESH_TOKEN_SECRET,
       });
       return user;
-    } catch (err) {
+    } catch (err: any) {
       if (err.name === 'JsonWebTokenError') {
         throw new UnauthorizedException('JWT Error');
       }

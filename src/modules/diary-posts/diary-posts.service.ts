@@ -4,12 +4,15 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { MediaService } from 'src/modules/media/media.service';
 import { DiaryPostEntity } from 'src/modules/diary-posts/entities/diary-post.entity';
+import { UsersService } from 'src/modules/users/users.service';
+import { UserClient } from 'src/modules/users/entities/user-client.entity';
 
 @Injectable()
 export class DiaryPostsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly mediaService: MediaService,
+    private readonly usersService: UsersService,
   ) {}
 
   async create(
@@ -55,6 +58,59 @@ export class DiaryPostsService {
     );
 
     return { ...diaryPost, diaryPostMedias, isLiked: false, likedBy: 0 };
+  }
+
+  async feed(currentUser?: UserFromJwt): Promise<DiaryPostEntity[]> {
+    const posts = await this.prisma.diaryPost.findMany({
+      where: {
+        user: {
+          followers: {
+            some: {
+              followerId: currentUser?.id,
+            },
+          },
+        },
+      },
+      include: {
+        user: true,
+        diaryPostMedias: true,
+        likedBy: true,
+        tripDiary: true,
+      },
+    });
+
+    return posts.map((post) => {
+      return {
+        ...post,
+        isLiked: post.likedBy.some((like) => like.userId === currentUser?.id),
+        likedBy: post.likedBy.length,
+      };
+    });
+  }
+
+  async likedBy(id: number, currentUser?: UserFromJwt): Promise<UserClient[]> {
+    const users = await this.prisma.user.findMany({
+      where: {
+        diaryPostLikes: {
+          some: {
+            diaryPostId: id,
+          },
+        },
+      },
+    });
+
+    return await Promise.all(
+      users.map(async (user) => {
+        return {
+          ...user,
+          ...(await this.usersService.friendshipCount(user.username)),
+          ...(await this.usersService.friendshipStatus(
+            user.username,
+            currentUser,
+          )),
+        };
+      }),
+    );
   }
 
   async like(id: number, currentUser: UserFromJwt): Promise<void> {
@@ -109,7 +165,7 @@ export class DiaryPostsService {
     return posts.map((post) => {
       return {
         ...post,
-        isLiked: post.likedBy.some((like) => like.userId === currentUser.id),
+        isLiked: post.likedBy.some((like) => like.userId === currentUser?.id),
         likedBy: post.likedBy.length,
       };
     });

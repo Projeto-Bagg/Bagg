@@ -8,7 +8,7 @@ export class MediaService {
 
   private async getBlobServiceInstance() {
     const blobClientService = BlobServiceClient.fromConnectionString(
-      process.env.BLOB_STORAGE_URL,
+      process.env.BLOB_STORAGE_URL!,
     );
     return blobClientService;
   }

@@ -7,6 +7,7 @@ import {
   UseInterceptors,
   Param,
   ClassSerializerInterceptor,
+  Delete,
 } from '@nestjs/common';
 import { DiaryPostsService } from './diary-posts.service';
 import { CreateDiaryPostDto } from './dto/create-diary-post.dto';
@@ -85,6 +86,14 @@ export class DiaryPostsController {
     });
   }
 
+  @Get(':id')
+  @IsPublic()
+  @UseInterceptors(ClassSerializerInterceptor)
+  @ApiBearerAuth()
+  getById(@Param('id') id: number, @CurrentUser() currentUser: UserFromJwt) {
+    return this.diaryPostsService.findById(id, currentUser);
+  }
+
   @Get(':id/like')
   @ApiBearerAuth()
   @IsPublic()
@@ -115,6 +124,15 @@ export class DiaryPostsController {
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<void> {
     return this.diaryPostsService.unlike(id, currentUser);
+  }
+
+  @Delete(':id')
+  @ApiBearerAuth()
+  delete(
+    @Param('id') id: number,
+    @CurrentUser() currentUser: UserFromJwt,
+  ): Promise<void> {
+    return this.diaryPostsService.delete(id, currentUser);
   }
 
   @Get()

@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { CreateDiaryPostDto } from './dto/create-diary-post.dto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
@@ -58,6 +62,35 @@ export class DiaryPostsService {
     );
 
     return { ...diaryPost, diaryPostMedias, isLiked: false, likedBy: 0 };
+  }
+
+  async findById(
+    id: number,
+    currentUser?: UserFromJwt,
+  ): Promise<DiaryPostEntity> {
+    const diaryPost = await this.prisma.diaryPost.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        diaryPostMedias: true,
+        likedBy: true,
+        tripDiary: true,
+        user: true,
+      },
+    });
+
+    if (!diaryPost) {
+      throw new NotFoundException();
+    }
+
+    return {
+      ...diaryPost,
+      isLiked: diaryPost.likedBy.some(
+        (like) => like.userId === currentUser?.id,
+      ),
+      likedBy: diaryPost.likedBy.length,
+    };
   }
 
   async feed(currentUser?: UserFromJwt): Promise<DiaryPostEntity[]> {
@@ -168,6 +201,43 @@ export class DiaryPostsService {
         isLiked: post.likedBy.some((like) => like.userId === currentUser?.id),
         likedBy: post.likedBy.length,
       };
+    });
+  }
+
+  async delete(id: number, currentUser: UserFromJwt): Promise<void> {
+    const post = await this.prisma.diaryPost.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        diaryPostMedias: true,
+      },
+    });
+
+    if (!post) {
+      throw new NotFoundException();
+    }
+
+    if (post.userId !== currentUser.id) {
+      throw new UnauthorizedException();
+    }
+
+    if (post.diaryPostMedias && post.diaryPostMedias.length > 0) {
+      post.diaryPostMedias.forEach(async (media) => {
+        const fileName = media.url.split('/').pop();
+
+        if (!fileName) {
+          return;
+        }
+
+        await this.mediaService.deleteFile(fileName, 'diary-posts');
+      });
+    }
+
+    await this.prisma.diaryPost.delete({
+      where: {
+        id,
+      },
     });
   }
 

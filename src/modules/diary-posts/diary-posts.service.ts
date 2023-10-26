@@ -93,7 +93,9 @@ export class DiaryPostsService {
     };
   }
 
-  async feed(currentUser?: UserFromJwt): Promise<DiaryPostEntity[]> {
+  async feedFollowedByCurrentUser(
+    currentUser?: UserFromJwt,
+  ): Promise<DiaryPostEntity[]> {
     const posts = await this.prisma.diaryPost.findMany({
       where: {
         user: {
@@ -109,6 +111,43 @@ export class DiaryPostsService {
         diaryPostMedias: true,
         likedBy: true,
         tripDiary: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return posts.map((post) => {
+      return {
+        ...post,
+        isLiked: post.likedBy.some((like) => like.userId === currentUser?.id),
+        likedBy: post.likedBy.length,
+      };
+    });
+  }
+
+  async feedLikedByUser(
+    username: string,
+    currentUser?: UserFromJwt,
+  ): Promise<DiaryPostEntity[]> {
+    const posts = await this.prisma.diaryPost.findMany({
+      where: {
+        likedBy: {
+          some: {
+            user: {
+              username,
+            },
+          },
+        },
+      },
+      include: {
+        user: true,
+        diaryPostMedias: true,
+        likedBy: true,
+        tripDiary: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
       },
     });
 

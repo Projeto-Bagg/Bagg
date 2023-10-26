@@ -48,6 +48,24 @@ export class DiaryPostsController {
     return { ...post, user: new UserEntity(post.user) };
   }
 
+  @Get('user/feed')
+  @IsPublic()
+  @ApiBearerAuth()
+  @ApiResponse({ type: DiaryPostEntity, isArray: true })
+  @UseInterceptors(ClassSerializerInterceptor)
+  async feed(@CurrentUser() currentUser: UserFromJwt) {
+    const posts = await this.diaryPostsService.feedFollowedByCurrentUser(
+      currentUser,
+    );
+
+    return posts.map((post) => {
+      return {
+        ...post,
+        user: new UserEntity(post.user),
+      };
+    });
+  }
+
   @Get('/user/:username')
   @IsPublic()
   @ApiResponse({ type: DiaryPostEntity, isArray: true })
@@ -70,13 +88,19 @@ export class DiaryPostsController {
     });
   }
 
-  @Get('feed')
+  @Get('user/:username/feed/like')
   @IsPublic()
   @ApiBearerAuth()
   @ApiResponse({ type: DiaryPostEntity, isArray: true })
   @UseInterceptors(ClassSerializerInterceptor)
-  async feed(@CurrentUser() currentUser: UserFromJwt) {
-    const posts = await this.diaryPostsService.feed(currentUser);
+  async userLikedPostsFeed(
+    @Param('username') username: string,
+    @CurrentUser() currentUser: UserFromJwt,
+  ) {
+    const posts = await this.diaryPostsService.feedLikedByUser(
+      username,
+      currentUser,
+    );
 
     return posts.map((post) => {
       return {
@@ -113,7 +137,6 @@ export class DiaryPostsController {
     @Param('id') id: number,
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<void> {
-    console.log('autenticado');
     return this.diaryPostsService.like(id, currentUser);
   }
 

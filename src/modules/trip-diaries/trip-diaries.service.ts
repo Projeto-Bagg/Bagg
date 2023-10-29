@@ -1,8 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateTripDiaryDto } from './dto/create-trip-diary.dto';
 import { UpdateTripDiaryDto } from './dto/update-trip-diary.dto';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
+import { DiaryPostEntity } from 'src/modules/diary-posts/entities/diary-post.entity';
+import { TripDiaryEntity } from 'src/modules/trip-diaries/entities/trip-diary.entity';
 
 @Injectable()
 export class TripDiariesService {
@@ -32,8 +34,47 @@ export class TripDiariesService {
     });
   }
 
-  findOne(id: number) {
-    return this.prisma.tripDiary.findUnique({ where: { id: id } });
+  async findPostsById(
+    id: number,
+    currentUser: UserFromJwt,
+  ): Promise<DiaryPostEntity[]> {
+    const posts = await this.prisma.diaryPost.findMany({
+      where: {
+        tripDiaryId: id,
+      },
+      include: {
+        diaryPostMedias: true,
+        likedBy: true,
+        tripDiary: true,
+        user: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return posts.map((post) => {
+      return {
+        ...post,
+        isLiked: post.likedBy.some((like) => like.userId === currentUser?.id),
+        likedBy: post.likedBy.length,
+      };
+    });
+  }
+
+  async findOne(id: number): Promise<TripDiaryEntity> {
+    const tripDiary = await this.prisma.tripDiary.findUnique({
+      where: { id: id },
+      include: {
+        user: true,
+      },
+    });
+
+    if (!tripDiary) {
+      throw new NotFoundException();
+    }
+
+    return tripDiary;
   }
 
   update(id: number, updateTripDiaryDto: UpdateTripDiaryDto) {

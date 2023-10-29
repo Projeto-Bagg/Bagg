@@ -9,4 +9,7 @@ export class CreateTipDto {
 
   @ApiProperty()
   message: string;
+
+  @ApiProperty()
+  cityId: number;
 }

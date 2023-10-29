@@ -24,11 +24,15 @@ import { DiaryPostEntity } from 'src/modules/diary-posts/entities/diary-post.ent
 import { IsPublic } from 'src/modules/auth/decorators/is-public.decorator';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
 import { UserClient } from 'src/modules/users/entities/user-client.entity';
+import { DiaryPostLikesService } from 'src/modules/diary-post-likes/diary-post-likes.service';
 
 @Controller('diaryPosts')
 @ApiTags('diary posts')
 export class DiaryPostsController {
-  constructor(private readonly diaryPostsService: DiaryPostsService) {}
+  constructor(
+    private readonly diaryPostsService: DiaryPostsService,
+    private readonly diaryPostLikeService: DiaryPostLikesService,
+  ) {}
 
   @Post()
   @UseInterceptors(FilesInterceptor('medias'))
@@ -137,7 +141,7 @@ export class DiaryPostsController {
     @Param('id') id: number,
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<void> {
-    return this.diaryPostsService.like(id, currentUser);
+    return this.diaryPostLikeService.like({ postId: id }, currentUser);
   }
 
   @Post(':id/unlike')
@@ -146,7 +150,7 @@ export class DiaryPostsController {
     @Param('id') id: number,
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<void> {
-    return this.diaryPostsService.unlike(id, currentUser);
+    return this.diaryPostLikeService.unlike({ postId: id }, currentUser);
   }
 
   @Delete(':id')
@@ -159,7 +163,8 @@ export class DiaryPostsController {
   }
 
   @Get()
-  findAll() {
-    return this.diaryPostsService.findMany();
+  @ApiBearerAuth()
+  findAll(@CurrentUser() currentUser: UserFromJwt) {
+    return this.diaryPostsService.findMany(currentUser);
   }
 }

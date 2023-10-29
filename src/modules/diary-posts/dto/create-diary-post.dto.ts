@@ -1,10 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { MaxLength } from 'class-validator';
 
 export class CreateDiaryPostDto {
   @ApiProperty()
-  title: string;
-
-  @ApiProperty()
+  @MaxLength(300)
   message: string;
 
   @ApiProperty()

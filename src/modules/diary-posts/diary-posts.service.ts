@@ -26,7 +26,6 @@ export class DiaryPostsService {
   ): Promise<DiaryPostEntity> {
     const diaryPost = await this.prisma.diaryPost.create({
       data: {
-        title: createDiaryPostDto.title,
         message: createDiaryPostDto.message,
         tripDiary: {
           connect: {
@@ -185,34 +184,6 @@ export class DiaryPostsService {
     );
   }
 
-  async like(id: number, currentUser: UserFromJwt): Promise<void> {
-    await this.prisma.diaryPostLike.create({
-      data: {
-        diaryPost: {
-          connect: {
-            id,
-          },
-        },
-        user: {
-          connect: {
-            id: currentUser.id,
-          },
-        },
-      },
-    });
-  }
-
-  async unlike(id: number, currentUser: UserFromJwt): Promise<void> {
-    await this.prisma.diaryPostLike.delete({
-      where: {
-        userId_diaryPostId: {
-          diaryPostId: id,
-          userId: currentUser.id,
-        },
-      },
-    });
-  }
-
   async findByUsername(
     username: string,
     currentUser?: UserFromJwt,
@@ -280,7 +251,22 @@ export class DiaryPostsService {
     });
   }
 
-  findMany() {
-    return this.prisma.diaryPost.findMany();
+  async findMany(currentUser: UserFromJwt) {
+    const posts = await this.prisma.diaryPost.findMany({
+      include: {
+        diaryPostMedias: true,
+        likedBy: true,
+        tripDiary: true,
+        user: true,
+      },
+    });
+
+    return posts.map((post) => {
+      return {
+        ...post,
+        isLiked: post.likedBy.some((like) => like.userId === currentUser?.id),
+        likedBy: post.likedBy.length,
+      };
+    });
   }
 }

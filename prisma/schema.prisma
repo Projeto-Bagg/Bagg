@@ -19,6 +19,8 @@ model User {
   createdAt      DateTime        @default(now())
   password       String
   bio            String?
+  cityId         Int?
+  city           City?           @relation(fields: [cityId], references: [id])
   diaryPosts     DiaryPost[]
   followers      Follow[]        @relation("following")
   following      Follow[]        @relation("follower")
@@ -54,8 +56,7 @@ model TripDiary {
 
 model DiaryPost {
   id              Int              @id @default(autoincrement())
-  title           String?
-  message         String?
+  message         String
   createdAt       DateTime         @default(now())
   user            User             @relation(fields: [userId], references: [id], onUpdate: NoAction)
   userId          Int
@@ -77,7 +78,7 @@ model DiaryPostLike {
   id          Int       @id @default(autoincrement())
   user        User      @relation(fields: [userId], references: [id], onUpdate: NoAction)
   userId      Int
-  diaryPost   DiaryPost @relation(fields: [diaryPostId], references: [id])
+  diaryPost   DiaryPost @relation(fields: [diaryPostId], references: [id], onDelete: Cascade)
   diaryPostId Int
   createdAt   DateTime? @default(now())
 
@@ -86,11 +87,12 @@ model DiaryPostLike {
 
 model Tip {
   id          Int          @id @default(autoincrement())
-  title       String?
   message     String?
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      Int
   createdAt   DateTime     @default(now())
+  cityId      Int
+  city        City         @relation(fields: [cityId], references: [id], onUpdate: NoAction)
   likedBy     TipLike[]
   tipComments TipComment[]
   tipMedias   TipMedia[]
@@ -160,13 +162,15 @@ model City {
   regionId      Int
   cityVisits    CityVisit[]
   cityInterests CityInterest[]
+  Tip           Tip[]
+  User          User[]
 }
 
 model CityVisit {
   id      Int    @id @default(autoincrement())
   user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId  Int
-  city    City   @relation(fields: [cityId], references: [id])
+  city    City   @relation(fields: [cityId], references: [id], onUpdate: NoAction)
   cityId  Int
   rating  Int
   message String
@@ -176,7 +180,7 @@ model CityInterest {
   id        Int      @id @default(autoincrement())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    Int
-  city      City     @relation(fields: [cityId], references: [id])
+  city      City     @relation(fields: [cityId], references: [id], onUpdate: NoAction)
   cityId    Int
   createdAt DateTime @default(now())
 }

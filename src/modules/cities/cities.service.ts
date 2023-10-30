@@ -12,8 +12,10 @@ export class CitiesService {
   findByCountry(countryIso2: string) {
     return this.prisma.city.findMany({
       where: {
-        country: {
-          iso2: countryIso2,
+        region: {
+          country: {
+            iso2: countryIso2,
+          },
         },
       },
     });

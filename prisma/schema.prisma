@@ -9,28 +9,30 @@ datasource db {
 }
 
 model User {
-  id             Int             @id @default(autoincrement())
-  fullName       String
-  username       String          @unique
-  email          String          @unique
-  birthdate      DateTime
-  image          String?
-  emailVerified  Boolean         @default(false)
-  createdAt      DateTime        @default(now())
-  password       String
-  bio            String?
-  cityId         Int?
-  city           City?           @relation(fields: [cityId], references: [id])
-  diaryPosts     DiaryPost[]
-  followers      Follow[]        @relation("following")
-  following      Follow[]        @relation("follower")
-  tipLikes       TipLike[]
-  tips           Tip[]
-  tipComments    TipComment[]
-  diaryPostLikes DiaryPostLike[]
-  tripDiaries    TripDiary[]
-  cityVisits     CityVisit[]
-  cityInterests  CityInterest[]
+  id                  Int                   @id @default(autoincrement())
+  fullName            String
+  username            String                @unique
+  email               String                @unique
+  birthdate           DateTime
+  image               String?
+  emailVerified       Boolean               @default(false)
+  createdAt           DateTime              @default(now())
+  password            String
+  bio                 String?
+  cityId              Int?
+  city                City?                 @relation(fields: [cityId], references: [id])
+  diaryPosts          DiaryPost[]
+  followers           Follow[]              @relation("following")
+  following           Follow[]              @relation("follower")
+  tipLikes            TipLike[]
+  tips                Tip[]
+  tipComments         TipComment[]
+  diaryPostLikes      DiaryPostLike[]
+  tripDiaries         TripDiary[]
+  cityVisits          CityVisit[]
+  cityInterests       CityInterest[]
+  AccountDeactivation AccountDeactivation[]
+  UserSubscribesPlan  UserSubscribesPlan[]
 }
 
 model Follow {
@@ -128,36 +130,25 @@ model TipComment {
 }
 
 model Country {
-  id       Int    @id @default(autoincrement())
-  name     String @unique
-  iso2     String @unique
+  id       Int      @id @default(autoincrement())
+  name     String   @unique
+  iso2     String   @unique
   capital  String
-  region   Region @relation(fields: [regionId], references: [id])
+  region   Region[]
   regionId Int
-  City     City[]
 }
 
 model Region {
-  id      Int       @id @default(autoincrement())
-  name    String    @unique
-  country Country[]
-  cities  City[]
-}
-
-model State {
-  id          Int     @id @default(autoincrement())
-  name        String  @unique
-  countryIso2 String
-  latitude    Float
-  longitude   Float
-  type        String?
+  id        Int     @id @default(autoincrement())
+  name      String  @unique
+  country   Country @relation(fields: [countryId], references: [id])
+  countryId Int
+  city      City[]
 }
 
 model City {
   id            Int            @id @default(autoincrement())
   name          String
-  country       Country        @relation(fields: [countryId], references: [id], onUpdate: NoAction)
-  countryId     Int
   region        Region         @relation(fields: [regionId], references: [id], onUpdate: NoAction)
   regionId      Int
   cityVisits    CityVisit[]
@@ -183,4 +174,30 @@ model CityInterest {
   city      City     @relation(fields: [cityId], references: [id], onUpdate: NoAction)
   cityId    Int
   createdAt DateTime @default(now())
+}
+
+model SubscriptionPlan {
+  id                 Int                  @id @default(autoincrement())
+  planName           String               @unique
+  price              Float
+  description        String
+  createdAt          DateTime             @default(now())
+  UserSubscribesPlan UserSubscribesPlan[]
+}
+
+model UserSubscribesPlan {
+  id                 Int              @id @default(autoincrement())
+  subscriptionDate   DateTime         @default(now())
+  subscriptionPlan   SubscriptionPlan @relation(fields: [subscriptionPlanId], references: [id])
+  subscriptionPlanId Int
+  User               User             @relation(fields: [userId], references: [id])
+  userId             Int
+}
+
+model AccountDeactivation {
+  id          Int      @id @default(autoincrement())
+  requestDate DateTime @default(now())
+  reason      String
+  userId      Int
+  User        User     @relation(fields: [userId], references: [id])
 }

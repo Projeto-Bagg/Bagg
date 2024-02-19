@@ -13,4 +13,10 @@ export class CityEntity implements City {
 
   @ApiProperty()
   countryId: number;
+
+  @ApiProperty()
+  latitude: number;
+
+  @ApiProperty()
+  longitude: number;
 }

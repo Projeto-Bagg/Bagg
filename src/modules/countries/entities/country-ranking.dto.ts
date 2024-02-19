@@ -1,9 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class CreateCityInterestDto {
+export class CountryRankingDto {
   @ApiProperty()
-  userId: number;
+  page: number;
 
   @ApiProperty()
-  cityId: number;
+  count: number;
 }

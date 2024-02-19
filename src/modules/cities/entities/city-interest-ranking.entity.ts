@@ -1,7 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Region } from '@prisma/client';
 
-export class RegionEntity implements Region {
+export class CityInterestRankingEntity {
   @ApiProperty()
   id: number;
 
@@ -9,11 +8,11 @@ export class RegionEntity implements Region {
   name: string;
 
   @ApiProperty()
-  countryId: number;
+  totalInterest: number;
 
   @ApiProperty()
-  latitude: number;
+  countryIso2: string;
 
   @ApiProperty()
-  longitude: number;
+  countryName: string;
 }

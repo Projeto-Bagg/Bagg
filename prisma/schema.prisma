@@ -130,20 +130,23 @@ model TipComment {
 }
 
 model Country {
-  id       Int      @id @default(autoincrement())
-  name     String   @unique
-  iso2     String   @unique
-  capital  String
-  region   Region[]
-  regionId Int
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  iso2      String   @unique
+  capital   String
+  latitude  Float
+  longitude Float
+  regions   Region[]
 }
 
 model Region {
   id        Int     @id @default(autoincrement())
-  name      String  @unique
+  name      String
   country   Country @relation(fields: [countryId], references: [id])
   countryId Int
-  city      City[]
+  latitude  Float
+  longitude Float
+  cities    City[]
 }
 
 model City {
@@ -151,9 +154,11 @@ model City {
   name          String
   region        Region         @relation(fields: [regionId], references: [id], onUpdate: NoAction)
   regionId      Int
+  latitude      Float
+  longitude     Float
   cityVisits    CityVisit[]
   cityInterests CityInterest[]
-  Tip           Tip[]
+  tips          Tip[]
   User          User[]
 }
 
@@ -165,6 +170,8 @@ model CityVisit {
   cityId  Int
   rating  Int
   message String
+
+  @@unique([userId, cityId])
 }
 
 model CityInterest {
@@ -174,6 +181,8 @@ model CityInterest {
   city      City     @relation(fields: [cityId], references: [id], onUpdate: NoAction)
   cityId    Int
   createdAt DateTime @default(now())
+
+  @@unique([userId, cityId])
 }
 
 model SubscriptionPlan {
@@ -182,7 +191,7 @@ model SubscriptionPlan {
   price              Float
   description        String
   createdAt          DateTime             @default(now())
-  UserSubscribesPlan UserSubscribesPlan[]
+  userSubscribesPlan UserSubscribesPlan[]
 }
 
 model UserSubscribesPlan {
@@ -190,7 +199,7 @@ model UserSubscribesPlan {
   subscriptionDate   DateTime         @default(now())
   subscriptionPlan   SubscriptionPlan @relation(fields: [subscriptionPlanId], references: [id])
   subscriptionPlanId Int
-  User               User             @relation(fields: [userId], references: [id])
+  user               User             @relation(fields: [userId], references: [id])
   userId             Int
 }
 
@@ -199,5 +208,5 @@ model AccountDeactivation {
   requestDate DateTime @default(now())
   reason      String
   userId      Int
-  User        User     @relation(fields: [userId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
 }

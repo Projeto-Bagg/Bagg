@@ -16,4 +16,10 @@ export class CountryEntity implements Country {
 
   @ApiProperty()
   regionId: number;
+
+  @ApiProperty()
+  latitude: number;
+
+  @ApiProperty()
+  longitude: number;
 }

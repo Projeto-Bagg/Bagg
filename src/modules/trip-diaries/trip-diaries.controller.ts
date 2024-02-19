@@ -51,6 +51,7 @@ export class TripDiariesController {
   }
 
   @Get(':id')
+  @IsPublic()
   findOne(@Param('id') id: number): Promise<TripDiaryEntity> {
     return this.tripDiariesService.findOne(id);
   }

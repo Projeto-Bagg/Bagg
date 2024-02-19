@@ -30,6 +30,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { MediaService } from '../media/media.service';
 import { IsPublic } from 'src/modules/auth/decorators/is-public.decorator';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
+import { FriendshipStatusDto } from 'src/modules/users/dtos/friendship-status.dto';
 
 @Controller('users')
 @ApiTags('users')
@@ -187,6 +188,15 @@ export class UsersController {
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<void> {
     return this.usersService.unfollow(username, currentUser);
+  }
+
+  @Get('friendshipStatus/:username')
+  @ApiBearerAuth()
+  friendshipStatus(
+    @Param('username') username: string,
+    @CurrentUser() currentUser: UserFromJwt,
+  ): Promise<FriendshipStatusDto> {
+    return this.usersService.friendshipStatus(username, currentUser);
   }
 
   @Delete('profilePic')

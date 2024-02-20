@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { RegionEntity } from 'src/modules/regions/entities/region.entity';
 
-export class CityInterestRankingEntity {
+export class CityVisitRankingEntity {
   @ApiProperty()
   id: number;
 
@@ -9,7 +9,7 @@ export class CityInterestRankingEntity {
   name: string;
 
   @ApiProperty()
-  totalInterest: number;
+  totalVisit: number;
 
   @ApiProperty({ type: RegionEntity })
   region: RegionEntity;

@@ -18,6 +18,7 @@ import { UserClient } from './entities/user-client.entity';
 import { FriendshipStatusDto } from 'src/modules/users/dtos/friendship-status.dto';
 import { FriendshipCountDto } from 'src/modules/users/dtos/friendship-count.dto';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
+import { UserSearchDto } from 'src/modules/users/entities/user-search.dto';
 
 interface JwtPayload {
   email: string;
@@ -94,12 +95,18 @@ export class UsersService {
     return user;
   }
 
-  async search(query: string): Promise<UserEntity[]> {
+  async search(query: UserSearchDto): Promise<UserEntity[]> {
     return (await this.prisma.$queryRaw`
+      DECLARE @page INT = ${query.page || 1};
+      DECLARE @count INT = ${query.count};
+
       SELECT *
-      FROM [dbo].[User]
-      WHERE CONTAINS(username, ${'"' + query + '*"'})
-         OR CONTAINS(fullName, ${'"' + query + '*"'})
+      FROM [dbo].[User] as u
+      WHERE CONTAINS(username, ${'"' + query.q + '*"'})
+         OR CONTAINS(fullName, ${'"' + query.q + '*"'})
+      ORDER BY u.id DESC
+      OFFSET @count * (@page - 1) ROWS
+      FETCH NEXT @count ROWS ONLY
     `) as UserEntity[];
   }
 

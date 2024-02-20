@@ -15,11 +15,12 @@ export class CountryEntity implements Country {
   iso2: string;
 
   @ApiProperty()
-  regionId: number;
-
-  @ApiProperty()
   latitude: number;
 
   @ApiProperty()
   longitude: number;
+
+  constructor(partial: CountryEntity) {
+    Object.assign(this, partial);
+  }
 }

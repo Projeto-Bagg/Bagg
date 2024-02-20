@@ -12,11 +12,12 @@ export class CityEntity implements City {
   regionId: number;
 
   @ApiProperty()
-  countryId: number;
-
-  @ApiProperty()
   latitude: number;
 
   @ApiProperty()
   longitude: number;
+
+  constructor(partial: CityEntity) {
+    Object.assign(this, partial);
+  }
 }

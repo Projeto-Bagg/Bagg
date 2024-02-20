@@ -31,6 +31,7 @@ import { MediaService } from '../media/media.service';
 import { IsPublic } from 'src/modules/auth/decorators/is-public.decorator';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
 import { FriendshipStatusDto } from 'src/modules/users/dtos/friendship-status.dto';
+import { CountrySearchDto } from 'src/modules/countries/entities/country-search.dto';
 
 @Controller('users')
 @ApiTags('users')
@@ -107,11 +108,11 @@ export class UsersController {
     return new UserEntity(user);
   }
 
-  @Get('search/:query')
+  @Get('search')
   @IsPublic()
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiResponse({ type: UserEntity, isArray: true })
-  async search(@Param('query') query: string): Promise<UserEntity[]> {
+  async search(@Query() query: CountrySearchDto): Promise<UserEntity[]> {
     const users = await this.usersService.search(query);
 
     return users.map((user) => new UserEntity(user));

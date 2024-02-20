@@ -27,7 +27,7 @@ lerna-debug.log*
 .settings/
 *.sublime-workspace
 .env
-
+/prisma/seed
 # IDE - VSCode
 .vscode/*
 !.vscode/settings.json

@@ -1,47 +1,34 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-} from '@nestjs/common';
+import { Controller, Post, Body, Param, Delete } from '@nestjs/common';
 import { CityVisitsService } from './city-visits.service';
-import { CreateCityVisitDto } from './dto/create-city-visit.dto';
-import { UpdateCityVisitDto } from './dto/update-city-visit.dto';
-import { ApiTags } from '@nestjs/swagger';
+import { CreateCityVisitDto } from './dtos/create-city-visit.dto';
+import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { CurrentUser } from 'src/modules/auth/decorators/current-user.decorator';
+import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
+import { DeleteCityVisitDto } from 'src/modules/city-visits/dtos/delete-city-visit.dto';
+import { CityVisitEntity } from 'src/modules/city-visits/entities/city-visit.entity';
 
 @Controller('city-visits')
 @ApiTags('city visits')
 export class CityVisitsController {
-  constructor(private readonly cityVisitsService: CityVisitsService) {}
+  constructor(private readonly cityVisitService: CityVisitsService) {}
 
   @Post()
-  create(@Body() createCityVisitDto: CreateCityVisitDto) {
-    return this.cityVisitsService.create(createCityVisitDto);
+  @ApiResponse({ type: CityVisitEntity })
+  @ApiBearerAuth()
+  async create(
+    @Body() createCityVisitDto: CreateCityVisitDto,
+    @CurrentUser() currentUser: UserFromJwt,
+  ): Promise<CityVisitEntity> {
+    return this.cityVisitService.create(createCityVisitDto, currentUser);
   }
 
-  @Get()
-  findAll() {
-    return this.cityVisitsService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.cityVisitsService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateCityVisitDto: UpdateCityVisitDto,
-  ) {
-    return this.cityVisitsService.update(+id, updateCityVisitDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.cityVisitsService.remove(+id);
+  @Delete(':cityId')
+  @ApiResponse({ type: CityVisitEntity })
+  @ApiBearerAuth()
+  remove(
+    @Param() param: DeleteCityVisitDto,
+    currentUser: UserFromJwt,
+  ): Promise<CityVisitEntity> {
+    return this.cityVisitService.remove(param.cityId, currentUser);
   }
 }

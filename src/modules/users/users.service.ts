@@ -18,7 +18,7 @@ import { UserClient } from './entities/user-client.entity';
 import { FriendshipStatusDto } from 'src/modules/users/dtos/friendship-status.dto';
 import { FriendshipCountDto } from 'src/modules/users/dtos/friendship-count.dto';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
-import { UserSearchDto } from 'src/modules/users/entities/user-search.dto';
+import { UserSearchDto } from 'src/modules/users/dtos/user-search.dto';
 
 interface JwtPayload {
   email: string;
@@ -280,27 +280,34 @@ export class UsersService {
     followingUsername: string,
     currentUser?: UserFromJwt,
   ): Promise<FriendshipStatusDto> {
-    const user = await this.prisma.user.findUnique({
-      where: {
-        username: followingUsername,
-      },
-      select: {
-        followers: true,
-        following: true,
-      },
-    });
-
-    if (!user) {
-      throw new NotFoundException();
+    if (!currentUser) {
+      return {
+        followedBy: false,
+        isFollowing: false,
+      };
     }
 
+    const isFollowing = !!(await this.prisma.follow.count({
+      where: {
+        followerId: currentUser.id,
+        following: {
+          username: followingUsername,
+        },
+      },
+    }));
+
+    const followedBy = !!(await this.prisma.follow.count({
+      where: {
+        followingId: currentUser.id,
+        follower: {
+          username: followingUsername,
+        },
+      },
+    }));
+
     return {
-      isFollowing: user.followers.some(
-        (follower) => follower.followerId === currentUser?.id,
-      ),
-      followedBy: user.following.some(
-        (following) => following.followingId === currentUser?.id,
-      ),
+      isFollowing,
+      followedBy,
     };
   }
 
@@ -338,12 +345,7 @@ export class UsersService {
       users.map(async (user) => {
         return {
           ...user,
-          ...(currentUser
-            ? await this.friendshipStatus(user.username, currentUser)
-            : {
-                isFollowing: false,
-                followedBy: false,
-              }),
+          ...(await this.friendshipStatus(user.username, currentUser)),
           ...(await this.friendshipCount(user.username)),
         };
       }),
@@ -370,12 +372,7 @@ export class UsersService {
       users.map(async (user) => {
         return {
           ...user,
-          ...(currentUser
-            ? await this.friendshipStatus(user.username, currentUser)
-            : {
-                isFollowing: false,
-                followedBy: false,
-              }),
+          ...(await this.friendshipStatus(user.username, currentUser)),
           ...(await this.friendshipCount(user.username)),
         };
       }),

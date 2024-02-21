@@ -27,7 +27,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiResponse({ type: UserToken })
   @ApiBody({ type: LoginRequestDto })
-  async login(@Request() req: AuthRequest) {
+  async login(@Request() req: AuthRequest): Promise<UserToken> {
     return this.authService.login(req.user);
   }
 
@@ -35,7 +35,7 @@ export class AuthController {
   @IsPublic()
   @ApiResponse({ type: UserToken })
   @ApiBody({ type: RefreshTokenDto })
-  async refreshToken(@Body() body: RefreshTokenDto) {
+  async refreshToken(@Body() body: RefreshTokenDto): Promise<UserToken> {
     const user = await this.authService.checkRefreshToken(body.refreshToken);
 
     return this.authService.getTokens({

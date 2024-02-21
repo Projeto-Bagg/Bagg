@@ -31,7 +31,7 @@ import { MediaService } from '../media/media.service';
 import { IsPublic } from 'src/modules/auth/decorators/is-public.decorator';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
 import { FriendshipStatusDto } from 'src/modules/users/dtos/friendship-status.dto';
-import { CountrySearchDto } from 'src/modules/countries/entities/country-search.dto';
+import { CountrySearchDto } from 'src/modules/countries/dtos/country-search.dto';
 
 @Controller('users')
 @ApiTags('users')
@@ -136,12 +136,7 @@ export class UsersController {
     return new UserClient({
       ...user,
       ...(await this.usersService.friendshipCount(user.username)),
-      ...(currentUser
-        ? await this.usersService.friendshipStatus(username, currentUser)
-        : {
-            isFollowing: false,
-            followedBy: false,
-          }),
+      ...(await this.usersService.friendshipStatus(username, currentUser)),
     });
   }
 
@@ -193,6 +188,7 @@ export class UsersController {
 
   @Get('friendshipStatus/:username')
   @ApiBearerAuth()
+  @ApiResponse({ type: FriendshipStatusDto })
   friendshipStatus(
     @Param('username') username: string,
     @CurrentUser() currentUser: UserFromJwt,

@@ -9,19 +9,17 @@ import {
 import { CountriesService } from './countries.service';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { IsPublic } from 'src/modules/auth/decorators/is-public.decorator';
-import { CountryRankingDto } from 'src/modules/countries/entities/country-ranking.dto';
+import { CountryRankingDto } from 'src/modules/countries/dtos/country-ranking.dto';
 import { CountryEntity } from 'src/modules/countries/entities/country.entity';
-import { CountrySearchDto } from 'src/modules/countries/entities/country-search.dto';
+import { CountrySearchDto } from 'src/modules/countries/dtos/country-search.dto';
+import { CountryVisitRankingEntity } from 'src/modules/countries/entities/country-visit-ranking.entity';
+import { CountryInterestRankingEntity } from 'src/modules/countries/entities/country-interest-ranking.entity';
+import { CountryRatingRankingEntity } from 'src/modules/countries/entities/country-rating-ranking.entity';
 
 @Controller('countries')
 @ApiTags('countries')
 export class CountriesController {
   constructor(private readonly countriesService: CountriesService) {}
-
-  @Get()
-  findAll() {
-    return this.countriesService.findAll();
-  }
 
   @Get('search')
   @IsPublic()
@@ -34,15 +32,30 @@ export class CountriesController {
   }
 
   @Get('ranking/interest')
+  @ApiResponse({ type: CountryInterestRankingEntity, isArray: true })
   @IsPublic()
-  interestRanking(@Query() query: CountryRankingDto) {
-    return this.countriesService.mostInterestedRanking(query.page, query.count);
+  interestRanking(
+    @Query() query: CountryRankingDto,
+  ): Promise<CountryInterestRankingEntity[]> {
+    return this.countriesService.interestRanking(query.page, query.count);
   }
 
   @Get('ranking/visit')
+  @ApiResponse({ type: CountryVisitRankingEntity, isArray: true })
   @IsPublic()
-  visitRanking(@Query() query: CountryRankingDto) {
-    return this.countriesService.mostVisitedRanking(query.page, query.count);
+  visitRanking(
+    @Query() query: CountryRankingDto,
+  ): Promise<CountryVisitRankingEntity[]> {
+    return this.countriesService.visitRanking(query.page, query.count);
+  }
+
+  @Get('ranking/rating')
+  @ApiResponse({ type: CountryVisitRankingEntity, isArray: true })
+  @IsPublic()
+  ratingRanking(
+    @Query() query: CountryRankingDto,
+  ): Promise<CountryRatingRankingEntity[]> {
+    return this.countriesService.ratingRanking(query.page, query.count);
   }
 
   @Get(':iso2')

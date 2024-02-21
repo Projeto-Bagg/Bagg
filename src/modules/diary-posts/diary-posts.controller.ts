@@ -10,7 +10,7 @@ import {
   Delete,
 } from '@nestjs/common';
 import { DiaryPostsService } from './diary-posts.service';
-import { CreateDiaryPostDto } from './dto/create-diary-post.dto';
+import { CreateDiaryPostDto } from './dtos/create-diary-post.dto';
 import {
   ApiBearerAuth,
   ApiConsumes,
@@ -57,7 +57,9 @@ export class DiaryPostsController {
   @ApiBearerAuth()
   @ApiResponse({ type: DiaryPostEntity, isArray: true })
   @UseInterceptors(ClassSerializerInterceptor)
-  async feed(@CurrentUser() currentUser: UserFromJwt) {
+  async feed(
+    @CurrentUser() currentUser: UserFromJwt,
+  ): Promise<DiaryPostEntity[]> {
     const posts = await this.diaryPostsService.feedFollowedByCurrentUser(
       currentUser,
     );
@@ -100,7 +102,7 @@ export class DiaryPostsController {
   async userLikedPostsFeed(
     @Param('username') username: string,
     @CurrentUser() currentUser: UserFromJwt,
-  ) {
+  ): Promise<DiaryPostEntity[]> {
     const posts = await this.diaryPostsService.feedLikedByUser(
       username,
       currentUser,
@@ -118,7 +120,11 @@ export class DiaryPostsController {
   @IsPublic()
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiBearerAuth()
-  getById(@Param('id') id: number, @CurrentUser() currentUser: UserFromJwt) {
+  @ApiResponse({ type: DiaryPostEntity })
+  getById(
+    @Param('id') id: number,
+    @CurrentUser() currentUser: UserFromJwt,
+  ): Promise<DiaryPostEntity> {
     return this.diaryPostsService.findById(id, currentUser);
   }
 
@@ -126,13 +132,14 @@ export class DiaryPostsController {
   @ApiBearerAuth()
   @IsPublic()
   @UseInterceptors(ClassSerializerInterceptor)
-  likedBy(
+  @ApiResponse({ type: UserClient, isArray: true })
+  async likedBy(
     @Param('id') id: number,
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<UserClient[]> {
-    return this.diaryPostsService
-      .likedBy(id, currentUser)
-      .then((users) => users.map((user) => new UserClient(user)));
+    const users = await this.diaryPostsService.likedBy(id, currentUser);
+
+    return users.map((user) => new UserClient(user));
   }
 
   @Post(':id/like')
@@ -163,8 +170,9 @@ export class DiaryPostsController {
   }
 
   @Get()
+  @ApiResponse({ type: DiaryPostEntity, isArray: true })
   @ApiBearerAuth()
-  findAll(@CurrentUser() currentUser: UserFromJwt) {
+  findAll(@CurrentUser() currentUser: UserFromJwt): Promise<DiaryPostEntity[]> {
     return this.diaryPostsService.findMany(currentUser);
   }
 }

@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class CountryInterestRankingEntity {
+export class CityRatingRankingEntity {
   @ApiProperty()
   name: string;
 
@@ -8,5 +8,5 @@ export class CountryInterestRankingEntity {
   iso2: string;
 
   @ApiProperty()
-  totalInterest: number;
+  averageRanking: number;
 }

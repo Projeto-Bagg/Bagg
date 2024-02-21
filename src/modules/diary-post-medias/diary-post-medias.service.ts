@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateDiaryPostMediaDto } from './dto/create-diary-post-media.dto';
-import { UpdateDiaryPostMediaDto } from './dto/update-diary-post-media.dto';
+import { CreateDiaryPostMediaDto } from './dtos/create-diary-post-media.dto';
+import { UpdateDiaryPostMediaDto } from './dtos/update-diary-post-media.dto';
 
 @Injectable()
 export class DiaryPostMediasService {

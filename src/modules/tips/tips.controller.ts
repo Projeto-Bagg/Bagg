@@ -8,8 +8,8 @@ import {
   Delete,
 } from '@nestjs/common';
 import { TipsService } from './tips.service';
-import { CreateTipDto } from './dto/create-tip.dto';
-import { UpdateTipDto } from './dto/update-tip.dto';
+import { CreateTipDto } from './dtos/create-tip.dto';
+import { UpdateTipDto } from './dtos/update-tip.dto';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { TipEntity } from './entities/tip.entity';
 

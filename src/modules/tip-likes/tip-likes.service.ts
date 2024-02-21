@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateTipLikeDto } from './dto/create-tip-like.dto';
-import { UpdateTipLikeDto } from './dto/update-tip-like.dto';
+import { CreateTipLikeDto } from './dtos/create-tip-like.dto';
+import { UpdateTipLikeDto } from './dtos/update-tip-like.dto';
 
 @Injectable()
 export class TipLikesService {
@@ -17,21 +17,6 @@ export class TipLikesService {
           connect: { id: createTipLikeDto.tipId },
         },
       },
-    });
-  }
-
-  findAll() {
-    return this.prisma.tipLike.findMany();
-  }
-
-  findOne(id: number) {
-    return this.prisma.tipLike.findUnique({ where: { id: id } });
-  }
-
-  update(id: number, updateTipLikeDto: UpdateTipLikeDto) {
-    return this.prisma.tipLike.update({
-      data: updateTipLikeDto,
-      where: { id: id },
     });
   }
 

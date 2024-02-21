@@ -3,7 +3,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { CreateDiaryPostDto } from './dto/create-diary-post.dto';
+import { CreateDiaryPostDto } from './dtos/create-diary-post.dto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { MediaService } from 'src/modules/media/media.service';

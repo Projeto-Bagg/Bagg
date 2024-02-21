@@ -31,8 +31,8 @@ model User {
   tripDiaries         TripDiary[]
   cityVisits          CityVisit[]
   cityInterests       CityInterest[]
-  AccountDeactivation AccountDeactivation[]
-  UserSubscribesPlan  UserSubscribesPlan[]
+  accountDeactivation AccountDeactivation[]
+  userSubscribesPlan  UserSubscribesPlan[]
 }
 
 model Follow {
@@ -82,7 +82,7 @@ model DiaryPostLike {
   userId      Int
   diaryPost   DiaryPost @relation(fields: [diaryPostId], references: [id], onDelete: Cascade)
   diaryPostId Int
-  createdAt   DateTime? @default(now())
+  createdAt   DateTime  @default(now())
 
   @@unique([userId, diaryPostId])
 }
@@ -146,6 +146,8 @@ model Region {
   countryId Int
   latitude  Float
   longitude Float
+  stateCode String
+  type      String?
   cities    City[]
 }
 
@@ -159,17 +161,17 @@ model City {
   cityVisits    CityVisit[]
   cityInterests CityInterest[]
   tips          Tip[]
-  User          User[]
+  users         User[]
 }
 
 model CityVisit {
-  id      Int    @id @default(autoincrement())
-  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id      Int     @id @default(autoincrement())
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId  Int
-  city    City   @relation(fields: [cityId], references: [id], onUpdate: NoAction)
+  city    City    @relation(fields: [cityId], references: [id], onUpdate: NoAction)
   cityId  Int
-  rating  Int
-  message String
+  rating  Int?
+  message String?
 
   @@unique([userId, cityId])
 }

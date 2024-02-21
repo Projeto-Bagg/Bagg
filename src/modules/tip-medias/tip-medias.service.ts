@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateTipMediaDto } from './dto/create-tip-media.dto';
-import { UpdateTipMediaDto } from './dto/update-tip-media.dto';
+import { CreateTipMediaDto } from './dtos/create-tip-media.dto';
+import { UpdateTipMediaDto } from './dtos/update-tip-media.dto';
 
 @Injectable()
 export class TipMediasService {

@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateTripDiaryDto } from './dto/create-trip-diary.dto';
-import { UpdateTripDiaryDto } from './dto/update-trip-diary.dto';
+import { CreateTripDiaryDto } from './dtos/create-trip-diary.dto';
+import { UpdateTripDiaryDto } from './dtos/update-trip-diary.dto';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { DiaryPostEntity } from 'src/modules/diary-posts/entities/diary-post.entity';
 import { TripDiaryEntity } from 'src/modules/trip-diaries/entities/trip-diary.entity';
@@ -10,7 +10,10 @@ import { TripDiaryEntity } from 'src/modules/trip-diaries/entities/trip-diary.en
 export class TripDiariesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  create(createTripDiaryDto: CreateTripDiaryDto, currentUser: UserFromJwt) {
+  create(
+    createTripDiaryDto: CreateTripDiaryDto,
+    currentUser: UserFromJwt,
+  ): Promise<TripDiaryEntity> {
     return this.prisma.tripDiary.create({
       data: {
         message: createTripDiaryDto.message,
@@ -24,7 +27,7 @@ export class TripDiariesService {
     });
   }
 
-  findByUsername(username: string) {
+  findByUsername(username: string): Promise<TripDiaryEntity[]> {
     return this.prisma.tripDiary.findMany({
       where: {
         user: {
@@ -77,14 +80,17 @@ export class TripDiariesService {
     return tripDiary;
   }
 
-  update(id: number, updateTripDiaryDto: UpdateTripDiaryDto) {
+  update(
+    id: number,
+    updateTripDiaryDto: UpdateTripDiaryDto,
+  ): Promise<TripDiaryEntity> {
     return this.prisma.tripDiary.update({
       data: updateTripDiaryDto,
       where: { id: id },
     });
   }
 
-  remove(id: number) {
+  remove(id: number): Promise<TripDiaryEntity> {
     return this.prisma.tripDiary.delete({ where: { id: id } });
   }
 }

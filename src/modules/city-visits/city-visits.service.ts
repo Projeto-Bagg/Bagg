@@ -1,32 +1,63 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateCityVisitDto } from './dto/create-city-visit.dto';
-import { UpdateCityVisitDto } from './dto/update-city-visit.dto';
+import { CreateCityVisitDto } from './dtos/create-city-visit.dto';
+import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
+import { CityInterestsService } from 'src/modules/city-interests/city-interests.service';
+import { CityVisitEntity } from 'src/modules/city-visits/entities/city-visit.entity';
 
 @Injectable()
 export class CityVisitsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cityInterestService: CityInterestsService,
+  ) {}
 
-  create(createCityVisitDto: CreateCityVisitDto) {
-    return this.prisma.cityVisit.create({ data: createCityVisitDto });
-  }
+  async create(
+    createCityVisitDto: CreateCityVisitDto,
+    currentUser: UserFromJwt,
+  ): Promise<CityVisitEntity> {
+    const isUserInterestedInCity =
+      await this.cityInterestService.isUserInterestedInCity(
+        createCityVisitDto.cityId,
+        currentUser.id,
+      );
 
-  findAll() {
-    return this.prisma.cityVisit.findMany();
-  }
+    if (isUserInterestedInCity) {
+      await this.cityInterestService.remove(
+        createCityVisitDto.cityId,
+        currentUser,
+      );
+    }
 
-  findOne(id: number) {
-    return this.prisma.cityVisit.findUnique({ where: { id: id } });
-  }
-
-  update(id: number, updateCityVisitDto: UpdateCityVisitDto) {
-    return this.prisma.cityVisit.update({
-      data: updateCityVisitDto,
-      where: { id: id },
+    return this.prisma.cityVisit.create({
+      data: {
+        ...createCityVisitDto,
+        userId: currentUser.id,
+      },
     });
   }
 
-  remove(id: number) {
-    return this.prisma.cityVisit.delete({ where: { id: id } });
+  async hasUserVisitedCity(cityId: number, userId: number): Promise<boolean> {
+    const visitVisit = await this.prisma.cityVisit.findUnique({
+      where: {
+        userId_cityId: {
+          cityId,
+          userId,
+        },
+      },
+    });
+
+    return !!visitVisit;
+  }
+
+  remove(cityId: number, currentUser: UserFromJwt): Promise<CityVisitEntity> {
+    return this.prisma.cityVisit.delete({
+      where: {
+        userId_cityId: {
+          cityId,
+          userId: currentUser.id,
+        },
+      },
+    });
   }
 }

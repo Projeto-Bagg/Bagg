@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateTipCommentDto } from './dto/create-tip-comment.dto';
-import { UpdateTipCommentDto } from './dto/update-tip-comment.dto';
+import { CreateTipCommentDto } from './dtos/create-tip-comment.dto';
+import { UpdateTipCommentDto } from './dtos/update-tip-comment.dto';
 
 @Injectable()
 export class TipCommentsService {

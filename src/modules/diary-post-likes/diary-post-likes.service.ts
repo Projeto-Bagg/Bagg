@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateDiaryPostLikeDto } from './dto/create-diary-post-like.dto';
+import { CreateDiaryPostLikeDto } from './dtos/create-diary-post-like.dto';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
-import { DeleteDiaryPostLikeDto } from 'src/modules/diary-post-likes/dto/delete-diary-post-like';
+import { DeleteDiaryPostLikeDto } from 'src/modules/diary-post-likes/dtos/delete-diary-post-like';
 
 @Injectable()
 export class DiaryPostLikesService {

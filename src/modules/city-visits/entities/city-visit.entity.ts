@@ -11,9 +11,9 @@ export class CityVisitEntity implements CityVisit {
   @ApiProperty()
   cityId: number;
 
-  @ApiProperty()
-  rating: number;
+  @ApiProperty({ type: Number })
+  rating: number | null;
 
-  @ApiProperty()
-  message: string;
+  @ApiProperty({ type: String })
+  message: string | null;
 }

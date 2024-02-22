@@ -177,7 +177,7 @@ export class CitiesService {
   }
   async ratingRanking(page: number, count: number) {
     return (await this.prisma.$queryRaw`
-      SELECT ci.*, r.name AS region, c.iso2, c.name AS country, AVG(cv.rating) AS averageRating
+      SELECT ci.*, r.name AS region, c.iso2, c.name AS country, ROUND(AVG(CAST(cv.rating AS FLOAT)), 1) AS averageRating
       FROM [dbo].[City] ci
       JOIN [dbo].[Region] r ON ci.regionId = r.id
       JOIN [dbo].[Country] c ON c.id = r.countryId

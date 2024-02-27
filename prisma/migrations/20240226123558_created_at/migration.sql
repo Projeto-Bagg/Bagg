@@ -1,0 +1,22 @@
+BEGIN TRY
+
+BEGIN TRAN;
+
+-- AlterTable
+ALTER TABLE [dbo].[AccountDeactivation] ADD [createdAt] DATETIME2 NOT NULL CONSTRAINT [AccountDeactivation_createdAt_df] DEFAULT CURRENT_TIMESTAMP;
+
+-- AlterTable
+ALTER TABLE [dbo].[CityVisit] ADD [createdAt] DATETIME2 NOT NULL CONSTRAINT [CityVisit_createdAt_df] DEFAULT CURRENT_TIMESTAMP;
+
+COMMIT TRAN;
+
+END TRY
+BEGIN CATCH
+
+IF @@TRANCOUNT > 0
+BEGIN
+    ROLLBACK TRAN;
+END;
+THROW
+
+END CATCH

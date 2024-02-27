@@ -50,6 +50,28 @@ export class CityVisitsService {
     return !!visitVisit;
   }
 
+  async getVisitsByCityId(
+    cityId: number,
+    page: number,
+    count: number,
+  ): Promise<CityVisitEntity[]> {
+    const visits = await this.prisma.cityVisit.findMany({
+      take: count,
+      skip: (page - 1) * count,
+      orderBy: {
+        createdAt: 'desc',
+      },
+      where: {
+        cityId,
+      },
+      include: {
+        user: true,
+      },
+    });
+
+    return visits;
+  }
+
   remove(cityId: number, currentUser: UserFromJwt): Promise<CityVisitEntity> {
     return this.prisma.cityVisit.delete({
       where: {

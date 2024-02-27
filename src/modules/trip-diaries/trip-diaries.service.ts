@@ -5,6 +5,7 @@ import { UpdateTripDiaryDto } from './dtos/update-trip-diary.dto';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { DiaryPostEntity } from 'src/modules/diary-posts/entities/diary-post.entity';
 import { TripDiaryEntity } from 'src/modules/trip-diaries/entities/trip-diary.entity';
+import { TripDiaryClientEntity } from 'src/modules/trip-diaries/entities/trip-diary-client.entity';
 
 @Injectable()
 export class TripDiariesService {
@@ -18,6 +19,11 @@ export class TripDiariesService {
       data: {
         message: createTripDiaryDto.message,
         title: createTripDiaryDto.title,
+        city: {
+          connect: {
+            id: createTripDiaryDto.cityId,
+          },
+        },
         user: {
           connect: {
             id: currentUser.id,
@@ -27,11 +33,22 @@ export class TripDiariesService {
     });
   }
 
-  findByUsername(username: string): Promise<TripDiaryEntity[]> {
+  findByUsername(username: string): Promise<TripDiaryClientEntity[]> {
     return this.prisma.tripDiary.findMany({
       where: {
         user: {
           username,
+        },
+      },
+      include: {
+        city: {
+          include: {
+            region: {
+              include: {
+                country: true,
+              },
+            },
+          },
         },
       },
     });

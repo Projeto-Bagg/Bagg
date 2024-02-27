@@ -16,4 +16,7 @@ export class CityVisitEntity implements CityVisit {
 
   @ApiProperty({ type: String })
   message: string | null;
+
+  @ApiProperty()
+  createdAt: Date;
 }

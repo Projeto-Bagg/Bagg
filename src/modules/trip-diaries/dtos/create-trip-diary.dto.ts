@@ -9,4 +9,7 @@ export class CreateTripDiaryDto {
   @ApiProperty()
   @MaxLength(300)
   message: string;
+
+  @ApiProperty()
+  cityId: number;
 }

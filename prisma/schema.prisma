@@ -53,6 +53,8 @@ model TripDiary {
   message    String
   user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId     Int
+  city       City        @relation(fields: [cityId], references: [id], onUpdate: NoAction)
+  cityId     Int
   diaryPosts DiaryPost[]
 }
 
@@ -162,16 +164,18 @@ model City {
   cityInterests CityInterest[]
   tips          Tip[]
   users         User[]
+  TripDiary     TripDiary[]
 }
 
 model CityVisit {
-  id      Int     @id @default(autoincrement())
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId  Int
-  city    City    @relation(fields: [cityId], references: [id], onUpdate: NoAction)
-  cityId  Int
-  rating  Int?
-  message String?
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  city      City     @relation(fields: [cityId], references: [id], onUpdate: NoAction)
+  cityId    Int
+  rating    Int?
+  message   String?
+  createdAt DateTime @default(now())
 
   @@unique([userId, cityId])
 }
@@ -211,4 +215,5 @@ model AccountDeactivation {
   reason      String
   userId      Int
   user        User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
 }

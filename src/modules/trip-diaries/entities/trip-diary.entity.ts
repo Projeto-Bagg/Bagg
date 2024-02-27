@@ -20,4 +20,7 @@ export class TripDiaryEntity implements TripDiary {
 
   @ApiProperty()
   createdAt: Date;
+
+  @ApiProperty()
+  cityId: number;
 }

@@ -3,6 +3,7 @@ import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { CitySearchDto } from 'src/modules/cities/dtos/city-search.dto';
 import { CityClientEntity } from 'src/modules/cities/entities/city-client.entity';
 import { CityInterestRankingEntity } from 'src/modules/cities/entities/city-interest-ranking.entity';
+import { NearCityEntity } from 'src/modules/cities/entities/city-near.entity';
 import { CityRatingRankingEntity } from 'src/modules/cities/entities/city-rating-ranikng.entity';
 import { CityVisitRankingEntity } from 'src/modules/cities/entities/city-visit-ranking.entity';
 import { CityEntity } from 'src/modules/cities/entities/city.entity';
@@ -74,6 +75,42 @@ export class CitiesService {
       isInterested,
       isVisited,
     };
+  }
+
+  async getNearCities(
+    cityId: number,
+    page: number,
+    count: number,
+  ): Promise<NearCityEntity[]> {
+    const city = await this.prisma.city.findUnique({
+      where: {
+        id: +cityId,
+      },
+    });
+
+    if (!city) {
+      throw new NotFoundException();
+    }
+
+    return (await this.prisma.$queryRaw`
+      DECLARE @page INT = ${page || 1};
+      DECLARE @count INT = ${count};
+      DECLARE @searchLatitude FLOAT = ${city.latitude};
+      DECLARE @searchLongitude FLOAT = ${city.longitude};
+
+      SELECT name, distance, averageRating
+      FROM (
+          SELECT name, ROUND(AVG(CAST(cv.rating AS FLOAT)), 1) AS averageRating, ( 6371 * acos( cos( radians(@searchLatitude) ) * cos( radians( c.latitude ) ) 
+              * cos( radians( c.longitude ) - radians(@searchLongitude) ) + sin( radians(@searchLatitude) ) * sin(radians(c.latitude)) ) ) AS distance 
+          FROM [dbo].[City] c
+          LEFT JOIN [dbo].[CityVisit] cv ON c.id = cv.cityId
+          WHERE latitude != @searchLatitude AND longitude != @searchLongitude
+          GROUP BY c.name, c.latitude, longitude
+      ) AS sub
+      ORDER BY distance
+      OFFSET @count * (@page - 1) ROWS
+      FETCH NEXT @count ROWS ONLY
+    `) as NearCityEntity[];
   }
 
   async search(query: CitySearchDto): Promise<CityEntity[]> {

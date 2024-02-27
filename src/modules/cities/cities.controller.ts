@@ -19,11 +19,17 @@ import { CitySearchDto } from 'src/modules/cities/dtos/city-search.dto';
 import { CityVisitRankingEntity } from 'src/modules/cities/entities/city-visit-ranking.entity';
 import { FindCityById } from 'src/modules/cities/dtos/find-city-by-id.dto';
 import { CityRatingRankingEntity } from 'src/modules/cities/entities/city-rating-ranikng.entity';
+import { CityNearDto } from 'src/modules/cities/dtos/city-near.dto';
+import { CityVisitsService } from 'src/modules/city-visits/city-visits.service';
+import { CityPageEntity } from 'src/modules/cities/entities/city-page.entity';
 
 @Controller('cities')
 @ApiTags('cities')
 export class CitiesController {
-  constructor(private readonly citiesService: CitiesService) {}
+  constructor(
+    private readonly citiesService: CitiesService,
+    private readonly cityVisitsService: CityVisitsService,
+  ) {}
 
   @Get('search')
   @IsPublic()
@@ -35,17 +41,36 @@ export class CitiesController {
     return city.map((city) => new CityEntity(city));
   }
 
+  @Get('/near')
+  @IsPublic()
+  near(@Query() query: CityNearDto) {
+    return this.citiesService.getNearCities(
+      query.cityId,
+      query.page,
+      query.count,
+    );
+  }
+
   @Get(':id')
   @IsPublic()
   @UseInterceptors(ClassSerializerInterceptor)
-  @ApiResponse({ type: CityClientEntity })
+  @ApiResponse({ type: CityPageEntity })
   async findById(
     @Param() param: FindCityById,
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<CityClientEntity> {
-    return new CityClientEntity(
-      await this.citiesService.findById(+param.id, currentUser),
+    const city = await this.citiesService.findById(+param.id, currentUser);
+
+    const visits = await this.cityVisitsService.getVisitsByCityId(
+      city.id,
+      1,
+      5,
     );
+
+    return new CityPageEntity({
+      ...city,
+      visits,
+    });
   }
 
   @Get('ranking/interest')

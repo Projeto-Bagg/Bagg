@@ -16,6 +16,7 @@ import { CurrentUser } from 'src/modules/auth/decorators/current-user.decorator'
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { TripDiaryEntity } from 'src/modules/trip-diaries/entities/trip-diary.entity';
 import { DiaryPostEntity } from 'src/modules/diary-posts/entities/diary-post.entity';
+import { TripDiaryClientEntity } from 'src/modules/trip-diaries/entities/trip-diary-client.entity';
 
 @Controller('tripDiaries')
 @ApiTags('trip diaries')
@@ -33,11 +34,11 @@ export class TripDiariesController {
   }
 
   @Get('user/:username')
-  @ApiResponse({ type: TripDiaryEntity, isArray: true })
+  @ApiResponse({ type: TripDiaryClientEntity, isArray: true })
   @IsPublic()
   findByUsername(
     @Param('username') username: string,
-  ): Promise<TripDiaryEntity[]> {
+  ): Promise<TripDiaryClientEntity[]> {
     return this.tripDiariesService.findByUsername(username);
   }
 

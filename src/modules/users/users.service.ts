@@ -86,7 +86,20 @@ export class UsersService {
   }
 
   async findByUsername(username: string): Promise<UserEntity> {
-    const user = await this.prisma.user.findUnique({ where: { username } });
+    const user = await this.prisma.user.findUnique({
+      where: { username },
+      include: {
+        city: {
+          include: {
+            region: {
+              include: {
+                country: true,
+              },
+            },
+          },
+        },
+      },
+    });
 
     if (!user) {
       throw new NotFoundException();

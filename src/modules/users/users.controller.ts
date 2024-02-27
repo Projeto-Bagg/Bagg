@@ -32,6 +32,7 @@ import { IsPublic } from 'src/modules/auth/decorators/is-public.decorator';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
 import { FriendshipStatusDto } from 'src/modules/users/dtos/friendship-status.dto';
 import { CountrySearchDto } from 'src/modules/countries/dtos/country-search.dto';
+import { UserEntityWithCityRegionCountry } from 'src/modules/users/entities/user-with-city-region-country.entity';
 
 @Controller('users')
 @ApiTags('users')
@@ -101,11 +102,13 @@ export class UsersController {
   @Get('me')
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiBearerAuth()
-  @ApiResponse({ type: UserEntity })
-  async me(@CurrentUser() userFromJwt: UserFromJwt): Promise<UserEntity> {
-    const user = await this.usersService.findById(userFromJwt.id);
+  @ApiResponse({ type: UserEntityWithCityRegionCountry })
+  async me(
+    @CurrentUser() userFromJwt: UserFromJwt,
+  ): Promise<UserEntityWithCityRegionCountry> {
+    const user = await this.usersService.findByUsername(userFromJwt.username);
 
-    return new UserEntity(user);
+    return new UserEntityWithCityRegionCountry(user);
   }
 
   @Get('search')

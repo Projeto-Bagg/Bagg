@@ -3,11 +3,11 @@ import { CityRegionCountryEntity } from 'src/modules/cities/entities/city-region
 import { CityEntity } from 'src/modules/cities/entities/city.entity';
 import { UserClient } from 'src/modules/users/entities/user-client.entity';
 
-export class UserClientWithCity extends UserClient {
+export class UserClientWithCityRegionCountry extends UserClient {
   @ApiProperty({ type: CityEntity })
   city: CityRegionCountryEntity;
 
-  constructor(partial: UserClientWithCity) {
+  constructor(partial: UserClientWithCityRegionCountry) {
     super(partial);
     Object.assign(this, partial);
   }

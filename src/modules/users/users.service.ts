@@ -19,6 +19,7 @@ import { FriendshipStatusDto } from 'src/modules/users/dtos/friendship-status.dt
 import { FriendshipCountDto } from 'src/modules/users/dtos/friendship-count.dto';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { UserSearchDto } from 'src/modules/users/dtos/user-search.dto';
+import { UserEntityWithCityRegionCountry } from 'src/modules/users/entities/user-with-city-region-country.entity';
 
 interface JwtPayload {
   email: string;
@@ -85,7 +86,9 @@ export class UsersService {
     return user;
   }
 
-  async findByUsername(username: string): Promise<UserEntity> {
+  async findByUsername(
+    username: string,
+  ): Promise<UserEntityWithCityRegionCountry> {
     const user = await this.prisma.user.findUnique({
       where: { username },
       include: {

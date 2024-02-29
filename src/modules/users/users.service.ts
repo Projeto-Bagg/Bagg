@@ -14,12 +14,13 @@ import { UpdatePasswordDto } from './dtos/update-password.dto';
 import { DeleteUserDto } from './dtos/delete-user.dto';
 import nodemailer from 'nodemailer';
 import { JwtService } from '@nestjs/jwt';
-import { UserClient } from './entities/user-client.entity';
+import { UserClientDto } from './dtos/user-client.dto';
 import { FriendshipStatusDto } from 'src/modules/users/dtos/friendship-status.dto';
 import { FriendshipCountDto } from 'src/modules/users/dtos/friendship-count.dto';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { UserSearchDto } from 'src/modules/users/dtos/user-search.dto';
-import { UserEntityWithCityRegionCountry } from 'src/modules/users/entities/user-with-city-region-country.entity';
+import { UserFullInfoDto } from 'src/modules/users/dtos/user-full-info.dto';
+import { UserWithFollowersFollowindDto } from 'src/modules/users/dtos/user-with-followers-following.dto';
 
 interface JwtPayload {
   email: string;
@@ -88,7 +89,8 @@ export class UsersService {
 
   async findByUsername(
     username: string,
-  ): Promise<UserEntityWithCityRegionCountry> {
+    currentUser?: UserFromJwt,
+  ): Promise<UserFullInfoDto> {
     const user = await this.prisma.user.findUnique({
       where: { username },
       include: {
@@ -108,7 +110,11 @@ export class UsersService {
       throw new NotFoundException();
     }
 
-    return user;
+    return {
+      ...user,
+      ...(await this.friendshipCount(user.username)),
+      friendshipStatus: await this.friendshipStatus(user.username, currentUser),
+    };
   }
 
   async search(query: UserSearchDto): Promise<UserEntity[]> {
@@ -129,7 +135,7 @@ export class UsersService {
   async update(
     updateUserDto: UpdateUserDto,
     currentUser: UserFromJwt,
-  ): Promise<UserClient> {
+  ): Promise<UserClientDto> {
     const data: Prisma.UserUpdateInput = {
       ...updateUserDto,
       password: updateUserDto.password
@@ -154,7 +160,7 @@ export class UsersService {
     return {
       ...user,
       ...(await this.friendshipCount(currentUser.username)),
-      ...{
+      friendshipStatus: {
         isFollowing: false,
         followedBy: false,
       },
@@ -344,7 +350,7 @@ export class UsersService {
   async following(
     username: string,
     currentUser?: UserFromJwt,
-  ): Promise<UserClient[]> {
+  ): Promise<UserWithFollowersFollowindDto[]> {
     const users = await this.prisma.user.findMany({
       where: {
         followers: {
@@ -361,7 +367,10 @@ export class UsersService {
       users.map(async (user) => {
         return {
           ...user,
-          ...(await this.friendshipStatus(user.username, currentUser)),
+          friendshipStatus: await this.friendshipStatus(
+            user.username,
+            currentUser,
+          ),
           ...(await this.friendshipCount(user.username)),
         };
       }),
@@ -371,7 +380,7 @@ export class UsersService {
   async followers(
     username: string,
     currentUser?: UserFromJwt,
-  ): Promise<UserClient[]> {
+  ): Promise<UserClientDto[]> {
     const users = await this.prisma.user.findMany({
       where: {
         following: {
@@ -388,7 +397,10 @@ export class UsersService {
       users.map(async (user) => {
         return {
           ...user,
-          ...(await this.friendshipStatus(user.username, currentUser)),
+          friendshipStatus: await this.friendshipStatus(
+            user.username,
+            currentUser,
+          ),
           ...(await this.friendshipCount(user.username)),
         };
       }),

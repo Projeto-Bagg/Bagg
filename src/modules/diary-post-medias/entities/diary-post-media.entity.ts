@@ -1,16 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { DiaryPostMedia } from '@prisma/client';
+import { MediaEntity } from 'src/modules/media/entities/media.entity';
 
-export class DiaryPostMediaEntity implements DiaryPostMedia {
-  @ApiProperty()
-  id: number;
-
-  @ApiProperty()
-  url: string;
-
+export class DiaryPostMediaEntity extends MediaEntity {
   @ApiProperty()
   diaryPostId: number;
-
-  @ApiProperty()
-  createdAt: Date;
 }

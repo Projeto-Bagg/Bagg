@@ -22,8 +22,7 @@ import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { DiaryPostEntity } from 'src/modules/diary-posts/entities/diary-post.entity';
 import { IsPublic } from 'src/modules/auth/decorators/is-public.decorator';
-import { UserEntity } from 'src/modules/users/entities/user.entity';
-import { UserClient } from 'src/modules/users/entities/user-client.entity';
+import { UserClientDto } from 'src/modules/users/dtos/user-client.dto';
 import { DiaryPostLikesService } from 'src/modules/diary-post-likes/diary-post-likes.service';
 
 @Controller('diaryPosts')
@@ -49,7 +48,7 @@ export class DiaryPostsController {
       currentUser,
     );
 
-    return { ...post, user: new UserEntity(post.user) };
+    return { ...post, user: new UserClientDto(post.user) };
   }
 
   @Get('user/feed')
@@ -67,7 +66,7 @@ export class DiaryPostsController {
     return posts.map((post) => {
       return {
         ...post,
-        user: new UserEntity(post.user),
+        user: new UserClientDto(post.user),
       };
     });
   }
@@ -89,7 +88,7 @@ export class DiaryPostsController {
     return posts.map((post) => {
       return {
         ...post,
-        user: new UserEntity(post.user),
+        user: new UserClientDto(post.user),
       };
     });
   }
@@ -111,7 +110,7 @@ export class DiaryPostsController {
     return posts.map((post) => {
       return {
         ...post,
-        user: new UserEntity(post.user),
+        user: new UserClientDto(post.user),
       };
     });
   }
@@ -132,14 +131,14 @@ export class DiaryPostsController {
   @ApiBearerAuth()
   @IsPublic()
   @UseInterceptors(ClassSerializerInterceptor)
-  @ApiResponse({ type: UserClient, isArray: true })
+  @ApiResponse({ type: UserClientDto, isArray: true })
   async likedBy(
     @Param('id') id: number,
     @CurrentUser() currentUser: UserFromJwt,
-  ): Promise<UserClient[]> {
+  ): Promise<UserClientDto[]> {
     const users = await this.diaryPostsService.likedBy(id, currentUser);
 
-    return users.map((user) => new UserClient(user));
+    return users.map((user) => new UserClientDto(user));
   }
 
   @Post(':id/like')

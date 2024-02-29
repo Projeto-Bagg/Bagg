@@ -6,10 +6,14 @@ import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { DiaryPostEntity } from 'src/modules/diary-posts/entities/diary-post.entity';
 import { TripDiaryEntity } from 'src/modules/trip-diaries/entities/trip-diary.entity';
 import { TripDiaryClientEntity } from 'src/modules/trip-diaries/entities/trip-diary-client.entity';
+import { UsersService } from 'src/modules/users/users.service';
 
 @Injectable()
 export class TripDiariesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly usersService: UsersService,
+  ) {}
 
   create(
     createTripDiaryDto: CreateTripDiaryDto,
@@ -51,6 +55,9 @@ export class TripDiariesService {
           },
         },
       },
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
   }
 
@@ -73,13 +80,21 @@ export class TripDiariesService {
       },
     });
 
-    return posts.map((post) => {
-      return {
-        ...post,
-        isLiked: post.likedBy.some((like) => like.userId === currentUser?.id),
-        likedBy: post.likedBy.length,
-      };
-    });
+    return await Promise.all(
+      posts.map(async (post) => {
+        return {
+          ...post,
+          isLiked: post.likedBy.some((like) => like.userId === currentUser?.id),
+          likedBy: post.likedBy.length,
+          user: {
+            ...post.user,
+            friendshipStatus: await this.usersService.friendshipStatus(
+              post.user.username,
+            ),
+          },
+        };
+      }),
+    );
   }
 
   async findOne(id: number): Promise<TripDiaryEntity> {

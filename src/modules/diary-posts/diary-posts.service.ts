@@ -9,7 +9,7 @@ import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { MediaService } from 'src/modules/media/media.service';
 import { DiaryPostEntity } from 'src/modules/diary-posts/entities/diary-post.entity';
 import { UsersService } from 'src/modules/users/users.service';
-import { UserClient } from 'src/modules/users/entities/user-client.entity';
+import { UserClientDto } from 'src/modules/users/dtos/user-client.dto';
 
 @Injectable()
 export class DiaryPostsService {
@@ -60,14 +60,24 @@ export class DiaryPostsService {
       }),
     );
 
-    return { ...diaryPost, diaryPostMedias, isLiked: false, likedBy: 0 };
+    return {
+      ...diaryPost,
+      diaryPostMedias,
+      isLiked: false,
+      likedBy: 0,
+      user: {
+        ...diaryPost.user,
+        friendshipStatus: { followedBy: false, isFollowing: false },
+        ...(await this.usersService.friendshipCount(diaryPost.user.username)),
+      },
+    };
   }
 
   async findById(
     id: number,
     currentUser?: UserFromJwt,
   ): Promise<DiaryPostEntity> {
-    const diaryPost = await this.prisma.diaryPost.findUnique({
+    const post = await this.prisma.diaryPost.findUnique({
       where: {
         id,
       },
@@ -79,16 +89,21 @@ export class DiaryPostsService {
       },
     });
 
-    if (!diaryPost) {
+    if (!post) {
       throw new NotFoundException();
     }
 
     return {
-      ...diaryPost,
-      isLiked: diaryPost.likedBy.some(
-        (like) => like.userId === currentUser?.id,
-      ),
-      likedBy: diaryPost.likedBy.length,
+      ...post,
+      isLiked: post.likedBy.some((like) => like.userId === currentUser?.id),
+      likedBy: post.likedBy.length,
+      user: {
+        ...post.user,
+        friendshipStatus: await this.usersService.friendshipStatus(
+          post.user.username,
+          currentUser,
+        ),
+      },
     };
   }
 
@@ -116,13 +131,22 @@ export class DiaryPostsService {
       },
     });
 
-    return posts.map((post) => {
-      return {
-        ...post,
-        isLiked: post.likedBy.some((like) => like.userId === currentUser?.id),
-        likedBy: post.likedBy.length,
-      };
-    });
+    return await Promise.all(
+      posts.map(async (post) => {
+        return {
+          ...post,
+          isLiked: post.likedBy.some((like) => like.userId === currentUser?.id),
+          likedBy: post.likedBy.length,
+          user: {
+            ...post.user,
+            friendshipStatus: await this.usersService.friendshipStatus(
+              post.user.username,
+              currentUser,
+            ),
+          },
+        };
+      }),
+    );
   }
 
   async feedLikedByUser(
@@ -150,16 +174,29 @@ export class DiaryPostsService {
       },
     });
 
-    return posts.map((post) => {
-      return {
-        ...post,
-        isLiked: post.likedBy.some((like) => like.userId === currentUser?.id),
-        likedBy: post.likedBy.length,
-      };
-    });
+    return await Promise.all(
+      posts.map(async (post) => {
+        return {
+          ...post,
+          isLiked: post.likedBy.some((like) => like.userId === currentUser?.id),
+          likedBy: post.likedBy.length,
+          user: {
+            ...post.user,
+            friendshipStatus: await this.usersService.friendshipStatus(
+              post.user.username,
+              currentUser,
+            ),
+            ...(await this.usersService.friendshipCount(post.user.username)),
+          },
+        };
+      }),
+    );
   }
 
-  async likedBy(id: number, currentUser?: UserFromJwt): Promise<UserClient[]> {
+  async likedBy(
+    id: number,
+    currentUser?: UserFromJwt,
+  ): Promise<UserClientDto[]> {
     const users = await this.prisma.user.findMany({
       where: {
         diaryPostLikes: {
@@ -175,10 +212,10 @@ export class DiaryPostsService {
         return {
           ...user,
           ...(await this.usersService.friendshipCount(user.username)),
-          ...(await this.usersService.friendshipStatus(
+          friendshipStatus: await this.usersService.friendshipStatus(
             user.username,
             currentUser,
-          )),
+          ),
         };
       }),
     );
@@ -205,13 +242,22 @@ export class DiaryPostsService {
       },
     });
 
-    return posts.map((post) => {
-      return {
-        ...post,
-        isLiked: post.likedBy.some((like) => like.userId === currentUser?.id),
-        likedBy: post.likedBy.length,
-      };
-    });
+    return await Promise.all(
+      posts.map(async (post) => {
+        return {
+          ...post,
+          isLiked: post.likedBy.some((like) => like.userId === currentUser?.id),
+          likedBy: post.likedBy.length,
+          user: {
+            ...post.user,
+            friendshipStatus: await this.usersService.friendshipStatus(
+              post.user.username,
+              currentUser,
+            ),
+          },
+        };
+      }),
+    );
   }
 
   async delete(id: number, currentUser: UserFromJwt): Promise<void> {
@@ -251,7 +297,7 @@ export class DiaryPostsService {
     });
   }
 
-  async findMany(currentUser: UserFromJwt) {
+  async findMany(currentUser: UserFromJwt): Promise<DiaryPostEntity[]> {
     const posts = await this.prisma.diaryPost.findMany({
       include: {
         diaryPostMedias: true,
@@ -261,12 +307,21 @@ export class DiaryPostsService {
       },
     });
 
-    return posts.map((post) => {
-      return {
-        ...post,
-        isLiked: post.likedBy.some((like) => like.userId === currentUser?.id),
-        likedBy: post.likedBy.length,
-      };
-    });
+    return await Promise.all(
+      posts.map(async (post) => {
+        return {
+          ...post,
+          isLiked: post.likedBy.some((like) => like.userId === currentUser?.id),
+          likedBy: post.likedBy.length,
+          user: {
+            ...post.user,
+            friendshipStatus: await this.usersService.friendshipStatus(
+              post.user.username,
+              currentUser,
+            ),
+          },
+        };
+      }),
+    );
   }
 }

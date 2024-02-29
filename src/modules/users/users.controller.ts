@@ -19,7 +19,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { UserClient } from './entities/user-client.entity';
+import { UserClientDto } from './dtos/user-client.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { UpdatePasswordDto } from './dtos/update-password.dto';
 import { DeleteUserDto } from './dtos/delete-user.dto';
@@ -32,7 +32,8 @@ import { IsPublic } from 'src/modules/auth/decorators/is-public.decorator';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
 import { FriendshipStatusDto } from 'src/modules/users/dtos/friendship-status.dto';
 import { CountrySearchDto } from 'src/modules/countries/dtos/country-search.dto';
-import { UserEntityWithCityRegionCountry } from 'src/modules/users/entities/user-with-city-region-country.entity';
+import { UserFullInfoDto } from 'src/modules/users/dtos/user-full-info.dto';
+import { UserWithFollowersFollowindDto } from 'src/modules/users/dtos/user-with-followers-following.dto';
 
 @Controller('users')
 @ApiTags('users')
@@ -51,12 +52,12 @@ export class UsersController {
   @ApiBearerAuth()
   @UseInterceptors(FileInterceptor('profilePic'), ClassSerializerInterceptor)
   @ApiConsumes('multipart/form-data')
-  @ApiResponse({ type: UserClient })
+  @ApiResponse({ type: UserClientDto })
   async update(
     @Body() updateUserDto: UpdateUserDto,
     @UploadedFile() file: Express.Multer.File,
     @CurrentUser() currentUser: UserFromJwt,
-  ): Promise<UserClient> {
+  ): Promise<UserClientDto> {
     let imageUrl: string | undefined;
 
     if (file) {
@@ -75,7 +76,7 @@ export class UsersController {
       currentUser,
     );
 
-    return new UserClient(user);
+    return new UserClientDto(user);
   }
 
   @Delete()
@@ -102,13 +103,14 @@ export class UsersController {
   @Get('me')
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiBearerAuth()
-  @ApiResponse({ type: UserEntityWithCityRegionCountry })
-  async me(
-    @CurrentUser() userFromJwt: UserFromJwt,
-  ): Promise<UserEntityWithCityRegionCountry> {
-    const user = await this.usersService.findByUsername(userFromJwt.username);
+  @ApiResponse({ type: UserFullInfoDto })
+  async me(@CurrentUser() currentUser: UserFromJwt): Promise<UserFullInfoDto> {
+    const user = await this.usersService.findByUsername(
+      currentUser.username,
+      currentUser,
+    );
 
-    return new UserEntityWithCityRegionCountry(user);
+    return new UserFullInfoDto(user);
   }
 
   @Get('search')
@@ -122,53 +124,51 @@ export class UsersController {
   }
 
   @Get(':username')
-  @ApiResponse({ type: UserClient })
+  @ApiResponse({ type: UserClientDto })
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiBearerAuth()
   @IsPublic()
   async findByUsername(
     @Param('username') username: string,
     @CurrentUser() currentUser: UserFromJwt,
-  ): Promise<UserClient> {
-    const user = await this.usersService.findByUsername(username);
+  ): Promise<UserFullInfoDto> {
+    const user = await this.usersService.findByUsername(username, currentUser);
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    return new UserClient({
-      ...user,
-      ...(await this.usersService.friendshipCount(user.username)),
-      ...(await this.usersService.friendshipStatus(username, currentUser)),
-    });
+    return new UserFullInfoDto(user);
   }
 
   @Get(':username/followers')
-  @ApiResponse({ type: UserClient, isArray: true })
+  @ApiResponse({ type: UserClientDto, isArray: true })
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiBearerAuth()
   @IsPublic()
   async userFollowers(
     @Param('username') username: string,
     @CurrentUser() currentUser: UserFromJwt,
-  ): Promise<UserEntity[]> {
+  ): Promise<UserClientDto[]> {
     const followers = await this.usersService.followers(username, currentUser);
 
-    return followers.map((follower) => new UserEntity(follower));
+    return followers.map((follower) => new UserClientDto(follower));
   }
 
   @Get(':username/following')
-  @ApiResponse({ type: UserClient, isArray: true })
+  @ApiResponse({ type: UserClientDto, isArray: true })
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiBearerAuth()
   @IsPublic()
   async userFollowing(
     @Param('username') username: string,
     @CurrentUser() currentUser: UserFromJwt,
-  ): Promise<UserEntity[]> {
+  ): Promise<UserWithFollowersFollowindDto[]> {
     const followings = await this.usersService.following(username, currentUser);
 
-    return followings.map((following) => new UserEntity(following));
+    return followings.map(
+      (following) => new UserWithFollowersFollowindDto(following),
+    );
   }
 
   @Post('following/:username')

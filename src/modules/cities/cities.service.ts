@@ -9,6 +9,7 @@ import { CityVisitRankingEntity } from 'src/modules/cities/entities/city-visit-r
 import { CityEntity } from 'src/modules/cities/entities/city.entity';
 import { CityInterestsService } from 'src/modules/city-interests/city-interests.service';
 import { CityVisitsService } from 'src/modules/city-visits/city-visits.service';
+import { MediaEntity } from 'src/modules/media/entities/media.entity';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
@@ -52,11 +53,27 @@ export class CitiesService {
       throw new NotFoundException();
     }
 
+    const images = (await this.prisma.$queryRaw`
+      DECLARE @cityId INT = ${city.id}
+      (SELECT m.id, m.url, m.createdAt FROM [dbo].[DiaryPostMedia] m
+      JOIN [dbo].[DiaryPost] dp ON dp.id = m.diaryPostId
+      JOIN [dbo].[TripDiary] td ON td.id = dp.tripDiaryId
+      WHERE td.cityId = @cityId)
+      UNION ALL
+      (SELECT m.id, m.url, m.createdAt FROM [dbo].[TipMedia] m
+      JOIN [dbo].[Tip] t ON t.id = m.tipId
+      WHERE t.cityId = @cityId)
+      ORDER BY createdAt DESC
+      OFFSET 0 ROWS
+      FETCH FIRST 10 ROWS ONLY;
+    `) as MediaEntity[];
+
     if (!currentUser) {
       return {
         ...city,
         isInterested: false,
         isVisited: false,
+        images,
       };
     }
 
@@ -74,6 +91,7 @@ export class CitiesService {
       ...city,
       isInterested,
       isVisited,
+      images,
     };
   }
 

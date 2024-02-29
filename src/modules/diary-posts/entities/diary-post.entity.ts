@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { DiaryPost } from '@prisma/client';
 import { DiaryPostMediaEntity } from 'src/modules/diary-post-medias/entities/diary-post-media.entity';
 import { TripDiaryEntity } from 'src/modules/trip-diaries/entities/trip-diary.entity';
-import { UserEntity } from 'src/modules/users/entities/user.entity';
+import { UserClientDto } from 'src/modules/users/dtos/user-client.dto';
 
 export class DiaryPostEntity implements DiaryPost {
   @ApiProperty()
@@ -15,7 +15,7 @@ export class DiaryPostEntity implements DiaryPost {
   userId: number;
 
   @ApiProperty()
-  user: UserEntity;
+  user: UserClientDto;
 
   @ApiProperty()
   createdAt: Date;

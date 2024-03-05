@@ -33,7 +33,7 @@ import { UserEntity } from 'src/modules/users/entities/user.entity';
 import { FriendshipStatusDto } from 'src/modules/users/dtos/friendship-status.dto';
 import { CountrySearchDto } from 'src/modules/countries/dtos/country-search.dto';
 import { UserFullInfoDto } from 'src/modules/users/dtos/user-full-info.dto';
-import { UserWithFollowersFollowindDto } from 'src/modules/users/dtos/user-with-followers-following.dto';
+import { UserWithFollowersFollowingDto } from 'src/modules/users/dtos/user-with-followers-following.dto';
 
 @Controller('users')
 @ApiTags('users')
@@ -163,11 +163,11 @@ export class UsersController {
   async userFollowing(
     @Param('username') username: string,
     @CurrentUser() currentUser: UserFromJwt,
-  ): Promise<UserWithFollowersFollowindDto[]> {
+  ): Promise<UserWithFollowersFollowingDto[]> {
     const followings = await this.usersService.following(username, currentUser);
 
     return followings.map(
-      (following) => new UserWithFollowersFollowindDto(following),
+      (following) => new UserWithFollowersFollowingDto(following),
     );
   }
 

@@ -20,7 +20,7 @@ import { FriendshipCountDto } from 'src/modules/users/dtos/friendship-count.dto'
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { UserSearchDto } from 'src/modules/users/dtos/user-search.dto';
 import { UserFullInfoDto } from 'src/modules/users/dtos/user-full-info.dto';
-import { UserWithFollowersFollowindDto } from 'src/modules/users/dtos/user-with-followers-following.dto';
+import { UserWithFollowersFollowingDto } from 'src/modules/users/dtos/user-with-followers-following.dto';
 
 interface JwtPayload {
   email: string;
@@ -350,7 +350,7 @@ export class UsersService {
   async following(
     username: string,
     currentUser?: UserFromJwt,
-  ): Promise<UserWithFollowersFollowindDto[]> {
+  ): Promise<UserWithFollowersFollowingDto[]> {
     const users = await this.prisma.user.findMany({
       where: {
         followers: {

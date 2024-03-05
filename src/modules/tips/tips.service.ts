@@ -19,6 +19,23 @@ export class TipsService {
     return this.prisma.tip.findUnique({ where: { id } });
   }
 
+  async findByUserCityInterest(userId: number, tipCount = 10, currentPage = 1) {
+    const cities = (
+      await this.prisma.cityInterest.findMany({
+        where: { userId },
+        select: { cityId: true },
+      })
+    ).map((city) => city.cityId);
+
+    const index = tipCount * (currentPage - 1);
+
+    return await this.prisma.tip.findMany({
+      skip: index,
+      take: tipCount,
+      where: { cityId: { in: cities } },
+    });
+  }
+
   update(id: number, UpdateTipDto: UpdateTipDto) {
     return this.prisma.tip.update({ where: { id }, data: UpdateTipDto });
   }

@@ -5,7 +5,7 @@ import { CityInterestEntity } from 'src/modules/city-interests/entities/city-int
 
 @Injectable()
 export class CityInterestsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   create(
     cityId: number,
@@ -44,5 +44,9 @@ export class CityInterestsService {
         },
       },
     });
+  }
+
+  findMany() {
+    return this.prisma.cityInterest.findMany();
   }
 }

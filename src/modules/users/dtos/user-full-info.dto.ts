@@ -1,10 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { CityRegionCountryEntity } from 'src/modules/cities/entities/city-region-country.entity';
+import { CityRegionCountryDto } from 'src/modules/cities/dtos/city-region-country.dto';
 import { UserWithFollowersFollowingDto } from 'src/modules/users/dtos/user-with-followers-following.dto';
 
 export class UserFullInfoDto extends UserWithFollowersFollowingDto {
-  @ApiProperty({ type: CityRegionCountryEntity })
-  city: CityRegionCountryEntity | null;
+  @ApiProperty({ type: CityRegionCountryDto })
+  city: CityRegionCountryDto | null;
 
   constructor(partial: UserFullInfoDto) {
     super(partial);

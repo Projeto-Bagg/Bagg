@@ -8,5 +8,5 @@ export class CreateCityVisitDto {
   rating: number;
 
   @ApiProperty()
-  message: string;
+  message?: string;
 }

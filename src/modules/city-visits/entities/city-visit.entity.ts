@@ -19,4 +19,8 @@ export class CityVisitEntity implements CityVisit {
 
   @ApiProperty()
   createdAt: Date;
+
+  constructor(partial: CityVisitEntity) {
+    Object.assign(this, partial);
+  }
 }

@@ -19,6 +19,14 @@ export class CityInterestsService {
     });
   }
 
+  async getInterestsCountByCityId(cityId: number): Promise<number> {
+    return await this.prisma.cityInterest.count({
+      where: {
+        cityId,
+      },
+    });
+  }
+
   async isUserInterestedInCity(
     cityId: number,
     userId: number,

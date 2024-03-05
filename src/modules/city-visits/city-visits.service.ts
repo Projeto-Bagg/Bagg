@@ -4,6 +4,9 @@ import { CreateCityVisitDto } from './dtos/create-city-visit.dto';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { CityInterestsService } from 'src/modules/city-interests/city-interests.service';
 import { CityVisitEntity } from 'src/modules/city-visits/entities/city-visit.entity';
+import { CityVisitClientDto } from 'src/modules/city-visits/dtos/city-visit-client.dto';
+import { UpdateCityVisitDto } from 'src/modules/city-visits/dtos/update-city-visit.dto';
+import { UserCityVisitDto } from 'src/modules/city-visits/dtos/user-city-visit.dto';
 
 @Injectable()
 export class CityVisitsService {
@@ -37,8 +40,29 @@ export class CityVisitsService {
     });
   }
 
-  async hasUserVisitedCity(cityId: number, userId: number): Promise<boolean> {
-    const visitVisit = await this.prisma.cityVisit.findUnique({
+  async update(
+    updateCityVisitDto: UpdateCityVisitDto,
+    currentUser: UserFromJwt,
+  ): Promise<CityVisitEntity> {
+    return await this.prisma.cityVisit.update({
+      where: {
+        userId_cityId: {
+          cityId: updateCityVisitDto.cityId,
+          userId: currentUser.id,
+        },
+      },
+      data: {
+        message: updateCityVisitDto.message,
+        rating: updateCityVisitDto.rating,
+      },
+    });
+  }
+
+  async getUserVisitByCityId(
+    cityId: number,
+    userId: number,
+  ): Promise<CityVisitEntity | null> {
+    return await this.prisma.cityVisit.findUnique({
       where: {
         userId_cityId: {
           cityId,
@@ -46,15 +70,32 @@ export class CityVisitsService {
         },
       },
     });
+  }
 
-    return !!visitVisit;
+  async getAverageRatingByCityId(cityId: number): Promise<number> {
+    const response = (await this.prisma.$queryRaw`
+      SELECT ROUND(AVG(CAST(cv.rating AS FLOAT)), 1) AS averageRating
+      FROM [dbo].[City] ci
+      JOIN [dbo].[CityVisit] cv ON ci.id = cv.cityId
+      WHERE ci.id = ${cityId}
+    `) as { averageRating: number }[];
+
+    return response[0].averageRating;
+  }
+
+  async getVisitsCountByCityId(cityId: number): Promise<number> {
+    return await this.prisma.cityVisit.count({
+      where: {
+        cityId,
+      },
+    });
   }
 
   async getVisitsByCityId(
     cityId: number,
     page: number,
     count: number,
-  ): Promise<CityVisitEntity[]> {
+  ): Promise<CityVisitClientDto[]> {
     const visits = await this.prisma.cityVisit.findMany({
       take: count,
       skip: (page - 1) * count,
@@ -63,6 +104,7 @@ export class CityVisitsService {
       },
       where: {
         cityId,
+        NOT: [{ message: null }],
       },
       include: {
         user: true,
@@ -72,14 +114,38 @@ export class CityVisitsService {
     return visits;
   }
 
-  remove(cityId: number, currentUser: UserFromJwt): Promise<CityVisitEntity> {
-    return this.prisma.cityVisit.delete({
+  async getVisitsByUsername(username: string): Promise<UserCityVisitDto[]> {
+    return await this.prisma.cityVisit.findMany({
+      where: {
+        user: {
+          username,
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      include: {
+        city: {
+          include: {
+            region: {
+              include: {
+                country: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async remove(cityId: number, currentUser: UserFromJwt): Promise<boolean> {
+    return !!(await this.prisma.cityVisit.delete({
       where: {
         userId_cityId: {
           cityId,
           userId: currentUser.id,
         },
       },
-    });
+    }));
   }
 }

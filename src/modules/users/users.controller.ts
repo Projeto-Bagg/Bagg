@@ -34,6 +34,8 @@ import { FriendshipStatusDto } from 'src/modules/users/dtos/friendship-status.dt
 import { CountrySearchDto } from 'src/modules/countries/dtos/country-search.dto';
 import { UserFullInfoDto } from 'src/modules/users/dtos/user-full-info.dto';
 import { UserWithFollowersFollowingDto } from 'src/modules/users/dtos/user-with-followers-following.dto';
+import { CityVisitsService } from 'src/modules/city-visits/city-visits.service';
+import { UserCityVisitDto } from 'src/modules/city-visits/dtos/user-city-visit.dto';
 
 @Controller('users')
 @ApiTags('users')
@@ -41,6 +43,7 @@ export class UsersController {
   constructor(
     private readonly usersService: UsersService,
     private readonly mediaService: MediaService,
+    private readonly cityVisitsService: CityVisitsService,
   ) {}
   @Post()
   @IsPublic()
@@ -169,6 +172,15 @@ export class UsersController {
     return followings.map(
       (following) => new UserWithFollowersFollowingDto(following),
     );
+  }
+
+  @Get(':username/visits')
+  @ApiResponse({ type: UserCityVisitDto, isArray: true })
+  @IsPublic()
+  async userVisits(
+    @Param('username') username: string,
+  ): Promise<UserCityVisitDto[]> {
+    return this.cityVisitsService.getVisitsByUsername(username);
   }
 
   @Post('following/:username')

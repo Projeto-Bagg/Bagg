@@ -1,6 +1,6 @@
-import { Controller, Post, Param, Delete } from '@nestjs/common';
+import { Controller, Post, Param, Delete, Get, ClassSerializerInterceptor, UseInterceptors } from '@nestjs/common';
 import { CityInterestsService } from './city-interests.service';
-import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from 'src/modules/auth/decorators/current-user.decorator';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { CityInterestEntity } from 'src/modules/city-interests/entities/city-interest.entity';
@@ -9,6 +9,14 @@ import { CityInterestEntity } from 'src/modules/city-interests/entities/city-int
 @ApiTags('city interests')
 export class CityInterestsController {
   constructor(private readonly cityInterestsService: CityInterestsService) {}
+
+  @Get()
+  @UseInterceptors(ClassSerializerInterceptor)
+  @ApiBearerAuth()
+  @ApiResponse ({ type: CityInterestEntity, isArray: true })
+  findAll() {
+    return this.cityInterestsService.findMany();
+  }
 
   @Post(':cityId')
   @ApiResponse({ type: CityInterestEntity })

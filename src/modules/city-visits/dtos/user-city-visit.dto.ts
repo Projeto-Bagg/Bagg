@@ -1,8 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { CityRegionCountryDto } from 'src/modules/cities/dtos/city-region-country.dto';
-import { TripDiaryEntity } from 'src/modules/trip-diaries/entities/trip-diary.entity';
+import { CityVisitEntity } from 'src/modules/city-visits/entities/city-visit.entity';
 
-export class TripDiaryClientEntity extends TripDiaryEntity {
+export class UserCityVisitDto extends CityVisitEntity {
   @ApiProperty({ type: CityRegionCountryDto })
   city: CityRegionCountryDto;
 }

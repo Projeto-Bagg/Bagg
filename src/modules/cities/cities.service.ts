@@ -2,15 +2,15 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { CitySearchDto } from 'src/modules/cities/dtos/city-search.dto';
 import { CityClientEntity } from 'src/modules/cities/entities/city-client.entity';
-import { CityInterestRankingEntity } from 'src/modules/cities/entities/city-interest-ranking.entity';
-import { NearCityEntity } from 'src/modules/cities/entities/city-near.entity';
-import { CityRatingRankingEntity } from 'src/modules/cities/entities/city-rating-ranikng.entity';
-import { CityVisitRankingEntity } from 'src/modules/cities/entities/city-visit-ranking.entity';
+import { CityInterestRankingDto } from 'src/modules/cities/dtos/city-interest-ranking.dto';
+import { CityRatingRankingDto } from 'src/modules/cities/dtos/city-rating-ranking.dto';
+import { CityVisitRankingDto } from 'src/modules/cities/dtos/city-visit-ranking.dto';
 import { CityEntity } from 'src/modules/cities/entities/city.entity';
 import { CityInterestsService } from 'src/modules/city-interests/city-interests.service';
 import { CityVisitsService } from 'src/modules/city-visits/city-visits.service';
 import { MediaEntity } from 'src/modules/media/entities/media.entity';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { CityNearDto } from 'src/modules/cities/dtos/city-near.dto';
 
 @Injectable()
 export class CitiesService {
@@ -72,8 +72,8 @@ export class CitiesService {
       return {
         ...city,
         isInterested: false,
-        isVisited: false,
         images,
+        userVisit: null,
       };
     }
 
@@ -82,7 +82,7 @@ export class CitiesService {
       currentUser.id,
     );
 
-    const isVisited = await this.cityVisitsService.hasUserVisitedCity(
+    const userVisit = await this.cityVisitsService.getUserVisitByCityId(
       city.id,
       currentUser.id,
     );
@@ -90,7 +90,7 @@ export class CitiesService {
     return {
       ...city,
       isInterested,
-      isVisited,
+      userVisit,
       images,
     };
   }
@@ -99,7 +99,7 @@ export class CitiesService {
     cityId: number,
     page: number,
     count: number,
-  ): Promise<NearCityEntity[]> {
+  ): Promise<CityNearDto[]> {
     const city = await this.prisma.city.findUnique({
       where: {
         id: +cityId,
@@ -128,7 +128,7 @@ export class CitiesService {
       ORDER BY distance
       OFFSET @count * (@page - 1) ROWS
       FETCH NEXT @count ROWS ONLY
-    `) as NearCityEntity[];
+    `) as CityNearDto[];
   }
 
   async search(query: CitySearchDto): Promise<CityEntity[]> {
@@ -158,7 +158,7 @@ export class CitiesService {
   async interestRanking(
     page: number,
     count: number,
-  ): Promise<CityInterestRankingEntity[]> {
+  ): Promise<CityInterestRankingDto[]> {
     const cities = await this.prisma.city.findMany({
       take: +count,
       skip: count * (page - 1),
@@ -196,7 +196,7 @@ export class CitiesService {
   async visitRanking(
     page: number,
     count: number,
-  ): Promise<CityVisitRankingEntity[]> {
+  ): Promise<CityVisitRankingDto[]> {
     const cities = await this.prisma.city.findMany({
       take: +count,
       skip: count * (page - 1),
@@ -230,6 +230,7 @@ export class CitiesService {
       };
     });
   }
+
   async ratingRanking(page: number, count: number) {
     return (await this.prisma.$queryRaw`
       SELECT ci.*, r.name AS region, c.iso2, c.name AS country, ROUND(AVG(CAST(cv.rating AS FLOAT)), 1) AS averageRating
@@ -241,6 +242,6 @@ export class CitiesService {
       ORDER BY averageRating DESC
       OFFSET ${count * (page - 1)} ROWS
       FETCH NEXT ${+count} ROWS ONLY
-    `) as CityRatingRankingEntity[];
+    `) as CityRatingRankingDto[];
   }
 }

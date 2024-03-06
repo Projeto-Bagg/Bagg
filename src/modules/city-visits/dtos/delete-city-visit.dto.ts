@@ -1,8 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumberString } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsNumber } from 'class-validator';
 
 export class DeleteCityVisitDto {
   @ApiProperty()
-  @IsNumberString()
+  @Type(() => Number)
+  @IsNumber()
   cityId: number;
 }

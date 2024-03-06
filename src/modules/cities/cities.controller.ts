@@ -12,16 +12,16 @@ import { IsPublic } from 'src/modules/auth/decorators/is-public.decorator';
 import { CurrentUser } from 'src/modules/auth/decorators/current-user.decorator';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { CityRankingDto } from 'src/modules/cities/dtos/city-ranking.dto';
-import { CityInterestRankingEntity } from 'src/modules/cities/entities/city-interest-ranking.entity';
+import { CityInterestRankingDto } from 'src/modules/cities/dtos/city-interest-ranking.dto';
 import { CityEntity } from 'src/modules/cities/entities/city.entity';
-import { CityClientEntity } from 'src/modules/cities/entities/city-client.entity';
 import { CitySearchDto } from 'src/modules/cities/dtos/city-search.dto';
-import { CityVisitRankingEntity } from 'src/modules/cities/entities/city-visit-ranking.entity';
-import { FindCityById } from 'src/modules/cities/dtos/find-city-by-id.dto';
-import { CityRatingRankingEntity } from 'src/modules/cities/entities/city-rating-ranikng.entity';
-import { CityNearDto } from 'src/modules/cities/dtos/city-near.dto';
+import { CityVisitRankingDto } from 'src/modules/cities/dtos/city-visit-ranking.Dto';
+import { FindCityByIdDto } from 'src/modules/cities/dtos/find-city-by-id.dto';
+import { CityRatingRankingDto } from 'src/modules/cities/dtos/city-rating-ranking.dto';
 import { CityVisitsService } from 'src/modules/city-visits/city-visits.service';
-import { CityPageEntity } from 'src/modules/cities/entities/city-page.entity';
+import { CityPageDto } from 'src/modules/cities/dtos/city-page.Dto';
+import { UserEntity } from 'src/modules/users/entities/user.entity';
+import { CityInterestsService } from 'src/modules/city-interests/city-interests.service';
 
 @Controller('cities')
 @ApiTags('cities')
@@ -29,6 +29,7 @@ export class CitiesController {
   constructor(
     private readonly citiesService: CitiesService,
     private readonly cityVisitsService: CityVisitsService,
+    private readonly cityInterestsService: CityInterestsService,
   ) {}
 
   @Get('search')
@@ -41,24 +42,14 @@ export class CitiesController {
     return city.map((city) => new CityEntity(city));
   }
 
-  @Get('/near')
-  @IsPublic()
-  near(@Query() query: CityNearDto) {
-    return this.citiesService.getNearCities(
-      query.cityId,
-      query.page,
-      query.count,
-    );
-  }
-
   @Get(':id')
   @IsPublic()
   @UseInterceptors(ClassSerializerInterceptor)
-  @ApiResponse({ type: CityPageEntity })
+  @ApiResponse({ type: CityPageDto })
   async findById(
-    @Param() param: FindCityById,
+    @Param() param: FindCityByIdDto,
     @CurrentUser() currentUser: UserFromJwt,
-  ): Promise<CityClientEntity> {
+  ): Promise<CityPageDto> {
     const city = await this.citiesService.findById(+param.id, currentUser);
 
     const visits = await this.cityVisitsService.getVisitsByCityId(
@@ -67,36 +58,53 @@ export class CitiesController {
       5,
     );
 
-    return new CityPageEntity({
+    const averageRating = await this.cityVisitsService.getAverageRatingByCityId(
+      +param.id,
+    );
+
+    const visitsCount = await this.cityVisitsService.getVisitsCountByCityId(
+      city.id,
+    );
+
+    const interestsCount =
+      await this.cityInterestsService.getInterestsCountByCityId(city.id);
+
+    return new CityPageDto({
       ...city,
-      visits,
+      averageRating,
+      visitsCount,
+      interestsCount,
+      visits: visits.map((visit) => {
+        return {
+          ...visit,
+          user: new UserEntity(visit.user),
+        };
+      }),
     });
   }
 
   @Get('ranking/interest')
   @IsPublic()
-  @ApiResponse({ type: CityInterestRankingEntity, isArray: true })
+  @ApiResponse({ type: CityInterestRankingDto, isArray: true })
   interestRanking(
     @Query() query: CityRankingDto,
-  ): Promise<CityInterestRankingEntity[]> {
+  ): Promise<CityInterestRankingDto[]> {
     return this.citiesService.interestRanking(query.page, query.count);
   }
 
   @Get('ranking/visit')
   @IsPublic()
-  @ApiResponse({ type: CityVisitRankingEntity, isArray: true })
-  visitRanking(
-    @Query() query: CityRankingDto,
-  ): Promise<CityVisitRankingEntity[]> {
+  @ApiResponse({ type: CityVisitRankingDto, isArray: true })
+  visitRanking(@Query() query: CityRankingDto): Promise<CityVisitRankingDto[]> {
     return this.citiesService.visitRanking(query.page, query.count);
   }
 
   @Get('ranking/rating')
   @IsPublic()
-  @ApiResponse({ type: CityRatingRankingEntity, isArray: true })
+  @ApiResponse({ type: CityRatingRankingDto, isArray: true })
   ratingRanking(
     @Query() query: CityRankingDto,
-  ): Promise<CityRatingRankingEntity[]> {
+  ): Promise<CityRatingRankingDto[]> {
     return this.citiesService.ratingRanking(query.page, query.count);
   }
 }

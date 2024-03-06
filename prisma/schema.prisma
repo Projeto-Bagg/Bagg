@@ -91,7 +91,7 @@ model DiaryPostLike {
 
 model Tip {
   id          Int          @id @default(autoincrement())
-  message     String?
+  message     String
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      Int
   createdAt   DateTime     @default(now())

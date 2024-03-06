@@ -15,11 +15,11 @@ import { CityRankingDto } from 'src/modules/cities/dtos/city-ranking.dto';
 import { CityInterestRankingDto } from 'src/modules/cities/dtos/city-interest-ranking.dto';
 import { CityEntity } from 'src/modules/cities/entities/city.entity';
 import { CitySearchDto } from 'src/modules/cities/dtos/city-search.dto';
-import { CityVisitRankingDto } from 'src/modules/cities/dtos/city-visit-ranking.Dto';
+import { CityVisitRankingDto } from 'src/modules/cities/dtos/city-visit-ranking.dto';
 import { FindCityByIdDto } from 'src/modules/cities/dtos/find-city-by-id.dto';
 import { CityRatingRankingDto } from 'src/modules/cities/dtos/city-rating-ranking.dto';
 import { CityVisitsService } from 'src/modules/city-visits/city-visits.service';
-import { CityPageDto } from 'src/modules/cities/dtos/city-page.Dto';
+import { CityPageDto } from 'src/modules/cities/dtos/city-page.dto';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
 import { CityInterestsService } from 'src/modules/city-interests/city-interests.service';
 

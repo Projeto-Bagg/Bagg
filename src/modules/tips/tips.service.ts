@@ -4,16 +4,22 @@ import { UpdateTipDto } from './dtos/update-tip.dto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { TipEntity } from 'src/modules/tips/entities/tip.entity';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
+import { MediaService } from '../media/media.service';
+import { TipMedia } from '@prisma/client';
 
 @Injectable()
 export class TipsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly mediaService: MediaService,
+  ) {}
 
-  create(
+  async create(
     createTipDto: CreateTipDto,
+    medias: Express.Multer.File[],
     currentUser: UserFromJwt,
   ): Promise<TipEntity> {
-    return this.prisma.tip.create({
+    const tip = await this.prisma.tip.create({
       data: {
         ...createTipDto,
         userId: currentUser.id,
@@ -22,12 +28,34 @@ export class TipsService {
         user: true,
       },
     });
+
+    const tipMedias = await Promise.all(
+      medias.map(async (media) => {
+        const url = await this.mediaService.uploadFile(media, 'tips');
+        return await this.prisma.tipMedia.create({
+          data: {
+            url,
+            tip: {
+              connect: {
+                id: tip.id,
+              },
+            },
+          },
+        });
+      }),
+    );
+
+    return {
+      ...tip,
+      tipMedias,
+    };
   }
 
   findMany(): Promise<TipEntity[]> {
     return this.prisma.tip.findMany({
       include: {
         user: true,
+        tipMedias: true,
       },
     });
   }
@@ -37,6 +65,7 @@ export class TipsService {
       where: { id },
       include: {
         user: true,
+        tipMedias: true,
       },
     });
 
@@ -67,19 +96,20 @@ export class TipsService {
       where: { cityId: { in: cities } },
       include: {
         user: true,
+        tipMedias: true,
       },
     });
   }
 
-  update(id: number, UpdateTipDto: UpdateTipDto): Promise<TipEntity> {
-    return this.prisma.tip.update({
-      where: { id },
-      data: UpdateTipDto,
-      include: {
-        user: true,
-      },
-    });
-  }
+  // update(id: number, UpdateTipDto: UpdateTipDto): Promise<TipEntity> {
+  //   return this.prisma.tip.update({
+  //     where: { id },
+  //     data: UpdateTipDto,
+  //     include: {
+  //       user: true,
+  //     },
+  //   });
+  // }
 
   async delete(id: number): Promise<boolean> {
     return !!(await this.prisma.tip.delete({ where: { id } }));

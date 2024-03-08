@@ -2,13 +2,32 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateTipCommentDto } from './dtos/create-tip-comment.dto';
 import { UpdateTipCommentDto } from './dtos/update-tip-comment.dto';
+import { TipCommentEntity } from './entities/tip-comment.entity';
+import { UserFromJwt } from '../auth/models/UserFromJwt';
 
 @Injectable()
 export class TipCommentsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  create(createTipCommentDto: CreateTipCommentDto) {
-    return this.prisma.tipComment.create({ data: createTipCommentDto });
+  async create(
+    createTipCommentDto: CreateTipCommentDto,
+    currentUser: UserFromJwt,
+  ): Promise<TipCommentEntity> {
+    return await this.prisma.tipComment.create({
+      data: { ...createTipCommentDto, userId: currentUser.id },
+      include: {
+        user: true,
+      },
+    });
+  }
+
+  findByTip(tipId: number) : Promise<TipCommentEntity[]> {
+    return this.prisma.tipComment.findMany({
+      where: { tipId },
+      include: {
+        user: true,
+      },
+    });
   }
 
   findAll() {

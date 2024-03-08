@@ -9,11 +9,17 @@ import {
   ClassSerializerInterceptor,
   UseInterceptors,
   Query,
+  UploadedFiles,
 } from '@nestjs/common';
 import { TipsService } from './tips.service';
 import { CreateTipDto } from './dtos/create-tip.dto';
 import { UpdateTipDto } from './dtos/update-tip.dto';
-import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { TipEntity } from './entities/tip.entity';
 import { FindByUserCityInterestDto } from 'src/modules/tips/dtos/find-by-user-city-interest.dto';
 import { CurrentUser } from 'src/modules/auth/decorators/current-user.decorator';
@@ -27,12 +33,18 @@ export class TipsController {
 
   @Post()
   @UseInterceptors(ClassSerializerInterceptor)
+  @ApiConsumes('multipart/form-data')
   @ApiBearerAuth()
   async create(
     @Body() createTipDto: CreateTipDto,
     @CurrentUser() currentUser: UserFromJwt,
+    @UploadedFiles() medias: Express.Multer.File[],
   ): Promise<TipEntity> {
-    const tip = await this.tipsService.create(createTipDto, currentUser);
+    const tip = await this.tipsService.create(
+      createTipDto,
+      medias,
+      currentUser,
+    );
 
     return new TipEntity(tip); // Tem que retornar desse jeito pro serializador de classe funcionar
     // Nesse caso, ele tá excluindo a senha e email do usuário que fez a tip
@@ -77,17 +89,17 @@ export class TipsController {
     return new TipEntity(tip);
   }
 
-  @Patch(':id')
-  @UseInterceptors(ClassSerializerInterceptor)
-  @ApiBearerAuth()
-  async update(
-    @Param('id') id: string,
-    @Body() updateTipDto: UpdateTipDto,
-  ): Promise<TipEntity> {
-    const tip = await this.tipsService.update(+id, updateTipDto);
+  // @Patch(':id')
+  // @UseInterceptors(ClassSerializerInterceptor)
+  // @ApiBearerAuth()
+  // async update(
+  //   @Param('id') id: string,
+  //   @Body() updateTipDto: UpdateTipDto,
+  // ): Promise<TipEntity> {
+  //   const tip = await this.tipsService.update(+id, updateTipDto);
 
-    return new TipEntity(tip);
-  }
+  //   return new TipEntity(tip);
+  // }
 
   @Delete(':id')
   remove(@Param('id') id: string): Promise<boolean> {

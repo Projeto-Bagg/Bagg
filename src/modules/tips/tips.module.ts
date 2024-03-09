@@ -4,9 +4,10 @@ import { TipsController } from './tips.controller';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { MediaModule } from '../media/media.module';
 import { UsersModule } from 'src/modules/users/users.module';
+import { TipCommentsModule } from 'src/modules/tip-comments/tip-comments.module';
 
 @Module({
-  imports: [PrismaModule, MediaModule, UsersModule],
+  imports: [PrismaModule, MediaModule, UsersModule, TipCommentsModule],
   controllers: [TipsController],
   providers: [TipsService],
 })

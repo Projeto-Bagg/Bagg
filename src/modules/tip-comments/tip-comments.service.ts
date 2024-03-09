@@ -1,7 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateTipCommentDto } from './dtos/create-tip-comment.dto';
-import { UpdateTipCommentDto } from './dtos/update-tip-comment.dto';
 import { TipCommentEntity } from './entities/tip-comment.entity';
 import { UserFromJwt } from '../auth/models/UserFromJwt';
 
@@ -21,7 +24,7 @@ export class TipCommentsService {
     });
   }
 
-  findByTip(tipId: number) : Promise<TipCommentEntity[]> {
+  findByTip(tipId: number): Promise<TipCommentEntity[]> {
     return this.prisma.tipComment.findMany({
       where: { tipId },
       include: {
@@ -30,22 +33,21 @@ export class TipCommentsService {
     });
   }
 
-  findAll() {
-    return this.prisma.tipComment.findMany();
-  }
-
-  findOne(id: number) {
-    return this.prisma.tipComment.findUnique({ where: { id: id } });
-  }
-
-  update(id: number, updateTipCommentDto: UpdateTipCommentDto) {
-    return this.prisma.tipComment.update({
-      data: updateTipCommentDto,
-      where: { id: id },
+  async delete(id: number, currentUser: UserFromJwt) {
+    const comment = await this.prisma.tipComment.findUnique({
+      where: {
+        id,
+      },
     });
-  }
 
-  remove(id: number) {
+    if (!comment) {
+      throw new NotFoundException();
+    }
+
+    if (comment.userId !== currentUser.id) {
+      throw new UnauthorizedException();
+    }
+
     return this.prisma.tipComment.delete({ where: { id: id } });
   }
 }

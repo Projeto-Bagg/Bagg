@@ -6,8 +6,9 @@ import {
   Param,
   Post,
   Body,
+  Delete,
 } from '@nestjs/common';
-import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { IsPublic } from 'src/modules/auth/decorators/is-public.decorator';
 import { TipCommentsService } from './tip-comments.service';
 import { TipCommentEntity } from './entities/tip-comment.entity';
@@ -19,7 +20,8 @@ import { UserFromJwt } from '../auth/models/UserFromJwt';
 @ApiTags('tip-comments')
 export class TipCommentsController {
   constructor(private readonly tipCommentsService: TipCommentsService) {}
-  @Get()
+
+  @Get(':tipId')
   @UseInterceptors(ClassSerializerInterceptor)
   @IsPublic()
   @ApiResponse({ type: TipCommentEntity })
@@ -36,5 +38,14 @@ export class TipCommentsController {
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<TipCommentEntity> {
     return this.tipCommentsService.create(createTipCommentDto, currentUser);
+  }
+
+  @Delete(':id')
+  @ApiBearerAuth()
+  async delete(
+    @Param('id') id: number,
+    @CurrentUser() CurrentUser: UserFromJwt,
+  ) {
+    return this.tipCommentsService.delete(id, CurrentUser);
   }
 }

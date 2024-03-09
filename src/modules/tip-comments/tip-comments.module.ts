@@ -7,5 +7,6 @@ import { TipCommentsController } from './tip-comments.controller';
   imports: [PrismaModule],
   providers: [TipCommentsService],
   controllers: [TipCommentsController],
+  exports: [TipCommentsService],
 })
 export class TipCommentsModule {}

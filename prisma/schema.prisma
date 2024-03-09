@@ -124,9 +124,9 @@ model TipLike {
 model TipComment {
   id        Int      @id @default(autoincrement())
   user      User     @relation(fields: [userId], references: [id], onUpdate: NoAction)
-  userId    Int      @unique
+  userId    Int
   tip       Tip      @relation(fields: [tipId], references: [id], onDelete: Cascade)
-  tipId     Int      @unique
+  tipId     Int
   message   String
   createdAt DateTime @default(now())
 }

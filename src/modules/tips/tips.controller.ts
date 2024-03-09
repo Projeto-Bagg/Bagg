@@ -3,7 +3,6 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
   Delete,
   ClassSerializerInterceptor,
@@ -13,7 +12,6 @@ import {
 } from '@nestjs/common';
 import { TipsService } from './tips.service';
 import { CreateTipDto } from './dtos/create-tip.dto';
-import { UpdateTipDto } from './dtos/update-tip.dto';
 import {
   ApiBearerAuth,
   ApiConsumes,
@@ -25,6 +23,8 @@ import { FindByUserCityInterestDto } from 'src/modules/tips/dtos/find-by-user-ci
 import { CurrentUser } from 'src/modules/auth/decorators/current-user.decorator';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { IsPublic } from 'src/modules/auth/decorators/is-public.decorator';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { UserClientDto } from 'src/modules/users/dtos/user-client.dto';
 
 @Controller('tips')
 @ApiTags('tips')
@@ -33,6 +33,7 @@ export class TipsController {
 
   @Post()
   @UseInterceptors(ClassSerializerInterceptor)
+  @UseInterceptors(FilesInterceptor('medias'))
   @ApiConsumes('multipart/form-data')
   @ApiBearerAuth()
   async create(
@@ -46,20 +47,7 @@ export class TipsController {
       currentUser,
     );
 
-    return new TipEntity(tip); // Tem que retornar desse jeito pro serializador de classe funcionar
-    // Nesse caso, ele tá excluindo a senha e email do usuário que fez a tip
-
-    // Tem que fazer a parte das mídias depois. Olha a DiaryPostService que é basicamente a mesma coisa
-  }
-  // A tip também precisa retornar likedBy (número de likes), isLiked e as mídias
-  @Get()
-  @UseInterceptors(ClassSerializerInterceptor)
-  @IsPublic() // IsPublic pra deixar a rota pública. Não precisa do ApiBearerAuth nesse caso
-  @ApiResponse({ type: TipEntity, isArray: true })
-  async findAll(): Promise<TipEntity[]> {
-    const tips = await this.tipsService.findMany();
-
-    return tips.map((tip) => new TipEntity(tip));
+    return new TipEntity(tip);
   }
 
   @Get('feed')
@@ -67,8 +55,8 @@ export class TipsController {
   @ApiBearerAuth()
   @ApiResponse({ type: TipEntity, isArray: true })
   async findByUserCityInterest(
-    @Query() query: FindByUserCityInterestDto, // Criei um dto pra query. Agora os campos são opcionais
-    @CurrentUser() currentUser: UserFromJwt, // E o id do usuário é pego pelo JWT do usuário logado
+    @Query() query: FindByUserCityInterestDto,
+    @CurrentUser() currentUser: UserFromJwt,
   ): Promise<TipEntity[]> {
     const tips = await this.tipsService.findByUserCityInterest(
       query.count,
@@ -79,30 +67,41 @@ export class TipsController {
     return tips.map((tip) => new TipEntity(tip));
   }
 
+  @Get(':id/like')
+  @ApiBearerAuth()
+  @IsPublic()
+  @UseInterceptors(ClassSerializerInterceptor)
+  @ApiResponse({ type: UserClientDto, isArray: true })
+  async likedBy(
+    @Param('id') id: number,
+    @CurrentUser() currentUser: UserFromJwt,
+  ): Promise<UserClientDto[]> {
+    const users = await this.tipsService.likedBy(id, currentUser);
+
+    return users.map((user) => new UserClientDto(user));
+  }
+
   @Get(':id')
   @IsPublic()
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiResponse({ type: TipEntity, isArray: false })
-  async findOne(@Param('id') id: string): Promise<TipEntity> {
-    const tip = await this.tipsService.findUnique(+id);
+  @ApiBearerAuth()
+  @IsPublic()
+  async findOne(
+    @Param('id') id: string,
+    @CurrentUser() currentUser: UserFromJwt,
+  ): Promise<TipEntity> {
+    const tip = await this.tipsService.findUnique(+id, currentUser);
 
     return new TipEntity(tip);
   }
 
-  // @Patch(':id')
-  // @UseInterceptors(ClassSerializerInterceptor)
-  // @ApiBearerAuth()
-  // async update(
-  //   @Param('id') id: string,
-  //   @Body() updateTipDto: UpdateTipDto,
-  // ): Promise<TipEntity> {
-  //   const tip = await this.tipsService.update(+id, updateTipDto);
-
-  //   return new TipEntity(tip);
-  // }
-
   @Delete(':id')
-  remove(@Param('id') id: string): Promise<boolean> {
-    return this.tipsService.delete(+id);
+  @ApiBearerAuth()
+  remove(
+    @Param('id') id: number,
+    @CurrentUser() currentUser: UserFromJwt,
+  ): Promise<void> {
+    return this.tipsService.delete(+id, currentUser);
   }
 }

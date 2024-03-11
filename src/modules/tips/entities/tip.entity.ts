@@ -1,5 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Tip } from '@prisma/client';
+import { CityRegionCountryDto } from 'src/modules/cities/dtos/city-region-country.dto';
+import { TipMediaEntity } from 'src/modules/tip-medias/entities/tip-media.entity';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
 
 export class TipEntity implements Tip {
@@ -20,6 +22,21 @@ export class TipEntity implements Tip {
 
   @ApiProperty({ type: UserEntity })
   user: UserEntity;
+
+  @ApiProperty({ type: TipMediaEntity, isArray: true })
+  tipMedias: TipMediaEntity[];
+
+  @ApiProperty()
+  likedBy: number;
+
+  @ApiProperty()
+  isLiked: boolean;
+
+  @ApiProperty()
+  commentsAmount: number;
+
+  @ApiProperty({ type: CityRegionCountryDto })
+  city: CityRegionCountryDto;
 
   constructor(partial: TipEntity) {
     Object.assign(this, { ...partial, user: new UserEntity(partial.user) });

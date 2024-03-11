@@ -65,11 +65,6 @@ export class DiaryPostsService {
       diaryPostMedias,
       isLiked: false,
       likedBy: 0,
-      user: {
-        ...diaryPost.user,
-        friendshipStatus: { followedBy: false, isFollowing: false },
-        ...(await this.usersService.friendshipCount(diaryPost.user.username)),
-      },
     };
   }
 
@@ -97,56 +92,7 @@ export class DiaryPostsService {
       ...post,
       isLiked: post.likedBy.some((like) => like.userId === currentUser?.id),
       likedBy: post.likedBy.length,
-      user: {
-        ...post.user,
-        friendshipStatus: await this.usersService.friendshipStatus(
-          post.user.username,
-          currentUser,
-        ),
-      },
     };
-  }
-
-  async feedFollowedByCurrentUser(
-    currentUser?: UserFromJwt,
-  ): Promise<DiaryPostEntity[]> {
-    const posts = await this.prisma.diaryPost.findMany({
-      where: {
-        user: {
-          followers: {
-            some: {
-              followerId: currentUser?.id,
-            },
-          },
-        },
-      },
-      include: {
-        user: true,
-        diaryPostMedias: true,
-        likedBy: true,
-        tripDiary: true,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-
-    return await Promise.all(
-      posts.map(async (post) => {
-        return {
-          ...post,
-          isLiked: post.likedBy.some((like) => like.userId === currentUser?.id),
-          likedBy: post.likedBy.length,
-          user: {
-            ...post.user,
-            friendshipStatus: await this.usersService.friendshipStatus(
-              post.user.username,
-              currentUser,
-            ),
-          },
-        };
-      }),
-    );
   }
 
   async feedLikedByUser(
@@ -174,23 +120,13 @@ export class DiaryPostsService {
       },
     });
 
-    return await Promise.all(
-      posts.map(async (post) => {
-        return {
-          ...post,
-          isLiked: post.likedBy.some((like) => like.userId === currentUser?.id),
-          likedBy: post.likedBy.length,
-          user: {
-            ...post.user,
-            friendshipStatus: await this.usersService.friendshipStatus(
-              post.user.username,
-              currentUser,
-            ),
-            ...(await this.usersService.friendshipCount(post.user.username)),
-          },
-        };
-      }),
-    );
+    return posts.map((post) => {
+      return {
+        ...post,
+        isLiked: post.likedBy.some((like) => like.userId === currentUser?.id),
+        likedBy: post.likedBy.length,
+      };
+    });
   }
 
   async likedBy(
@@ -242,22 +178,13 @@ export class DiaryPostsService {
       },
     });
 
-    return await Promise.all(
-      posts.map(async (post) => {
-        return {
-          ...post,
-          isLiked: post.likedBy.some((like) => like.userId === currentUser?.id),
-          likedBy: post.likedBy.length,
-          user: {
-            ...post.user,
-            friendshipStatus: await this.usersService.friendshipStatus(
-              post.user.username,
-              currentUser,
-            ),
-          },
-        };
-      }),
-    );
+    return posts.map((post) => {
+      return {
+        ...post,
+        isLiked: post.likedBy.some((like) => like.userId === currentUser?.id),
+        likedBy: post.likedBy.length,
+      };
+    });
   }
 
   async delete(id: number, currentUser: UserFromJwt): Promise<void> {
@@ -307,21 +234,12 @@ export class DiaryPostsService {
       },
     });
 
-    return await Promise.all(
-      posts.map(async (post) => {
-        return {
-          ...post,
-          isLiked: post.likedBy.some((like) => like.userId === currentUser?.id),
-          likedBy: post.likedBy.length,
-          user: {
-            ...post.user,
-            friendshipStatus: await this.usersService.friendshipStatus(
-              post.user.username,
-              currentUser,
-            ),
-          },
-        };
-      }),
-    );
+    return posts.map((post) => {
+      return {
+        ...post,
+        isLiked: post.likedBy.some((like) => like.userId === currentUser?.id),
+        likedBy: post.likedBy.length,
+      };
+    });
   }
 }

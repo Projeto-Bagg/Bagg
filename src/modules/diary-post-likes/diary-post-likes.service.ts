@@ -1,22 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateDiaryPostLikeDto } from './dtos/create-diary-post-like.dto';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
-import { DeleteDiaryPostLikeDto } from 'src/modules/diary-post-likes/dtos/delete-diary-post-like';
 
 @Injectable()
 export class DiaryPostLikesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async like(
-    createDiaryPostLikeDto: CreateDiaryPostLikeDto,
-    currentUser: UserFromJwt,
-  ): Promise<void> {
+  async like(id: number, currentUser: UserFromJwt): Promise<void> {
     await this.prisma.diaryPostLike.create({
       data: {
         diaryPost: {
           connect: {
-            id: createDiaryPostLikeDto.postId,
+            id,
           },
         },
         user: {
@@ -28,14 +23,11 @@ export class DiaryPostLikesService {
     });
   }
 
-  async unlike(
-    deleteDiaryPostLikeDto: DeleteDiaryPostLikeDto,
-    currentUser: UserFromJwt,
-  ): Promise<void> {
+  async unlike(id: number, currentUser: UserFromJwt): Promise<void> {
     await this.prisma.diaryPostLike.delete({
       where: {
         userId_diaryPostId: {
-          diaryPostId: deleteDiaryPostLikeDto.postId,
+          diaryPostId: id,
           userId: currentUser.id,
         },
       },

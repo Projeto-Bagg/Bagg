@@ -32,6 +32,9 @@ export class TipEntity implements Tip {
   @ApiProperty()
   isLiked: boolean;
 
+  @ApiProperty()
+  commentsAmount: number;
+
   @ApiProperty({ type: CityRegionCountryDto })
   city: CityRegionCountryDto;
 

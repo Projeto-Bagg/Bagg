@@ -10,6 +10,7 @@ import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { MediaService } from '../media/media.service';
 import { UserClientDto } from 'src/modules/users/dtos/user-client.dto';
 import { UsersService } from 'src/modules/users/users.service';
+import { TipCommentsService } from 'src/modules/tip-comments/tip-comments.service';
 
 @Injectable()
 export class TipsService {
@@ -17,6 +18,7 @@ export class TipsService {
     private readonly prisma: PrismaService,
     private readonly mediaService: MediaService,
     private readonly usersService: UsersService,
+    private readonly tipCommentsService: TipCommentsService,
   ) {}
 
   async create(
@@ -63,6 +65,7 @@ export class TipsService {
       ...tip,
       isLiked: false,
       likedBy: 0,
+      commentsAmount: 0,
       tipMedias,
     };
   }
@@ -90,10 +93,15 @@ export class TipsService {
       throw new NotFoundException();
     }
 
+    const commentsAmount = await this.tipCommentsService.getTipCommentsAmount(
+      tip.id,
+    );
+
     return {
       ...tip,
       isLiked: tip.likedBy.some((like) => like.userId === currentUser?.id),
       likedBy: tip.likedBy.length,
+      commentsAmount,
     };
   }
 
@@ -115,6 +123,9 @@ export class TipsService {
       skip: index,
       take: count,
       where: { cityId: { in: cities } },
+      orderBy: {
+        createdAt: 'desc',
+      },
       include: {
         user: true,
         tipMedias: true,
@@ -131,13 +142,19 @@ export class TipsService {
       },
     });
 
-    return tips.map((tip) => {
-      return {
-        ...tip,
-        isLiked: tip.likedBy.some((like) => like.userId === currentUser?.id),
-        likedBy: tip.likedBy.length,
-      };
-    });
+    return await Promise.all(
+      tips.map(async (tip) => {
+        const commentsAmount =
+          await this.tipCommentsService.getTipCommentsAmount(tip.id);
+
+        return {
+          ...tip,
+          isLiked: tip.likedBy.some((like) => like.userId === currentUser?.id),
+          likedBy: tip.likedBy.length,
+          commentsAmount,
+        };
+      }),
+    );
   }
 
   async likedBy(

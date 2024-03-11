@@ -30,6 +30,17 @@ export class TipCommentsService {
       include: {
         user: true,
       },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
+  getTipCommentsAmount(tipId: number): Promise<number> {
+    return this.prisma.tipComment.count({
+      where: {
+        tipId,
+      },
     });
   }
 

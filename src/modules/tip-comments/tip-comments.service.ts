@@ -1,32 +1,64 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateTipCommentDto } from './dtos/create-tip-comment.dto';
-import { UpdateTipCommentDto } from './dtos/update-tip-comment.dto';
+import { TipCommentEntity } from './entities/tip-comment.entity';
+import { UserFromJwt } from '../auth/models/UserFromJwt';
 
 @Injectable()
 export class TipCommentsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  create(createTipCommentDto: CreateTipCommentDto) {
-    return this.prisma.tipComment.create({ data: createTipCommentDto });
-  }
-
-  findAll() {
-    return this.prisma.tipComment.findMany();
-  }
-
-  findOne(id: number) {
-    return this.prisma.tipComment.findUnique({ where: { id: id } });
-  }
-
-  update(id: number, updateTipCommentDto: UpdateTipCommentDto) {
-    return this.prisma.tipComment.update({
-      data: updateTipCommentDto,
-      where: { id: id },
+  async create(
+    createTipCommentDto: CreateTipCommentDto,
+    currentUser: UserFromJwt,
+  ): Promise<TipCommentEntity> {
+    return await this.prisma.tipComment.create({
+      data: { ...createTipCommentDto, userId: currentUser.id },
+      include: {
+        user: true,
+      },
     });
   }
 
-  remove(id: number) {
+  findByTip(tipId: number): Promise<TipCommentEntity[]> {
+    return this.prisma.tipComment.findMany({
+      where: { tipId },
+      include: {
+        user: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
+  getTipCommentsAmount(tipId: number): Promise<number> {
+    return this.prisma.tipComment.count({
+      where: {
+        tipId,
+      },
+    });
+  }
+
+  async delete(id: number, currentUser: UserFromJwt) {
+    const comment = await this.prisma.tipComment.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!comment) {
+      throw new NotFoundException();
+    }
+
+    if (comment.userId !== currentUser.id) {
+      throw new UnauthorizedException();
+    }
+
     return this.prisma.tipComment.delete({ where: { id: id } });
   }
 }

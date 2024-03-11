@@ -1,26 +1,32 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateTipLikeDto } from './dtos/create-tip-like.dto';
-import { UpdateTipLikeDto } from './dtos/update-tip-like.dto';
+import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 
 @Injectable()
 export class TipLikesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  create(createTipLikeDto: CreateTipLikeDto) {
+  create(tipId: number, currentUser: UserFromJwt) {
     return this.prisma.tipLike.create({
       data: {
         user: {
-          connect: { id: createTipLikeDto.userId },
+          connect: { id: currentUser.id },
         },
         tip: {
-          connect: { id: createTipLikeDto.tipId },
+          connect: { id: tipId },
         },
       },
     });
   }
 
-  remove(id: number) {
-    return this.prisma.tipLike.delete({ where: { id: id } });
+  remove(tipId: number, currentUser: UserFromJwt) {
+    return this.prisma.tipLike.delete({
+      where: {
+        userId_tipId: {
+          tipId,
+          userId: currentUser.id,
+        },
+      },
+    });
   }
 }

@@ -48,27 +48,7 @@ export class DiaryPostsController {
       currentUser,
     );
 
-    return { ...post, user: new UserClientDto(post.user) };
-  }
-
-  @Get('user/feed')
-  @IsPublic()
-  @ApiBearerAuth()
-  @ApiResponse({ type: DiaryPostEntity, isArray: true })
-  @UseInterceptors(ClassSerializerInterceptor)
-  async feed(
-    @CurrentUser() currentUser: UserFromJwt,
-  ): Promise<DiaryPostEntity[]> {
-    const posts = await this.diaryPostsService.feedFollowedByCurrentUser(
-      currentUser,
-    );
-
-    return posts.map((post) => {
-      return {
-        ...post,
-        user: new UserClientDto(post.user),
-      };
-    });
+    return new DiaryPostEntity(post);
   }
 
   @Get('/user/:username')
@@ -86,10 +66,7 @@ export class DiaryPostsController {
     );
 
     return posts.map((post) => {
-      return {
-        ...post,
-        user: new UserClientDto(post.user),
-      };
+      return new DiaryPostEntity(post);
     });
   }
 
@@ -108,10 +85,7 @@ export class DiaryPostsController {
     );
 
     return posts.map((post) => {
-      return {
-        ...post,
-        user: new UserClientDto(post.user),
-      };
+      return new DiaryPostEntity(post);
     });
   }
 
@@ -147,7 +121,7 @@ export class DiaryPostsController {
     @Param('id') id: number,
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<void> {
-    return this.diaryPostLikeService.like({ postId: id }, currentUser);
+    return this.diaryPostLikeService.like(id, currentUser);
   }
 
   @Post(':id/unlike')
@@ -156,7 +130,7 @@ export class DiaryPostsController {
     @Param('id') id: number,
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<void> {
-    return this.diaryPostLikeService.unlike({ postId: id }, currentUser);
+    return this.diaryPostLikeService.unlike(id, currentUser);
   }
 
   @Delete(':id')

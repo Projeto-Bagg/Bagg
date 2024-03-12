@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { FriendshipStatusDto } from 'src/modules/users/dtos/friendship-status.dto';
+import { FriendshipStatusDto } from 'src/modules/follows/dtos/friendship-status.dto';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
 
 export class UserClientDto extends UserEntity {

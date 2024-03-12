@@ -30,12 +30,10 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { MediaService } from '../media/media.service';
 import { IsPublic } from 'src/modules/auth/decorators/is-public.decorator';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
-import { FriendshipStatusDto } from 'src/modules/users/dtos/friendship-status.dto';
-import { CountrySearchDto } from 'src/modules/countries/dtos/country-search.dto';
 import { UserFullInfoDto } from 'src/modules/users/dtos/user-full-info.dto';
-import { UserWithFollowersFollowingDto } from 'src/modules/users/dtos/user-with-followers-following.dto';
 import { CityVisitsService } from 'src/modules/city-visits/city-visits.service';
 import { UserCityVisitDto } from 'src/modules/city-visits/dtos/user-city-visit.dto';
+import { UserSearchDto } from 'src/modules/users/dtos/user-search.dto';
 
 @Controller('users')
 @ApiTags('users')
@@ -120,14 +118,14 @@ export class UsersController {
   @IsPublic()
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiResponse({ type: UserEntity, isArray: true })
-  async search(@Query() query: CountrySearchDto): Promise<UserEntity[]> {
+  async search(@Query() query: UserSearchDto): Promise<UserEntity[]> {
     const users = await this.usersService.search(query);
 
     return users.map((user) => new UserEntity(user));
   }
 
   @Get(':username')
-  @ApiResponse({ type: UserClientDto })
+  @ApiResponse({ type: UserFullInfoDto })
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiBearerAuth()
   @IsPublic()
@@ -166,12 +164,10 @@ export class UsersController {
   async userFollowing(
     @Param('username') username: string,
     @CurrentUser() currentUser: UserFromJwt,
-  ): Promise<UserWithFollowersFollowingDto[]> {
+  ): Promise<UserClientDto[]> {
     const followings = await this.usersService.following(username, currentUser);
 
-    return followings.map(
-      (following) => new UserWithFollowersFollowingDto(following),
-    );
+    return followings.map((following) => new UserClientDto(following));
   }
 
   @Get(':username/visits')
@@ -183,35 +179,7 @@ export class UsersController {
     return this.cityVisitsService.getVisitsByUsername(username);
   }
 
-  @Post('following/:username')
-  @ApiBearerAuth()
-  follow(
-    @Param('username') username: string,
-    @CurrentUser() currentUser: UserFromJwt,
-  ): Promise<void> {
-    return this.usersService.follow(username, currentUser);
-  }
-
-  @Delete('following/:username')
-  @ApiBearerAuth()
-  unfollow(
-    @Param('username') username: string,
-    @CurrentUser() currentUser: UserFromJwt,
-  ): Promise<void> {
-    return this.usersService.unfollow(username, currentUser);
-  }
-
-  @Get('friendshipStatus/:username')
-  @ApiBearerAuth()
-  @ApiResponse({ type: FriendshipStatusDto })
-  friendshipStatus(
-    @Param('username') username: string,
-    @CurrentUser() currentUser: UserFromJwt,
-  ): Promise<FriendshipStatusDto> {
-    return this.usersService.friendshipStatus(username, currentUser);
-  }
-
-  @Delete('profilePic')
+  @Delete('profile-pic')
   @ApiBearerAuth()
   async deleteProfilePic(
     @CurrentUser() currentUser: UserFromJwt,

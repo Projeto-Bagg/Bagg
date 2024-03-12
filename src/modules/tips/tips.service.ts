@@ -9,16 +9,16 @@ import { TipEntity } from 'src/modules/tips/entities/tip.entity';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { MediaService } from '../media/media.service';
 import { UserClientDto } from 'src/modules/users/dtos/user-client.dto';
-import { UsersService } from 'src/modules/users/users.service';
 import { TipCommentsService } from 'src/modules/tip-comments/tip-comments.service';
+import { FollowsService } from 'src/modules/follows/follows.service';
 
 @Injectable()
 export class TipsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly mediaService: MediaService,
-    private readonly usersService: UsersService,
     private readonly tipCommentsService: TipCommentsService,
+    private readonly followsService: FollowsService,
   ) {}
 
   async create(
@@ -105,9 +105,57 @@ export class TipsService {
     };
   }
 
-  async findByUserCityInterest(
-    count = 10,
+  async findByUsername(
+    username: string,
     page = 1,
+    count = 10,
+    currentUser?: UserFromJwt,
+  ): Promise<TipEntity[]> {
+    const posts = await this.prisma.tip.findMany({
+      where: {
+        user: {
+          username,
+        },
+      },
+      skip: count * (page - 1),
+      take: count,
+      include: {
+        user: true,
+        tipMedias: true,
+        likedBy: true,
+        city: {
+          include: {
+            region: {
+              include: {
+                country: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return await Promise.all(
+      posts.map(async (post) => {
+        const commentsAmount =
+          await this.tipCommentsService.getTipCommentsAmount(post.id);
+
+        return {
+          ...post,
+          isLiked: post.likedBy.some((like) => like.userId === currentUser?.id),
+          likedBy: post.likedBy.length,
+          commentsAmount,
+        };
+      }),
+    );
+  }
+
+  async findByUserCityInterest(
+    page = 1,
+    count = 10,
     currentUser: UserFromJwt,
   ): Promise<TipEntity[]> {
     const cities = (
@@ -117,15 +165,13 @@ export class TipsService {
       })
     ).map((city) => city.cityId);
 
-    const index = count * (page - 1);
-
     const tips = await this.prisma.tip.findMany({
-      skip: index,
-      take: count,
       where: { cityId: { in: cities } },
       orderBy: {
         createdAt: 'desc',
       },
+      skip: count * (page - 1),
+      take: count,
       include: {
         user: true,
         tipMedias: true,
@@ -175,8 +221,7 @@ export class TipsService {
       users.map(async (user) => {
         return {
           ...user,
-          ...(await this.usersService.friendshipCount(user.username)),
-          friendshipStatus: await this.usersService.friendshipStatus(
+          friendshipStatus: await this.followsService.friendshipStatus(
             user.username,
             currentUser,
           ),

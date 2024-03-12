@@ -20,21 +20,25 @@ import { TipMediasModule } from './modules/tip-medias/tip-medias.module';
 import { DiaryPostMediasModule } from './modules/diary-post-medias/diary-post-medias.module';
 import { TripDiariesModule } from './modules/trip-diaries/trip-diaries.module';
 import { MediaModule } from './modules/media/media.module';
+import { DiaryPostLikesModule } from 'src/modules/diary-post-likes/diary-post-likes.module';
+import { FollowsModule } from 'src/modules/follows/follows.module';
 
 @Module({
   imports: [
     AuthModule,
     UsersModule,
-    DiaryPostsModule,
-    DiaryPostMediasModule,
+    FollowsModule,
     TripDiariesModule,
+    DiaryPostsModule,
+    DiaryPostLikesModule,
+    DiaryPostMediasModule,
     TipsModule,
     TipLikesModule,
     TipCommentsModule,
     TipMediasModule,
-    CityInterestsModule,
-    CityVisitsModule,
     CitiesModule,
+    CityVisitsModule,
+    CityInterestsModule,
     RegionsModule,
     CountriesModule,
     PrismaModule,

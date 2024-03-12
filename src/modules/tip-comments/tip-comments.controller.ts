@@ -24,20 +24,26 @@ export class TipCommentsController {
   @Get(':tipId')
   @UseInterceptors(ClassSerializerInterceptor)
   @IsPublic()
-  @ApiResponse({ type: TipCommentEntity })
+  @ApiResponse({ type: TipCommentEntity, isArray: true })
   async findByTip(@Param('tipId') tipId: number): Promise<TipCommentEntity[]> {
-    return this.tipCommentsService.findByTip(tipId);
+    const comments = await this.tipCommentsService.findByTip(tipId);
+
+    return comments.map((comment) => new TipCommentEntity(comment));
   }
 
   @Post()
   @UseInterceptors(ClassSerializerInterceptor)
-  @IsPublic()
   @ApiResponse({ type: TipCommentEntity })
   async create(
     @Body() createTipCommentDto: CreateTipCommentDto,
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<TipCommentEntity> {
-    return this.tipCommentsService.create(createTipCommentDto, currentUser);
+    const comment = await this.tipCommentsService.create(
+      createTipCommentDto,
+      currentUser,
+    );
+
+    return new TipCommentEntity(comment);
   }
 
   @Delete(':id')
@@ -45,7 +51,7 @@ export class TipCommentsController {
   async delete(
     @Param('id') id: number,
     @CurrentUser() CurrentUser: UserFromJwt,
-  ) {
+  ): Promise<void> {
     return this.tipCommentsService.delete(id, CurrentUser);
   }
 }

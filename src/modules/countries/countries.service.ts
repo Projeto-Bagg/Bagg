@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { CountryInterestRankingDto } from 'src/modules/countries/dtos/country-interest-ranking.dto';
+import { CountryRatingRankingDto } from 'src/modules/countries/dtos/country-rating-ranking.dto';
 import { CountrySearchDto } from 'src/modules/countries/dtos/country-search.dto';
-import { CountryInterestRankingEntity } from 'src/modules/countries/entities/country-interest-ranking.entity';
-import { CountryRatingRankingEntity } from 'src/modules/countries/entities/country-rating-ranking.entity';
-import { CountryVisitRankingEntity } from 'src/modules/countries/entities/country-visit-ranking.entity';
+import { CountryVisitRankingDto } from 'src/modules/countries/dtos/country-visit-ranking.dto';
 import { CountryEntity } from 'src/modules/countries/entities/country.entity';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -23,9 +23,9 @@ export class CountriesService {
   }
 
   async search(query: CountrySearchDto): Promise<CountryEntity[]> {
-    return (await this.prisma.$queryRaw`
+    return await this.prisma.$queryRaw<CountryEntity[]>`
       DECLARE @page INT = ${query.page || 1};
-      DECLARE @count INT = ${query.count};
+      DECLARE @count INT = ${query.count || 10};
 
       SELECT *
       FROM [dbo].[Country] as c
@@ -33,11 +33,14 @@ export class CountriesService {
       ORDER BY c.id DESC
       OFFSET @count * (@page - 1) ROWS
       FETCH NEXT @count ROWS ONLY
-    `) as CountryEntity[];
+    `;
   }
 
-  async interestRanking(page: number, count: number) {
-    return (await this.prisma.$queryRaw`
+  async interestRanking(
+    page = 1,
+    count = 10,
+  ): Promise<CountryInterestRankingDto[]> {
+    return await this.prisma.$queryRaw<CountryInterestRankingDto[]>`
      SELECT c.name, c.iso2,
         COUNT(ci.userId) AS totalInterest
       FROM [dbo].[Country] c
@@ -48,11 +51,11 @@ export class CountriesService {
       ORDER BY totalInterest DESC
       OFFSET ${count * (page - 1)} ROWS
       FETCH NEXT ${+count} ROWS ONLY
-    `) as CountryInterestRankingEntity[];
+    `;
   }
 
-  async visitRanking(page: number, count: number) {
-    return (await this.prisma.$queryRaw`
+  async visitRanking(page = 1, count = 10): Promise<CountryVisitRankingDto[]> {
+    return await this.prisma.$queryRaw<CountryVisitRankingDto[]>`
      SELECT c.name, c.iso2,
         COUNT(ci.userId) AS totalVisit
       FROM [dbo].[Country] c
@@ -63,11 +66,14 @@ export class CountriesService {
       ORDER BY totalVisit DESC
       OFFSET ${count * (page - 1)} ROWS
       FETCH NEXT ${+count} ROWS ONLY
-    `) as CountryVisitRankingEntity[];
+    `;
   }
 
-  async ratingRanking(page: number, count: number) {
-    return (await this.prisma.$queryRaw`
+  async ratingRanking(
+    page = 1,
+    count = 10,
+  ): Promise<CountryRatingRankingDto[]> {
+    return await this.prisma.$queryRaw<CountryRatingRankingDto[]>`
       SELECT c.name, c.iso2, ROUND(AVG(CAST(ci.rating AS FLOAT)), 1) AS averageRating
       FROM [dbo].[Country] c
       JOIN [dbo].[Region] r ON c.id = r.countryId
@@ -77,6 +83,6 @@ export class CountriesService {
       ORDER BY averageRating DESC
       OFFSET ${count * (page - 1)} ROWS
       FETCH NEXT ${+count} ROWS ONLY
-    `) as CountryRatingRankingEntity[];
+    `;
   }
 }

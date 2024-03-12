@@ -1,32 +1,17 @@
-import {
-  Controller,
-  Post,
-  Param,
-  Delete,
-  Get,
-  ClassSerializerInterceptor,
-  UseInterceptors,
-} from '@nestjs/common';
+import { Controller, Post, Param, Delete } from '@nestjs/common';
 import { CityInterestsService } from './city-interests.service';
 import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from 'src/modules/auth/decorators/current-user.decorator';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { CityInterestEntity } from 'src/modules/city-interests/entities/city-interest.entity';
 
-@Controller('cityInterests')
+@Controller('city-interests')
 @ApiTags('city interests')
 export class CityInterestsController {
   constructor(private readonly cityInterestsService: CityInterestsService) {}
 
-  @Get()
-  @UseInterceptors(ClassSerializerInterceptor)
-  @ApiBearerAuth()
-  @ApiResponse({ type: CityInterestEntity, isArray: true })
-  findAll() {
-    return this.cityInterestsService.findMany();
-  }
-
   @Post(':cityId')
+  @ApiBearerAuth()
   @ApiResponse({ type: CityInterestEntity })
   create(
     @Param('cityId') cityId: number,
@@ -36,11 +21,11 @@ export class CityInterestsController {
   }
 
   @Delete(':cityId')
-  @ApiResponse({ type: CityInterestEntity })
+  @ApiBearerAuth()
   delete(
     @Param('cityId') cityId: number,
     @CurrentUser() currentUser: UserFromJwt,
-  ): Promise<CityInterestEntity> {
+  ): Promise<void> {
     return this.cityInterestsService.remove(cityId, currentUser);
   }
 }

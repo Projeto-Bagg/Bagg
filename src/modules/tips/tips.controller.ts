@@ -19,12 +19,12 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { TipEntity } from './entities/tip.entity';
-import { FindByUserCityInterestDto } from 'src/modules/tips/dtos/find-by-user-city-interest.dto';
 import { CurrentUser } from 'src/modules/auth/decorators/current-user.decorator';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { IsPublic } from 'src/modules/auth/decorators/is-public.decorator';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { UserClientDto } from 'src/modules/users/dtos/user-client.dto';
+import { TipsFeedDto } from 'src/modules/tips/dtos/tips-feed.dto';
 
 @Controller('tips')
 @ApiTags('tips')
@@ -36,6 +36,7 @@ export class TipsController {
   @UseInterceptors(FilesInterceptor('medias'))
   @ApiConsumes('multipart/form-data')
   @ApiBearerAuth()
+  @ApiResponse({ type: TipEntity })
   async create(
     @Body() createTipDto: CreateTipDto,
     @CurrentUser() currentUser: UserFromJwt,
@@ -55,12 +56,12 @@ export class TipsController {
   @ApiBearerAuth()
   @ApiResponse({ type: TipEntity, isArray: true })
   async findByUserCityInterest(
-    @Query() query: FindByUserCityInterestDto,
+    @Query() query: TipsFeedDto,
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<TipEntity[]> {
     const tips = await this.tipsService.findByUserCityInterest(
-      query.count,
       query.page,
+      query.count,
       currentUser,
     );
 
@@ -79,6 +80,28 @@ export class TipsController {
     const users = await this.tipsService.likedBy(id, currentUser);
 
     return users.map((user) => new UserClientDto(user));
+  }
+
+  @Get('/user/:username')
+  @IsPublic()
+  @ApiResponse({ type: TipEntity, isArray: true })
+  @ApiBearerAuth()
+  @UseInterceptors(ClassSerializerInterceptor)
+  async getByUser(
+    @Param('username') username: string,
+    @Query() query: TipsFeedDto,
+    @CurrentUser() currentUser: UserFromJwt,
+  ): Promise<TipEntity[]> {
+    const posts = await this.tipsService.findByUsername(
+      username,
+      query.page,
+      query.count,
+      currentUser,
+    );
+
+    return posts.map((post) => {
+      return new TipEntity(post);
+    });
   }
 
   @Get(':id')

@@ -19,8 +19,4 @@ export class CountryEntity implements Country {
 
   @ApiProperty()
   longitude: number;
-
-  constructor(partial: CountryEntity) {
-    Object.assign(this, partial);
-  }
 }

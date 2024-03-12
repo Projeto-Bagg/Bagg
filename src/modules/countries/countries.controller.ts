@@ -12,9 +12,9 @@ import { IsPublic } from 'src/modules/auth/decorators/is-public.decorator';
 import { CountryRankingDto } from 'src/modules/countries/dtos/country-ranking.dto';
 import { CountryEntity } from 'src/modules/countries/entities/country.entity';
 import { CountrySearchDto } from 'src/modules/countries/dtos/country-search.dto';
-import { CountryVisitRankingEntity } from 'src/modules/countries/entities/country-visit-ranking.entity';
-import { CountryInterestRankingEntity } from 'src/modules/countries/entities/country-interest-ranking.entity';
-import { CountryRatingRankingEntity } from 'src/modules/countries/entities/country-rating-ranking.entity';
+import { CountryInterestRankingDto } from 'src/modules/countries/dtos/country-interest-ranking.dto';
+import { CountryVisitRankingDto } from 'src/modules/countries/dtos/country-visit-ranking.dto';
+import { CountryRatingRankingDto } from 'src/modules/countries/dtos/country-rating-ranking.dto';
 
 @Controller('countries')
 @ApiTags('countries')
@@ -26,35 +26,33 @@ export class CountriesController {
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiResponse({ type: CountryEntity, isArray: true })
   async search(@Query() query: CountrySearchDto): Promise<CountryEntity[]> {
-    const countries = await this.countriesService.search(query);
-
-    return countries.map((country) => new CountryEntity(country));
+    return await this.countriesService.search(query);
   }
 
   @Get('ranking/interest')
-  @ApiResponse({ type: CountryInterestRankingEntity, isArray: true })
+  @ApiResponse({ type: CountryInterestRankingDto, isArray: true })
   @IsPublic()
   interestRanking(
     @Query() query: CountryRankingDto,
-  ): Promise<CountryInterestRankingEntity[]> {
+  ): Promise<CountryInterestRankingDto[]> {
     return this.countriesService.interestRanking(query.page, query.count);
   }
 
   @Get('ranking/visit')
-  @ApiResponse({ type: CountryVisitRankingEntity, isArray: true })
+  @ApiResponse({ type: CountryVisitRankingDto, isArray: true })
   @IsPublic()
   visitRanking(
     @Query() query: CountryRankingDto,
-  ): Promise<CountryVisitRankingEntity[]> {
+  ): Promise<CountryVisitRankingDto[]> {
     return this.countriesService.visitRanking(query.page, query.count);
   }
 
   @Get('ranking/rating')
-  @ApiResponse({ type: CountryVisitRankingEntity, isArray: true })
+  @ApiResponse({ type: CountryRatingRankingDto, isArray: true })
   @IsPublic()
   ratingRanking(
     @Query() query: CountryRankingDto,
-  ): Promise<CountryRatingRankingEntity[]> {
+  ): Promise<CountryRatingRankingDto[]> {
     return this.countriesService.ratingRanking(query.page, query.count);
   }
 

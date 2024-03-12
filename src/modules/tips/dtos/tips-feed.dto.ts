@@ -1,12 +1,12 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
-export class FindByUserCityInterestDto {
-  @ApiPropertyOptional()
+export class TipsFeedDto {
+  @ApiPropertyOptional({ default: 10 })
   @Type(() => Number)
   count?: number;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ default: 1 })
   @Type(() => Number)
   page?: number;
 }

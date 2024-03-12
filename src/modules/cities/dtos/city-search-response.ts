@@ -1,16 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { CityEntity } from 'src/modules/cities/entities/city.entity';
 
-export class CityRatingRankingDto extends CityEntity {
-  @ApiProperty()
-  iso2: string;
-
+export class CitySearchResponseDto extends CityEntity {
   @ApiProperty()
   region: string;
 
   @ApiProperty()
-  country: string;
+  iso2: string;
 
   @ApiProperty()
-  averageRanking: number;
+  totalInterest: number;
+
+  @ApiProperty()
+  country: string;
 }

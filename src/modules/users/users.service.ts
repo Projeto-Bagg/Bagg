@@ -15,12 +15,10 @@ import { DeleteUserDto } from './dtos/delete-user.dto';
 import nodemailer from 'nodemailer';
 import { JwtService } from '@nestjs/jwt';
 import { UserClientDto } from './dtos/user-client.dto';
-import { FriendshipStatusDto } from 'src/modules/users/dtos/friendship-status.dto';
-import { FriendshipCountDto } from 'src/modules/users/dtos/friendship-count.dto';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { UserSearchDto } from 'src/modules/users/dtos/user-search.dto';
 import { UserFullInfoDto } from 'src/modules/users/dtos/user-full-info.dto';
-import { UserWithFollowersFollowingDto } from 'src/modules/users/dtos/user-with-followers-following.dto';
+import { FollowsService } from 'src/modules/follows/follows.service';
 
 interface JwtPayload {
   email: string;
@@ -31,6 +29,7 @@ export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
+    private readonly followsService: FollowsService,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<void> {
@@ -47,13 +46,13 @@ export class UsersService {
         ...(!!usernameAlreadyExist && {
           username: {
             description: 'Username not available',
-            code: 'usernameNotAvailable',
+            code: 'username-not-available',
           },
         }),
         ...(!!emailAlreadyExist && {
           email: {
             description: 'Email not available',
-            code: 'emailNotAvailable',
+            code: 'email-not-available',
           },
         }),
       });
@@ -112,15 +111,18 @@ export class UsersService {
 
     return {
       ...user,
-      ...(await this.friendshipCount(user.username)),
-      friendshipStatus: await this.friendshipStatus(user.username, currentUser),
+      ...(await this.followsService.friendshipCount(user.username)),
+      friendshipStatus: await this.followsService.friendshipStatus(
+        user.username,
+        currentUser,
+      ),
     };
   }
 
   async search(query: UserSearchDto): Promise<UserEntity[]> {
-    return (await this.prisma.$queryRaw`
+    return await this.prisma.$queryRaw<UserEntity[]>`
       DECLARE @page INT = ${query.page || 1};
-      DECLARE @count INT = ${query.count};
+      DECLARE @count INT = ${query.count || 10};
 
       SELECT *
       FROM [dbo].[User] as u
@@ -129,13 +131,13 @@ export class UsersService {
       ORDER BY u.id DESC
       OFFSET @count * (@page - 1) ROWS
       FETCH NEXT @count ROWS ONLY
-    `) as UserEntity[];
+    `;
   }
 
   async update(
     updateUserDto: UpdateUserDto,
     currentUser: UserFromJwt,
-  ): Promise<UserClientDto> {
+  ): Promise<UserFullInfoDto> {
     const data: Prisma.UserUpdateInput = {
       ...updateUserDto,
       password: updateUserDto.password
@@ -147,19 +149,30 @@ export class UsersService {
       .update({
         data,
         where: { id: currentUser.id },
+        include: {
+          city: {
+            include: {
+              region: {
+                include: {
+                  country: true,
+                },
+              },
+            },
+          },
+        },
       })
       .catch(() => {
         throw new ConflictException({
           username: {
             description: 'Username not available',
-            code: 'usernameNotAvailable',
+            code: 'username-not-available',
           },
         });
       });
 
     return {
       ...user,
-      ...(await this.friendshipCount(currentUser.username)),
+      ...(await this.followsService.friendshipCount(currentUser.username)),
       friendshipStatus: {
         isFollowing: false,
         followedBy: false,
@@ -262,95 +275,10 @@ export class UsersService {
     return true;
   }
 
-  async follow(
-    followingUsername: string,
-    currentUser: UserFromJwt,
-  ): Promise<void> {
-    await this.prisma.follow.create({
-      data: {
-        following: {
-          connect: {
-            username: followingUsername,
-          },
-        },
-        follower: {
-          connect: {
-            username: currentUser.username,
-          },
-        },
-      },
-    });
-  }
-
-  async unfollow(
-    followingUsername: string,
-    currentUser: UserFromJwt,
-  ): Promise<void> {
-    await this.prisma.follow.deleteMany({
-      where: {
-        following: {
-          username: followingUsername,
-        },
-        follower: {
-          username: currentUser.username,
-        },
-      },
-    });
-  }
-
-  async friendshipStatus(
-    followingUsername: string,
-    currentUser?: UserFromJwt,
-  ): Promise<FriendshipStatusDto> {
-    if (!currentUser) {
-      return {
-        followedBy: false,
-        isFollowing: false,
-      };
-    }
-
-    const isFollowing = !!(await this.prisma.follow.count({
-      where: {
-        followerId: currentUser.id,
-        following: {
-          username: followingUsername,
-        },
-      },
-    }));
-
-    const followedBy = !!(await this.prisma.follow.count({
-      where: {
-        followingId: currentUser.id,
-        follower: {
-          username: followingUsername,
-        },
-      },
-    }));
-
-    return {
-      isFollowing,
-      followedBy,
-    };
-  }
-
-  async friendshipCount(username: string): Promise<FriendshipCountDto> {
-    const followers = await this.prisma.follow.count({
-      where: { following: { username } },
-    });
-    const following = await this.prisma.follow.count({
-      where: { follower: { username } },
-    });
-
-    return {
-      followers,
-      following,
-    };
-  }
-
   async following(
     username: string,
     currentUser?: UserFromJwt,
-  ): Promise<UserWithFollowersFollowingDto[]> {
+  ): Promise<UserClientDto[]> {
     const users = await this.prisma.user.findMany({
       where: {
         followers: {
@@ -367,11 +295,10 @@ export class UsersService {
       users.map(async (user) => {
         return {
           ...user,
-          friendshipStatus: await this.friendshipStatus(
+          friendshipStatus: await this.followsService.friendshipStatus(
             user.username,
             currentUser,
           ),
-          ...(await this.friendshipCount(user.username)),
         };
       }),
     );
@@ -397,11 +324,10 @@ export class UsersService {
       users.map(async (user) => {
         return {
           ...user,
-          friendshipStatus: await this.friendshipStatus(
+          friendshipStatus: await this.followsService.friendshipStatus(
             user.username,
             currentUser,
           ),
-          ...(await this.friendshipCount(user.username)),
         };
       }),
     );

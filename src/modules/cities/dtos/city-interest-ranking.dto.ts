@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { RegionEntity } from 'src/modules/regions/entities/region.entity';
+import { RegionCountryDto } from 'src/modules/regions/dtos/region-country.dto';
 
 export class CityInterestRankingDto {
   @ApiProperty()
@@ -11,6 +11,6 @@ export class CityInterestRankingDto {
   @ApiProperty()
   totalInterest: number;
 
-  @ApiProperty({ type: RegionEntity })
-  region: RegionEntity;
+  @ApiProperty({ type: RegionCountryDto })
+  region: RegionCountryDto;
 }

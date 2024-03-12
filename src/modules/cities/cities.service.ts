@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { CitySearchDto } from 'src/modules/cities/dtos/city-search.dto';
-import { CityClientEntity } from 'src/modules/cities/entities/city-client.entity';
 import { CityInterestRankingDto } from 'src/modules/cities/dtos/city-interest-ranking.dto';
 import { CityRatingRankingDto } from 'src/modules/cities/dtos/city-rating-ranking.dto';
 import { CityVisitRankingDto } from 'src/modules/cities/dtos/city-visit-ranking.dto';
@@ -11,6 +10,8 @@ import { CityVisitsService } from 'src/modules/city-visits/city-visits.service';
 import { MediaEntity } from 'src/modules/media/entities/media.entity';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CityNearDto } from 'src/modules/cities/dtos/city-near.dto';
+import { CitySearchResponseDto } from 'src/modules/cities/dtos/city-search-response';
+import { CityPageDto } from 'src/modules/cities/dtos/city-page.dto';
 
 @Injectable()
 export class CitiesService {
@@ -32,10 +33,7 @@ export class CitiesService {
     });
   }
 
-  async findById(
-    id: number,
-    currentUser?: UserFromJwt,
-  ): Promise<CityClientEntity> {
+  async findById(id: number, currentUser?: UserFromJwt): Promise<CityPageDto> {
     const city = await this.prisma.city.findUnique({
       where: {
         id,
@@ -53,7 +51,7 @@ export class CitiesService {
       throw new NotFoundException();
     }
 
-    const images = (await this.prisma.$queryRaw`
+    const images = await this.prisma.$queryRaw<MediaEntity[]>`
       DECLARE @cityId INT = ${city.id}
       (SELECT m.id, m.url, m.createdAt FROM [dbo].[DiaryPostMedia] m
       JOIN [dbo].[DiaryPost] dp ON dp.id = m.diaryPostId
@@ -66,7 +64,18 @@ export class CitiesService {
       ORDER BY createdAt DESC
       OFFSET 0 ROWS
       FETCH FIRST 10 ROWS ONLY;
-    `) as MediaEntity[];
+    `;
+
+    const averageRating = await this.cityVisitsService.getAverageRatingByCityId(
+      city.id,
+    );
+
+    const visitsCount = await this.cityVisitsService.getVisitsCountByCityId(
+      city.id,
+    );
+
+    const interestsCount =
+      await this.cityInterestsService.getInterestsCountByCityId(city.id);
 
     if (!currentUser) {
       return {
@@ -74,6 +83,10 @@ export class CitiesService {
         isInterested: false,
         images,
         userVisit: null,
+        visits: [],
+        averageRating,
+        visitsCount,
+        interestsCount,
       };
     }
 
@@ -87,10 +100,20 @@ export class CitiesService {
       currentUser.id,
     );
 
+    const visits = await this.cityVisitsService.getVisitsByCityId(
+      city.id,
+      1,
+      5,
+    );
+
     return {
       ...city,
       isInterested,
       userVisit,
+      visits,
+      averageRating,
+      visitsCount,
+      interestsCount,
       images,
     };
   }
@@ -110,7 +133,7 @@ export class CitiesService {
       throw new NotFoundException();
     }
 
-    return (await this.prisma.$queryRaw`
+    return await this.prisma.$queryRaw<CityNearDto[]>`
       DECLARE @page INT = ${page || 1};
       DECLARE @count INT = ${count};
       DECLARE @searchLatitude FLOAT = ${city.latitude};
@@ -128,13 +151,13 @@ export class CitiesService {
       ORDER BY distance
       OFFSET @count * (@page - 1) ROWS
       FETCH NEXT @count ROWS ONLY
-    `) as CityNearDto[];
+    `;
   }
 
-  async search(query: CitySearchDto): Promise<CityEntity[]> {
-    return (await this.prisma.$queryRaw`
+  async search(query: CitySearchDto): Promise<CitySearchResponseDto[]> {
+    return await this.prisma.$queryRaw<CitySearchResponseDto[]>`
       DECLARE @page INT = ${query.page || 1};
-      DECLARE @count INT = ${query.count};
+      DECLARE @count INT = ${query.count || 5};
 
       SELECT
           c.*,
@@ -152,12 +175,12 @@ export class CitiesService {
       ORDER BY totalInterest DESC, LEN(c.name) ASC
       OFFSET @count * (@page - 1) ROWS
       FETCH NEXT @count ROWS ONLY
-    `) as CityEntity[];
+    `;
   }
 
   async interestRanking(
-    page: number,
-    count: number,
+    page = 1,
+    count = 10,
   ): Promise<CityInterestRankingDto[]> {
     const cities = await this.prisma.city.findMany({
       take: +count,
@@ -193,10 +216,7 @@ export class CitiesService {
     });
   }
 
-  async visitRanking(
-    page: number,
-    count: number,
-  ): Promise<CityVisitRankingDto[]> {
+  async visitRanking(page = 1, count = 10): Promise<CityVisitRankingDto[]> {
     const cities = await this.prisma.city.findMany({
       take: +count,
       skip: count * (page - 1),
@@ -231,8 +251,8 @@ export class CitiesService {
     });
   }
 
-  async ratingRanking(page: number, count: number) {
-    return (await this.prisma.$queryRaw`
+  async ratingRanking(page = 1, count = 10) {
+    return await this.prisma.$queryRaw<CityRatingRankingDto[]>`
       SELECT ci.*, r.name AS region, c.iso2, c.name AS country, ROUND(AVG(CAST(cv.rating AS FLOAT)), 1) AS averageRating
       FROM [dbo].[City] ci
       JOIN [dbo].[Region] r ON ci.regionId = r.id
@@ -242,6 +262,6 @@ export class CitiesService {
       ORDER BY averageRating DESC
       OFFSET ${count * (page - 1)} ROWS
       FETCH NEXT ${+count} ROWS ONLY
-    `) as CityRatingRankingDto[];
+    `;
   }
 }

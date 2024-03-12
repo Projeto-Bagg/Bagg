@@ -5,7 +5,7 @@ import { CityInterestEntity } from 'src/modules/city-interests/entities/city-int
 
 @Injectable()
 export class CityInterestsService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   create(
     cityId: number,
@@ -43,8 +43,8 @@ export class CityInterestsService {
     return !!cityInterest;
   }
 
-  remove(cityId: number, currentUser: UserFromJwt) {
-    return this.prisma.cityInterest.delete({
+  async remove(cityId: number, currentUser: UserFromJwt): Promise<void> {
+    await this.prisma.cityInterest.delete({
       where: {
         userId_cityId: {
           cityId,
@@ -52,9 +52,5 @@ export class CityInterestsService {
         },
       },
     });
-  }
-
-  findMany() {
-    return this.prisma.cityInterest.findMany();
   }
 }

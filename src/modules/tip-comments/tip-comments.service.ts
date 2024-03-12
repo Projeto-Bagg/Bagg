@@ -44,7 +44,7 @@ export class TipCommentsService {
     });
   }
 
-  async delete(id: number, currentUser: UserFromJwt) {
+  async delete(id: number, currentUser: UserFromJwt): Promise<void> {
     const comment = await this.prisma.tipComment.findUnique({
       where: {
         id,
@@ -59,6 +59,6 @@ export class TipCommentsService {
       throw new UnauthorizedException();
     }
 
-    return this.prisma.tipComment.delete({ where: { id: id } });
+    await this.prisma.tipComment.delete({ where: { id: id } });
   }
 }

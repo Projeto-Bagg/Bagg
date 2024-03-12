@@ -6,8 +6,8 @@ import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 export class TipLikesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  create(tipId: number, currentUser: UserFromJwt) {
-    return this.prisma.tipLike.create({
+  async create(tipId: number, currentUser: UserFromJwt): Promise<void> {
+    await this.prisma.tipLike.create({
       data: {
         user: {
           connect: { id: currentUser.id },
@@ -19,8 +19,8 @@ export class TipLikesService {
     });
   }
 
-  remove(tipId: number, currentUser: UserFromJwt) {
-    return this.prisma.tipLike.delete({
+  async remove(tipId: number, currentUser: UserFromJwt): Promise<void> {
+    await this.prisma.tipLike.delete({
       where: {
         userId_tipId: {
           tipId,

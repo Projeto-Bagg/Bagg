@@ -13,15 +13,14 @@ import { CurrentUser } from 'src/modules/auth/decorators/current-user.decorator'
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { CityRankingDto } from 'src/modules/cities/dtos/city-ranking.dto';
 import { CityInterestRankingDto } from 'src/modules/cities/dtos/city-interest-ranking.dto';
-import { CityEntity } from 'src/modules/cities/entities/city.entity';
 import { CitySearchDto } from 'src/modules/cities/dtos/city-search.dto';
 import { CityVisitRankingDto } from 'src/modules/cities/dtos/city-visit-ranking.dto';
 import { FindCityByIdDto } from 'src/modules/cities/dtos/find-city-by-id.dto';
 import { CityRatingRankingDto } from 'src/modules/cities/dtos/city-rating-ranking.dto';
 import { CityVisitsService } from 'src/modules/city-visits/city-visits.service';
 import { CityPageDto } from 'src/modules/cities/dtos/city-page.dto';
-import { UserEntity } from 'src/modules/users/entities/user.entity';
 import { CityInterestsService } from 'src/modules/city-interests/city-interests.service';
+import { CitySearchResponseDto } from 'src/modules/cities/dtos/city-search-response';
 
 @Controller('cities')
 @ApiTags('cities')
@@ -35,11 +34,11 @@ export class CitiesController {
   @Get('search')
   @IsPublic()
   @UseInterceptors(ClassSerializerInterceptor)
-  @ApiResponse({ type: CityEntity, isArray: true })
-  async search(@Query() query: CitySearchDto): Promise<CityEntity[]> {
-    const city = await this.citiesService.search(query);
-
-    return city.map((city) => new CityEntity(city));
+  @ApiResponse({ type: CitySearchResponseDto, isArray: true })
+  async search(
+    @Query() query: CitySearchDto,
+  ): Promise<CitySearchResponseDto[]> {
+    return await this.citiesService.search(query);
   }
 
   @Get(':id')
@@ -52,35 +51,7 @@ export class CitiesController {
   ): Promise<CityPageDto> {
     const city = await this.citiesService.findById(+param.id, currentUser);
 
-    const visits = await this.cityVisitsService.getVisitsByCityId(
-      city.id,
-      1,
-      5,
-    );
-
-    const averageRating = await this.cityVisitsService.getAverageRatingByCityId(
-      +param.id,
-    );
-
-    const visitsCount = await this.cityVisitsService.getVisitsCountByCityId(
-      city.id,
-    );
-
-    const interestsCount =
-      await this.cityInterestsService.getInterestsCountByCityId(city.id);
-
-    return new CityPageDto({
-      ...city,
-      averageRating,
-      visitsCount,
-      interestsCount,
-      visits: visits.map((visit) => {
-        return {
-          ...visit,
-          user: new UserEntity(visit.user),
-        };
-      }),
-    });
+    return new CityPageDto(city);
   }
 
   @Get('ranking/interest')

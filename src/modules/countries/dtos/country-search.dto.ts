@@ -7,6 +7,6 @@ export class CountrySearchDto {
   @ApiPropertyOptional()
   page?: number;
 
-  @ApiProperty()
-  count: number;
+  @ApiPropertyOptional()
+  count?: number;
 }

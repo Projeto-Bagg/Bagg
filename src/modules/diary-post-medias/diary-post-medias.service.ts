@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateDiaryPostMediaDto } from './dtos/create-diary-post-media.dto';
-import { UpdateDiaryPostMediaDto } from './dtos/update-diary-post-media.dto';
 
 @Injectable()
 export class DiaryPostMediasService {
@@ -10,21 +9,6 @@ export class DiaryPostMediasService {
   create(createDiaryPostMediaDto: CreateDiaryPostMediaDto) {
     return this.prisma.diaryPostMedia.create({
       data: createDiaryPostMediaDto,
-    });
-  }
-
-  findAll() {
-    return this.prisma.diaryPostMedia.findMany();
-  }
-
-  findOne(id: number) {
-    return this.prisma.diaryPostMedia.findUnique({ where: { id: id } });
-  }
-
-  update(id: number, updateDiaryPostMediaDto: UpdateDiaryPostMediaDto) {
-    return this.prisma.diaryPostMedia.update({
-      data: updateDiaryPostMediaDto,
-      where: { id: id },
     });
   }
 

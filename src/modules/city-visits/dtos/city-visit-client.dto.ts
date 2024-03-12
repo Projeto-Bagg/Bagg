@@ -8,6 +8,6 @@ export class CityVisitClientDto extends CityVisitEntity {
 
   constructor(partial: CityVisitClientDto) {
     super(partial);
-    Object.assign(this, partial);
+    Object.assign(this, { ...partial, user: new UserEntity(partial.user) });
   }
 }

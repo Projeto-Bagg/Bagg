@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 export class MediaService {
   private containerName: string;
 
-  private async getBlobServiceInstance() {
+  private async getBlobServiceInstance(): Promise<BlobServiceClient> {
     const blobClientService = BlobServiceClient.fromConnectionString(
       process.env.BLOB_STORAGE_URL!,
     );
@@ -22,7 +22,10 @@ export class MediaService {
     return blockBlobClient;
   }
 
-  async uploadFile(file: Express.Multer.File, containerName: string) {
+  async uploadFile(
+    file: Express.Multer.File,
+    containerName: string,
+  ): Promise<string> {
     this.containerName = containerName;
     const extension = file.originalname.split('.').pop();
     const file_name = uuidv4() + '.' + extension;
@@ -33,7 +36,7 @@ export class MediaService {
     return fileUrl;
   }
 
-  async deleteFile(file_name: string, containerName: string) {
+  async deleteFile(file_name: string, containerName: string): Promise<void> {
     try {
       this.containerName = containerName;
       const blockBlobClient = await this.getBlobClient(file_name);

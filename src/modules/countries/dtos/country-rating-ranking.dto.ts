@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class CountryRatingRankingEntity {
+export class CountryRatingRankingDto {
   @ApiProperty()
   name: string;
 

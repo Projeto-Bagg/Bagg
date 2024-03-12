@@ -1,9 +1,9 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CityRankingDto {
-  @ApiProperty()
-  page: number;
+  @ApiPropertyOptional()
+  page?: number;
 
-  @ApiProperty()
-  count: number;
+  @ApiPropertyOptional()
+  count?: number;
 }

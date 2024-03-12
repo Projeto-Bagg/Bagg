@@ -1,6 +1,5 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { TripDiary } from '@prisma/client';
-import { UserEntity } from 'src/modules/users/entities/user.entity';
 
 export class TripDiaryEntity implements TripDiary {
   @ApiProperty()
@@ -14,9 +13,6 @@ export class TripDiaryEntity implements TripDiary {
 
   @ApiProperty()
   userId: number;
-
-  @ApiPropertyOptional({ type: UserEntity })
-  User?: UserEntity;
 
   @ApiProperty()
   createdAt: Date;

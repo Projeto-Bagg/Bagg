@@ -1,7 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
-export class CityRankingDto {
+export class CityImagesPaginationDto {
   @ApiPropertyOptional()
   @Type(() => Number)
   page?: number;

@@ -93,8 +93,8 @@ export class CityVisitsService {
 
   async getVisitsByCityId(
     cityId: number,
-    page: number,
-    count: number,
+    page = 1,
+    count = 5,
   ): Promise<CityVisitClientDto[]> {
     const visits = await this.prisma.cityVisit.findMany({
       take: count,

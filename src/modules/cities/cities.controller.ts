@@ -15,21 +15,16 @@ import { CityRankingDto } from 'src/modules/cities/dtos/city-ranking.dto';
 import { CityInterestRankingDto } from 'src/modules/cities/dtos/city-interest-ranking.dto';
 import { CitySearchDto } from 'src/modules/cities/dtos/city-search.dto';
 import { CityVisitRankingDto } from 'src/modules/cities/dtos/city-visit-ranking.dto';
-import { FindCityByIdDto } from 'src/modules/cities/dtos/find-city-by-id.dto';
 import { CityRatingRankingDto } from 'src/modules/cities/dtos/city-rating-ranking.dto';
-import { CityVisitsService } from 'src/modules/city-visits/city-visits.service';
 import { CityPageDto } from 'src/modules/cities/dtos/city-page.dto';
-import { CityInterestsService } from 'src/modules/city-interests/city-interests.service';
 import { CitySearchResponseDto } from 'src/modules/cities/dtos/city-search-response';
+import { MediaEntity } from 'src/modules/media/entities/media.entity';
+import { CityImagesPaginationDto } from 'src/modules/cities/dtos/city-images-pagination.dto';
 
 @Controller('cities')
 @ApiTags('cities')
 export class CitiesController {
-  constructor(
-    private readonly citiesService: CitiesService,
-    private readonly cityVisitsService: CityVisitsService,
-    private readonly cityInterestsService: CityInterestsService,
-  ) {}
+  constructor(private readonly citiesService: CitiesService) {}
 
   @Get('search')
   @IsPublic()
@@ -46,12 +41,22 @@ export class CitiesController {
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiResponse({ type: CityPageDto })
   async findById(
-    @Param() param: FindCityByIdDto,
+    @Param('id') id: number,
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<CityPageDto> {
-    const city = await this.citiesService.findById(+param.id, currentUser);
+    const city = await this.citiesService.findById(+id, currentUser);
 
     return new CityPageDto(city);
+  }
+
+  @Get(':id/images')
+  @IsPublic()
+  @ApiResponse({ type: MediaEntity, isArray: true })
+  images(
+    @Param('id') id: number,
+    @Query() query: CityImagesPaginationDto,
+  ): Promise<MediaEntity[]> {
+    return this.citiesService.getCityImages(+id, query.page, query.count);
   }
 
   @Get('ranking/interest')

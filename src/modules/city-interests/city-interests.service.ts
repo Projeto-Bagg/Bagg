@@ -27,6 +27,20 @@ export class CityInterestsService {
     });
   }
 
+  async getCountryInterestsCountByIso2(iso2: string): Promise<number> {
+    return await this.prisma.cityInterest.count({
+      where: {
+        city: {
+          region: {
+            country: {
+              iso2,
+            },
+          },
+        },
+      },
+    });
+  }
+
   async isUserInterestedInCity(
     cityId: number,
     userId: number,

@@ -3,8 +3,8 @@ import { CityEntity } from 'src/modules/cities/entities/city.entity';
 import { CityVisitEntity } from 'src/modules/city-visits/entities/city-visit.entity';
 
 export class CityPageDto extends CityEntity {
-  @ApiProperty()
-  averageRating: number;
+  @ApiProperty({ type: Number })
+  averageRating: number | null;
 
   @ApiProperty()
   visitsCount: number;

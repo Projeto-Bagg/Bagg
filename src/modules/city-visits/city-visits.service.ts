@@ -72,21 +72,56 @@ export class CityVisitsService {
     });
   }
 
-  async getAverageRatingByCityId(cityId: number): Promise<number> {
-    const response = (await this.prisma.$queryRaw`
-      SELECT ROUND(AVG(CAST(cv.rating AS FLOAT)), 1) AS averageRating
-      FROM [dbo].[City] ci
-      JOIN [dbo].[CityVisit] cv ON ci.id = cv.cityId
-      WHERE ci.id = ${cityId}
-    `) as { averageRating: number }[];
+  async getAverageRatingByCityId(cityId: number): Promise<number | null> {
+    const response = await this.prisma.cityVisit.aggregate({
+      _avg: {
+        rating: true,
+      },
+      where: {
+        cityId,
+      },
+    });
 
-    return response[0].averageRating;
+    return response._avg.rating ? +response._avg.rating.toFixed(1) : null;
+  }
+
+  async getCountryAverageRatingByIso2(iso2: string): Promise<number | null> {
+    const response = await this.prisma.cityVisit.aggregate({
+      _avg: {
+        rating: true,
+      },
+      where: {
+        city: {
+          region: {
+            country: {
+              iso2,
+            },
+          },
+        },
+      },
+    });
+
+    return response._avg.rating ? +response._avg.rating.toFixed(1) : null;
   }
 
   async getVisitsCountByCityId(cityId: number): Promise<number> {
     return await this.prisma.cityVisit.count({
       where: {
         cityId,
+      },
+    });
+  }
+
+  async getCountryVisitsCountByIso2(iso2: string): Promise<number> {
+    return await this.prisma.cityVisit.count({
+      where: {
+        city: {
+          region: {
+            country: {
+              iso2,
+            },
+          },
+        },
       },
     });
   }

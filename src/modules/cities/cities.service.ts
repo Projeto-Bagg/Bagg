@@ -198,6 +198,7 @@ export class CitiesService {
   async interestRanking(
     page = 1,
     count = 10,
+    countryIso2?: string,
   ): Promise<CityInterestRankingDto[]> {
     const cities = await this.prisma.city.findMany({
       take: +count,
@@ -207,6 +208,15 @@ export class CitiesService {
           _count: 'desc',
         },
       },
+      ...(countryIso2 && {
+        where: {
+          region: {
+            country: {
+              iso2: countryIso2,
+            },
+          },
+        },
+      }),
       select: {
         id: true,
         cityInterests: {
@@ -233,7 +243,11 @@ export class CitiesService {
     });
   }
 
-  async visitRanking(page = 1, count = 10): Promise<CityVisitRankingDto[]> {
+  async visitRanking(
+    page = 1,
+    count = 10,
+    countryIso2?: string,
+  ): Promise<CityVisitRankingDto[]> {
     const cities = await this.prisma.city.findMany({
       take: +count,
       skip: count * (page - 1),
@@ -242,6 +256,15 @@ export class CitiesService {
           _count: 'desc',
         },
       },
+      ...(countryIso2 && {
+        where: {
+          region: {
+            country: {
+              iso2: countryIso2,
+            },
+          },
+        },
+      }),
       select: {
         id: true,
         cityVisits: {
@@ -268,17 +291,22 @@ export class CitiesService {
     });
   }
 
-  async ratingRanking(page = 1, count = 10) {
+  async ratingRanking(page = 1, count = 10, countryIso2?: string) {
     return await this.prisma.$queryRaw<CityRatingRankingDto[]>`
+      DECLARE @page INT = ${page};
+      DECLARE @count INT = ${count};
+      DECLARE @countryIso2 VARCHAR(50) = ${countryIso2 || null};
+
       SELECT ci.*, r.name AS region, c.iso2, c.name AS country, ROUND(AVG(CAST(cv.rating AS FLOAT)), 1) AS averageRating
       FROM [dbo].[City] ci
       JOIN [dbo].[Region] r ON ci.regionId = r.id
       JOIN [dbo].[Country] c ON c.id = r.countryId
       JOIN [dbo].[CityVisit] cv ON ci.id = cv.cityId
+      WHERE c.iso2 = @countryIso2 OR @countryIso2 is NULL
       GROUP BY ci.name, ci.latitude, ci.longitude, ci.id, ci.regionId, r.name, c.iso2, c.name
       ORDER BY averageRating DESC
-      OFFSET ${count * (page - 1)} ROWS
-      FETCH NEXT ${+count} ROWS ONLY
+      OFFSET @count * (@page - 1) ROWS
+      FETCH NEXT @count ROWS ONLY
     `;
   }
 }

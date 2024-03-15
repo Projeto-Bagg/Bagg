@@ -20,6 +20,7 @@ import { CityPageDto } from 'src/modules/cities/dtos/city-page.dto';
 import { CitySearchResponseDto } from 'src/modules/cities/dtos/city-search-response';
 import { MediaEntity } from 'src/modules/media/entities/media.entity';
 import { CityImagesPaginationDto } from 'src/modules/cities/dtos/city-images-pagination.dto';
+import { CityImageDto } from 'src/modules/cities/dtos/city-image.dto';
 
 @Controller('cities')
 @ApiTags('cities')
@@ -51,11 +52,11 @@ export class CitiesController {
 
   @Get(':id/images')
   @IsPublic()
-  @ApiResponse({ type: MediaEntity, isArray: true })
+  @ApiResponse({ type: CityImageDto, isArray: true })
   images(
     @Param('id') id: number,
     @Query() query: CityImagesPaginationDto,
-  ): Promise<MediaEntity[]> {
+  ): Promise<CityImageDto[]> {
     return this.citiesService.getCityImages(+id, query.page, query.count);
   }
 
@@ -65,14 +66,22 @@ export class CitiesController {
   interestRanking(
     @Query() query: CityRankingDto,
   ): Promise<CityInterestRankingDto[]> {
-    return this.citiesService.interestRanking(query.page, query.count);
+    return this.citiesService.interestRanking(
+      query.page,
+      query.count,
+      query.countryIso2,
+    );
   }
 
   @Get('ranking/visit')
   @IsPublic()
   @ApiResponse({ type: CityVisitRankingDto, isArray: true })
   visitRanking(@Query() query: CityRankingDto): Promise<CityVisitRankingDto[]> {
-    return this.citiesService.visitRanking(query.page, query.count);
+    return this.citiesService.visitRanking(
+      query.page,
+      query.count,
+      query.countryIso2,
+    );
   }
 
   @Get('ranking/rating')
@@ -81,6 +90,10 @@ export class CitiesController {
   ratingRanking(
     @Query() query: CityRankingDto,
   ): Promise<CityRatingRankingDto[]> {
-    return this.citiesService.ratingRanking(query.page, query.count);
+    return this.citiesService.ratingRanking(
+      query.page,
+      query.count,
+      query.countryIso2,
+    );
   }
 }

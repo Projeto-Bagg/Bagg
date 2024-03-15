@@ -15,6 +15,8 @@ import { CountrySearchDto } from 'src/modules/countries/dtos/country-search.dto'
 import { CountryInterestRankingDto } from 'src/modules/countries/dtos/country-interest-ranking.dto';
 import { CountryVisitRankingDto } from 'src/modules/countries/dtos/country-visit-ranking.dto';
 import { CountryRatingRankingDto } from 'src/modules/countries/dtos/country-rating-ranking.dto';
+import { CountryImageDto } from 'src/modules/countries/dtos/country-image.dto';
+import { CountryImagesPaginationDto } from 'src/modules/countries/dtos/country-images-pagination.dto';
 
 @Controller('countries')
 @ApiTags('countries')
@@ -61,5 +63,19 @@ export class CountriesController {
   @ApiResponse({ type: CountryEntity })
   findByIso2(@Param('iso2') iso2: string): Promise<CountryEntity> {
     return this.countriesService.findByIso2(iso2);
+  }
+
+  @Get(':iso2/images')
+  @IsPublic()
+  @ApiResponse({ type: CountryImageDto, isArray: true })
+  images(
+    @Param('iso2') iso2: string,
+    @Query() query: CountryImagesPaginationDto,
+  ): Promise<CountryImageDto[]> {
+    return this.countriesService.getCountryImages(
+      iso2,
+      query.page,
+      query.count,
+    );
   }
 }

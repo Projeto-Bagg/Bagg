@@ -7,6 +7,6 @@ export class CitySearchDto {
   @ApiPropertyOptional()
   page?: number;
 
-  @ApiProperty()
-  count: number;
+  @ApiPropertyOptional()
+  count?: number;
 }

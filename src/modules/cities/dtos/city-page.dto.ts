@@ -1,13 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { CityClientEntity } from 'src/modules/cities/entities/city-client.entity';
-import { CityVisitClientDto } from 'src/modules/city-visits/dtos/city-visit-client.dto';
+import { CityEntity } from 'src/modules/cities/entities/city.entity';
+import { CityVisitEntity } from 'src/modules/city-visits/entities/city-visit.entity';
 
-export class CityPageDto extends CityClientEntity {
-  @ApiProperty({ type: CityVisitClientDto, isArray: true })
-  visits: CityVisitClientDto[];
-
-  @ApiProperty()
-  averageRating: number;
+export class CityPageDto extends CityEntity {
+  @ApiProperty({ type: Number })
+  averageRating: number | null;
 
   @ApiProperty()
   visitsCount: number;
@@ -15,8 +12,14 @@ export class CityPageDto extends CityClientEntity {
   @ApiProperty()
   interestsCount: number;
 
+  @ApiProperty()
+  isInterested: boolean;
+
+  @ApiProperty({ type: CityVisitEntity })
+  userVisit: CityVisitEntity | null;
+
   constructor(partial: CityPageDto) {
-    super(partial);
+    super();
     Object.assign(this, partial);
   }
 }

@@ -8,6 +8,7 @@ import {
   Param,
   ClassSerializerInterceptor,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { DiaryPostsService } from './diary-posts.service';
 import { CreateDiaryPostDto } from './dtos/create-diary-post.dto';
@@ -23,18 +24,15 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import { DiaryPostEntity } from 'src/modules/diary-posts/entities/diary-post.entity';
 import { IsPublic } from 'src/modules/auth/decorators/is-public.decorator';
 import { UserClientDto } from 'src/modules/users/dtos/user-client.dto';
-import { DiaryPostLikesService } from 'src/modules/diary-post-likes/diary-post-likes.service';
+import { TipsFeedDto } from 'src/modules/tips/dtos/tips-feed.dto';
 
-@Controller('diaryPosts')
+@Controller('diary-posts')
 @ApiTags('diary posts')
 export class DiaryPostsController {
-  constructor(
-    private readonly diaryPostsService: DiaryPostsService,
-    private readonly diaryPostLikeService: DiaryPostLikesService,
-  ) {}
+  constructor(private readonly diaryPostsService: DiaryPostsService) {}
 
   @Post()
-  @UseInterceptors(FilesInterceptor('medias'))
+  @UseInterceptors(FilesInterceptor('medias'), ClassSerializerInterceptor)
   @ApiConsumes('multipart/form-data')
   @ApiResponse({ type: DiaryPostEntity })
   async create(
@@ -58,29 +56,13 @@ export class DiaryPostsController {
   @UseInterceptors(ClassSerializerInterceptor)
   async getByUser(
     @Param('username') username: string,
+    @Query() query: TipsFeedDto,
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<DiaryPostEntity[]> {
     const posts = await this.diaryPostsService.findByUsername(
       username,
-      currentUser,
-    );
-
-    return posts.map((post) => {
-      return new DiaryPostEntity(post);
-    });
-  }
-
-  @Get('user/:username/feed/like')
-  @IsPublic()
-  @ApiBearerAuth()
-  @ApiResponse({ type: DiaryPostEntity, isArray: true })
-  @UseInterceptors(ClassSerializerInterceptor)
-  async userLikedPostsFeed(
-    @Param('username') username: string,
-    @CurrentUser() currentUser: UserFromJwt,
-  ): Promise<DiaryPostEntity[]> {
-    const posts = await this.diaryPostsService.feedLikedByUser(
-      username,
+      query.page,
+      query.count,
       currentUser,
     );
 
@@ -94,11 +76,13 @@ export class DiaryPostsController {
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiBearerAuth()
   @ApiResponse({ type: DiaryPostEntity })
-  getById(
+  async getById(
     @Param('id') id: number,
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<DiaryPostEntity> {
-    return this.diaryPostsService.findById(id, currentUser);
+    const post = await this.diaryPostsService.findById(id, currentUser);
+
+    return new DiaryPostEntity(post);
   }
 
   @Get(':id/like')
@@ -115,24 +99,6 @@ export class DiaryPostsController {
     return users.map((user) => new UserClientDto(user));
   }
 
-  @Post(':id/like')
-  @ApiBearerAuth()
-  like(
-    @Param('id') id: number,
-    @CurrentUser() currentUser: UserFromJwt,
-  ): Promise<void> {
-    return this.diaryPostLikeService.like(id, currentUser);
-  }
-
-  @Post(':id/unlike')
-  @ApiBearerAuth()
-  unlike(
-    @Param('id') id: number,
-    @CurrentUser() currentUser: UserFromJwt,
-  ): Promise<void> {
-    return this.diaryPostLikeService.unlike(id, currentUser);
-  }
-
   @Delete(':id')
   @ApiBearerAuth()
   delete(
@@ -140,12 +106,5 @@ export class DiaryPostsController {
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<void> {
     return this.diaryPostsService.delete(id, currentUser);
-  }
-
-  @Get()
-  @ApiResponse({ type: DiaryPostEntity, isArray: true })
-  @ApiBearerAuth()
-  findAll(@CurrentUser() currentUser: UserFromJwt): Promise<DiaryPostEntity[]> {
-    return this.diaryPostsService.findMany(currentUser);
   }
 }

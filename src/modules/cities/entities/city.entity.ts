@@ -16,8 +16,4 @@ export class CityEntity implements City {
 
   @ApiProperty()
   longitude: number;
-
-  constructor(partial: CityEntity) {
-    Object.assign(this, partial);
-  }
 }

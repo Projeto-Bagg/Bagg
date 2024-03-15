@@ -1,25 +1,24 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateTripDiaryDto } from './dtos/create-trip-diary.dto';
-import { UpdateTripDiaryDto } from './dtos/update-trip-diary.dto';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { DiaryPostEntity } from 'src/modules/diary-posts/entities/diary-post.entity';
 import { TripDiaryEntity } from 'src/modules/trip-diaries/entities/trip-diary.entity';
-import { TripDiaryClientEntity } from 'src/modules/trip-diaries/entities/trip-diary-client.entity';
-import { UsersService } from 'src/modules/users/users.service';
+import { TripDiaryClientDto } from 'src/modules/trip-diaries/dtos/trip-diary-client.dto';
 
 @Injectable()
 export class TripDiariesService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly usersService: UsersService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-  create(
+  async create(
     createTripDiaryDto: CreateTripDiaryDto,
     currentUser: UserFromJwt,
-  ): Promise<TripDiaryEntity> {
-    return this.prisma.tripDiary.create({
+  ): Promise<TripDiaryClientDto> {
+    const tripDiary = await this.prisma.tripDiary.create({
       data: {
         message: createTripDiaryDto.message,
         title: createTripDiaryDto.title,
@@ -34,11 +33,28 @@ export class TripDiariesService {
           },
         },
       },
+      include: {
+        city: {
+          include: {
+            region: {
+              include: {
+                country: true,
+              },
+            },
+          },
+        },
+        user: true,
+      },
     });
+
+    return {
+      ...tripDiary,
+      postsAmount: 0,
+    };
   }
 
-  findByUsername(username: string): Promise<TripDiaryClientEntity[]> {
-    return this.prisma.tripDiary.findMany({
+  async findByUsername(username: string): Promise<TripDiaryClientDto[]> {
+    const tripDiaries = await this.prisma.tripDiary.findMany({
       where: {
         user: {
           username,
@@ -54,21 +70,39 @@ export class TripDiariesService {
             },
           },
         },
+        user: true,
       },
       orderBy: {
         createdAt: 'desc',
       },
     });
+
+    return await Promise.all(
+      tripDiaries.map(async (tripDiary) => {
+        const postsAmount = await this.prisma.diaryPost.count({
+          where: { tripDiaryId: tripDiary.id },
+        });
+
+        return {
+          ...tripDiary,
+          postsAmount,
+        };
+      }),
+    );
   }
 
   async findPostsById(
     id: number,
+    page = 1,
+    count = 10,
     currentUser: UserFromJwt,
   ): Promise<DiaryPostEntity[]> {
     const posts = await this.prisma.diaryPost.findMany({
       where: {
         tripDiaryId: id,
       },
+      skip: count * (page - 1),
+      take: count,
       include: {
         diaryPostMedias: true,
         likedBy: true,
@@ -86,22 +120,25 @@ export class TripDiariesService {
           ...post,
           isLiked: post.likedBy.some((like) => like.userId === currentUser?.id),
           likedBy: post.likedBy.length,
-          user: {
-            ...post.user,
-            friendshipStatus: await this.usersService.friendshipStatus(
-              post.user.username,
-            ),
-          },
         };
       }),
     );
   }
 
-  async findOne(id: number): Promise<TripDiaryEntity> {
+  async findOne(id: number): Promise<TripDiaryClientDto> {
     const tripDiary = await this.prisma.tripDiary.findUnique({
       where: { id: id },
       include: {
         user: true,
+        city: {
+          include: {
+            region: {
+              include: {
+                country: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -109,20 +146,29 @@ export class TripDiariesService {
       throw new NotFoundException();
     }
 
-    return tripDiary;
-  }
-
-  update(
-    id: number,
-    updateTripDiaryDto: UpdateTripDiaryDto,
-  ): Promise<TripDiaryEntity> {
-    return this.prisma.tripDiary.update({
-      data: updateTripDiaryDto,
-      where: { id: id },
+    const postsAmount = await this.prisma.diaryPost.count({
+      where: {
+        tripDiaryId: id,
+      },
     });
+
+    return {
+      ...tripDiary,
+      postsAmount,
+    };
   }
 
-  remove(id: number): Promise<TripDiaryEntity> {
-    return this.prisma.tripDiary.delete({ where: { id: id } });
+  async remove(id: number, currentUser: UserFromJwt): Promise<void> {
+    const tripDiary = await this.prisma.tripDiary.findUnique({ where: { id } });
+
+    if (!tripDiary) {
+      throw new NotFoundException();
+    }
+
+    if (tripDiary.userId !== currentUser.id) {
+      throw new UnauthorizedException();
+    }
+
+    await this.prisma.tripDiary.delete({ where: { id: id } });
   }
 }

@@ -1,9 +1,15 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 
 export class CityRankingDto {
-  @ApiProperty()
-  page: number;
+  @ApiPropertyOptional()
+  countryIso2?: string;
 
-  @ApiProperty()
-  count: number;
+  @ApiPropertyOptional()
+  @Type(() => Number)
+  page?: number;
+
+  @ApiPropertyOptional()
+  @Type(() => Number)
+  count?: number;
 }

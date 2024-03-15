@@ -13,33 +13,28 @@ import { CurrentUser } from 'src/modules/auth/decorators/current-user.decorator'
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { CityRankingDto } from 'src/modules/cities/dtos/city-ranking.dto';
 import { CityInterestRankingDto } from 'src/modules/cities/dtos/city-interest-ranking.dto';
-import { CityEntity } from 'src/modules/cities/entities/city.entity';
 import { CitySearchDto } from 'src/modules/cities/dtos/city-search.dto';
 import { CityVisitRankingDto } from 'src/modules/cities/dtos/city-visit-ranking.dto';
-import { FindCityByIdDto } from 'src/modules/cities/dtos/find-city-by-id.dto';
 import { CityRatingRankingDto } from 'src/modules/cities/dtos/city-rating-ranking.dto';
-import { CityVisitsService } from 'src/modules/city-visits/city-visits.service';
 import { CityPageDto } from 'src/modules/cities/dtos/city-page.dto';
-import { UserEntity } from 'src/modules/users/entities/user.entity';
-import { CityInterestsService } from 'src/modules/city-interests/city-interests.service';
+import { CitySearchResponseDto } from 'src/modules/cities/dtos/city-search-response';
+import { MediaEntity } from 'src/modules/media/entities/media.entity';
+import { CityImagesPaginationDto } from 'src/modules/cities/dtos/city-images-pagination.dto';
+import { CityImageDto } from 'src/modules/cities/dtos/city-image.dto';
 
 @Controller('cities')
 @ApiTags('cities')
 export class CitiesController {
-  constructor(
-    private readonly citiesService: CitiesService,
-    private readonly cityVisitsService: CityVisitsService,
-    private readonly cityInterestsService: CityInterestsService,
-  ) {}
+  constructor(private readonly citiesService: CitiesService) {}
 
   @Get('search')
   @IsPublic()
   @UseInterceptors(ClassSerializerInterceptor)
-  @ApiResponse({ type: CityEntity, isArray: true })
-  async search(@Query() query: CitySearchDto): Promise<CityEntity[]> {
-    const city = await this.citiesService.search(query);
-
-    return city.map((city) => new CityEntity(city));
+  @ApiResponse({ type: CitySearchResponseDto, isArray: true })
+  async search(
+    @Query() query: CitySearchDto,
+  ): Promise<CitySearchResponseDto[]> {
+    return await this.citiesService.search(query);
   }
 
   @Get(':id')
@@ -47,40 +42,22 @@ export class CitiesController {
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiResponse({ type: CityPageDto })
   async findById(
-    @Param() param: FindCityByIdDto,
+    @Param('id') id: number,
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<CityPageDto> {
-    const city = await this.citiesService.findById(+param.id, currentUser);
+    const city = await this.citiesService.findById(+id, currentUser);
 
-    const visits = await this.cityVisitsService.getVisitsByCityId(
-      city.id,
-      1,
-      5,
-    );
+    return new CityPageDto(city);
+  }
 
-    const averageRating = await this.cityVisitsService.getAverageRatingByCityId(
-      +param.id,
-    );
-
-    const visitsCount = await this.cityVisitsService.getVisitsCountByCityId(
-      city.id,
-    );
-
-    const interestsCount =
-      await this.cityInterestsService.getInterestsCountByCityId(city.id);
-
-    return new CityPageDto({
-      ...city,
-      averageRating,
-      visitsCount,
-      interestsCount,
-      visits: visits.map((visit) => {
-        return {
-          ...visit,
-          user: new UserEntity(visit.user),
-        };
-      }),
-    });
+  @Get(':id/images')
+  @IsPublic()
+  @ApiResponse({ type: CityImageDto, isArray: true })
+  images(
+    @Param('id') id: number,
+    @Query() query: CityImagesPaginationDto,
+  ): Promise<CityImageDto[]> {
+    return this.citiesService.getCityImages(+id, query.page, query.count);
   }
 
   @Get('ranking/interest')
@@ -89,14 +66,22 @@ export class CitiesController {
   interestRanking(
     @Query() query: CityRankingDto,
   ): Promise<CityInterestRankingDto[]> {
-    return this.citiesService.interestRanking(query.page, query.count);
+    return this.citiesService.interestRanking(
+      query.page,
+      query.count,
+      query.countryIso2,
+    );
   }
 
   @Get('ranking/visit')
   @IsPublic()
   @ApiResponse({ type: CityVisitRankingDto, isArray: true })
   visitRanking(@Query() query: CityRankingDto): Promise<CityVisitRankingDto[]> {
-    return this.citiesService.visitRanking(query.page, query.count);
+    return this.citiesService.visitRanking(
+      query.page,
+      query.count,
+      query.countryIso2,
+    );
   }
 
   @Get('ranking/rating')
@@ -105,6 +90,10 @@ export class CitiesController {
   ratingRanking(
     @Query() query: CityRankingDto,
   ): Promise<CityRatingRankingDto[]> {
-    return this.citiesService.ratingRanking(query.page, query.count);
+    return this.citiesService.ratingRanking(
+      query.page,
+      query.count,
+      query.countryIso2,
+    );
   }
 }

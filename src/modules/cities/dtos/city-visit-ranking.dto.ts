@@ -1,16 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { RegionCountryDto } from 'src/modules/regions/dtos/region-country.dto';
+import { CityEntity } from 'src/modules/cities/entities/city.entity';
 
-export class CityVisitRankingDto {
-  @ApiProperty()
-  id: number;
-
-  @ApiProperty()
-  name: string;
-
+export class CityVisitRankingDto extends CityEntity {
   @ApiProperty()
   totalVisit: number;
 
-  @ApiProperty({ type: RegionCountryDto })
-  region: RegionCountryDto;
+  @ApiProperty()
+  iso2: string;
+
+  @ApiProperty()
+  region: string;
+
+  @ApiProperty()
+  country: string;
 }

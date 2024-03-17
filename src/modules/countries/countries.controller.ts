@@ -23,9 +23,15 @@ import { CountryImagesPaginationDto } from 'src/modules/countries/dtos/country-i
 export class CountriesController {
   constructor(private readonly countriesService: CountriesService) {}
 
+  @Get()
+  @IsPublic()
+  @ApiResponse({ type: CountryEntity, isArray: true })
+  async findMany(): Promise<CountryEntity[]> {
+    return await this.countriesService.findMany();
+  }
+
   @Get('search')
   @IsPublic()
-  @UseInterceptors(ClassSerializerInterceptor)
   @ApiResponse({ type: CountryEntity, isArray: true })
   async search(@Query() query: CountrySearchDto): Promise<CountryEntity[]> {
     return await this.countriesService.search(query);
@@ -35,27 +41,27 @@ export class CountriesController {
   @ApiResponse({ type: CountryInterestRankingDto, isArray: true })
   @IsPublic()
   interestRanking(
-    @Query() query: CountryRankingDto,
+    @Query() countryRankingDto: CountryRankingDto,
   ): Promise<CountryInterestRankingDto[]> {
-    return this.countriesService.interestRanking(query.page, query.count);
+    return this.countriesService.interestRanking(countryRankingDto);
   }
 
   @Get('ranking/visit')
   @ApiResponse({ type: CountryVisitRankingDto, isArray: true })
   @IsPublic()
   visitRanking(
-    @Query() query: CountryRankingDto,
+    @Query() countryRankingDto: CountryRankingDto,
   ): Promise<CountryVisitRankingDto[]> {
-    return this.countriesService.visitRanking(query.page, query.count);
+    return this.countriesService.visitRanking(countryRankingDto);
   }
 
   @Get('ranking/rating')
   @ApiResponse({ type: CountryRatingRankingDto, isArray: true })
   @IsPublic()
   ratingRanking(
-    @Query() query: CountryRankingDto,
+    @Query() countryRankingDto: CountryRankingDto,
   ): Promise<CountryRatingRankingDto[]> {
-    return this.countriesService.ratingRanking(query.page, query.count);
+    return this.countriesService.ratingRanking(countryRankingDto);
   }
 
   @Get(':iso2')

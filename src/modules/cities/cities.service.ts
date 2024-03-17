@@ -14,6 +14,7 @@ import { CitySearchResponseDto } from 'src/modules/cities/dtos/city-search-respo
 import { CityPageDto } from 'src/modules/cities/dtos/city-page.dto';
 import { UsersService } from 'src/modules/users/users.service';
 import { CityImageDto } from 'src/modules/cities/dtos/city-image.dto';
+import { CityRankingDto } from 'src/modules/cities/dtos/city-ranking.dto';
 
 @Injectable()
 export class CitiesService {
@@ -195,106 +196,68 @@ export class CitiesService {
     `;
   }
 
-  async interestRanking(
+  async interestRanking({
     page = 1,
     count = 10,
-    countryIso2?: string,
-  ): Promise<CityInterestRankingDto[]> {
-    const cities = await this.prisma.city.findMany({
-      take: +count,
-      skip: count * (page - 1),
-      orderBy: {
-        cityInterests: {
-          _count: 'desc',
-        },
-      },
-      ...(countryIso2 && {
-        where: {
-          region: {
-            country: {
-              iso2: countryIso2,
-            },
-          },
-        },
-      }),
-      select: {
-        id: true,
-        cityInterests: {
-          select: {
-            id: true,
-          },
-        },
-        name: true,
-        region: {
-          include: {
-            country: true,
-          },
-        },
-      },
-    });
+    countryIso2,
+    date,
+  }: CityRankingDto): Promise<CityInterestRankingDto[]> {
+    return await this.prisma.$queryRaw<CityInterestRankingDto[]>`
+      DECLARE @page INT = ${page};
+      DECLARE @count INT = ${count};
+      DECLARE @countryIso2 VARCHAR(50) = ${countryIso2 || null};
+      DECLARE @date INT = ${date || null};
 
-    return cities.map((city) => {
-      return {
-        id: city.id,
-        name: city.name,
-        totalInterest: city.cityInterests.length,
-        region: city.region,
-      };
-    });
+      SELECT ci.*, r.name AS region, c.iso2, c.name AS country, COUNT(cis.id) AS totalInterest
+      FROM [dbo].[City] ci
+      JOIN [dbo].[Region] r ON ci.regionId = r.id
+      JOIN [dbo].[Country] c ON c.id = r.countryId
+      JOIN [dbo].[CityInterest] cis ON ci.id = cis.cityId
+      WHERE (c.iso2 = @countryIso2 OR @countryIso2 is NULL)
+      AND (DATEDIFF(DAY, cis.createdAt, GETDATE()) <= @date OR @date IS NULL)
+      GROUP BY ci.name, ci.latitude, ci.longitude, ci.id, ci.regionId, r.name, c.iso2, c.name
+      ORDER BY totalInterest DESC
+      OFFSET @count * (@page - 1) ROWS
+      FETCH NEXT @count ROWS ONLY
+    `;
   }
 
-  async visitRanking(
+  async visitRanking({
     page = 1,
     count = 10,
-    countryIso2?: string,
-  ): Promise<CityVisitRankingDto[]> {
-    const cities = await this.prisma.city.findMany({
-      take: +count,
-      skip: count * (page - 1),
-      orderBy: {
-        cityVisits: {
-          _count: 'desc',
-        },
-      },
-      ...(countryIso2 && {
-        where: {
-          region: {
-            country: {
-              iso2: countryIso2,
-            },
-          },
-        },
-      }),
-      select: {
-        id: true,
-        cityVisits: {
-          select: {
-            id: true,
-          },
-        },
-        name: true,
-        region: {
-          include: {
-            country: true,
-          },
-        },
-      },
-    });
+    countryIso2,
+    date,
+  }: CityRankingDto): Promise<CityVisitRankingDto[]> {
+    return await this.prisma.$queryRaw<CityVisitRankingDto[]>`
+      DECLARE @page INT = ${page};
+      DECLARE @count INT = ${count};
+      DECLARE @date INT = ${date || null};
+      DECLARE @countryIso2 VARCHAR(50) = ${countryIso2 || null};
 
-    return cities.map((city) => {
-      return {
-        id: city.id,
-        name: city.name,
-        totalVisit: city.cityVisits.length,
-        region: city.region,
-      };
-    });
+      SELECT ci.*, r.name AS region, c.iso2, c.name AS country, COUNT(cv.id) AS totalVisit
+      FROM [dbo].[City] ci
+      JOIN [dbo].[Region] r ON ci.regionId = r.id
+      JOIN [dbo].[Country] c ON c.id = r.countryId
+      JOIN [dbo].[CityVisit] cv ON ci.id = cv.cityId
+      WHERE (c.iso2 = @countryIso2 OR @countryIso2 is NULL)
+      AND (DATEDIFF(DAY, cv.createdAt, GETDATE()) <= @date OR @date IS NULL)
+      GROUP BY ci.name, ci.latitude, ci.longitude, ci.id, ci.regionId, r.name, c.iso2, c.name
+      ORDER BY totalVisit DESC
+      OFFSET @count * (@page - 1) ROWS
+      FETCH NEXT @count ROWS ONLY
+    `;
   }
 
-  async ratingRanking(page = 1, count = 10, countryIso2?: string) {
+  async ratingRanking({
+    page = 1,
+    count = 10,
+    countryIso2,
+    date,
+  }: CityRankingDto) {
     return await this.prisma.$queryRaw<CityRatingRankingDto[]>`
       DECLARE @page INT = ${page};
       DECLARE @count INT = ${count};
+      DECLARE @date INT = ${date || null};
       DECLARE @countryIso2 VARCHAR(50) = ${countryIso2 || null};
 
       SELECT ci.*, r.name AS region, c.iso2, c.name AS country, ROUND(AVG(CAST(cv.rating AS FLOAT)), 1) AS averageRating
@@ -302,8 +265,10 @@ export class CitiesService {
       JOIN [dbo].[Region] r ON ci.regionId = r.id
       JOIN [dbo].[Country] c ON c.id = r.countryId
       JOIN [dbo].[CityVisit] cv ON ci.id = cv.cityId
-      WHERE c.iso2 = @countryIso2 OR @countryIso2 is NULL
+      WHERE (c.iso2 = @countryIso2 OR @countryIso2 IS NULL)
+      AND (DATEDIFF(DAY, cv.createdAt, GETDATE()) <= @date OR @date IS NULL)
       GROUP BY ci.name, ci.latitude, ci.longitude, ci.id, ci.regionId, r.name, c.iso2, c.name
+      HAVING ROUND(AVG(CAST(cv.rating AS FLOAT)), 1) IS NOT NULL
       ORDER BY averageRating DESC
       OFFSET @count * (@page - 1) ROWS
       FETCH NEXT @count ROWS ONLY

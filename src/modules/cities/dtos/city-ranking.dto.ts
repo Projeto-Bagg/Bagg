@@ -12,4 +12,7 @@ export class CityRankingDto {
   @ApiPropertyOptional()
   @Type(() => Number)
   count?: number;
+
+  @ApiPropertyOptional()
+  date?: number;
 }

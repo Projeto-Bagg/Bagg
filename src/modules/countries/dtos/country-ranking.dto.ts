@@ -6,4 +6,7 @@ export class CountryRankingDto {
 
   @ApiPropertyOptional()
   count?: number;
+
+  @ApiPropertyOptional()
+  date?: number;
 }

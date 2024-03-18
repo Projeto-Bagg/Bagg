@@ -7,6 +7,7 @@ import { CityVisitEntity } from 'src/modules/city-visits/entities/city-visit.ent
 import { CityVisitClientDto } from 'src/modules/city-visits/dtos/city-visit-client.dto';
 import { UpdateCityVisitDto } from 'src/modules/city-visits/dtos/update-city-visit.dto';
 import { UserCityVisitDto } from 'src/modules/city-visits/dtos/user-city-visit.dto';
+import { CountryCityVisitDto } from 'src/modules/city-visits/dtos/country-city-visit.dto';
 
 @Injectable()
 export class CityVisitsService {
@@ -147,6 +148,34 @@ export class CityVisitsService {
     });
 
     return visits;
+  }
+
+  async getVisitsByCountryIso2(
+    countryIso2: string,
+    page = 1,
+    count = 5,
+  ): Promise<CountryCityVisitDto[]> {
+    return await this.prisma.cityVisit.findMany({
+      take: count,
+      skip: (page - 1) * count,
+      orderBy: {
+        createdAt: 'desc',
+      },
+      where: {
+        city: {
+          region: {
+            country: {
+              iso2: countryIso2,
+            },
+          },
+        },
+        NOT: [{ message: null }],
+      },
+      include: {
+        user: true,
+        city: true,
+      },
+    });
   }
 
   async getVisitsByUsername(username: string): Promise<UserCityVisitDto[]> {

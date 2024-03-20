@@ -12,5 +12,8 @@ export class CountryPageDto extends CountryEntity {
   interestsCount: number;
 
   @ApiProperty()
+  reviewsCount: number;
+
+  @ApiProperty()
   residentsCount: number;
 }

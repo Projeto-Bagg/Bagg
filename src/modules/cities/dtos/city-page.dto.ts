@@ -13,6 +13,9 @@ export class CityPageDto extends CityEntity {
   interestsCount: number;
 
   @ApiProperty()
+  residentsCount: number;
+
+  @ApiProperty()
   isInterested: boolean;
 
   @ApiProperty({ type: CityVisitEntity })

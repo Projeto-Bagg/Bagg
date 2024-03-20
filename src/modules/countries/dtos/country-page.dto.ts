@@ -10,4 +10,7 @@ export class CountryPageDto extends CountryEntity {
 
   @ApiProperty()
   interestsCount: number;
+
+  @ApiProperty()
+  residentsCount: number;
 }

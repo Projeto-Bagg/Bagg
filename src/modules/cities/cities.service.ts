@@ -9,7 +9,7 @@ import { CityInterestsService } from 'src/modules/city-interests/city-interests.
 import { CityVisitsService } from 'src/modules/city-visits/city-visits.service';
 import { MediaEntity } from 'src/modules/media/entities/media.entity';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CityNearDto } from 'src/modules/cities/dtos/city-near.dto';
+import { CityPagination } from 'src/modules/cities/dtos/city-pagination.dto';
 import { CitySearchResponseDto } from 'src/modules/cities/dtos/city-search-response';
 import { CityPageDto } from 'src/modules/cities/dtos/city-page.dto';
 import { UsersService } from 'src/modules/users/users.service';
@@ -63,29 +63,30 @@ export class CitiesService {
       city.id,
     );
 
+    const reviewsCount = await this.cityVisitsService.getReviewsCountByCityId(
+      city.id,
+    );
+
     const interestsCount =
       await this.cityInterestsService.getInterestsCountByCityId(city.id);
 
-    if (!currentUser) {
-      return {
-        ...city,
-        isInterested: false,
-        userVisit: null,
-        averageRating,
-        visitsCount,
-        interestsCount,
-      };
-    }
-
-    const isInterested = await this.cityInterestsService.isUserInterestedInCity(
+    const residentsCount = await this.usersService.getResidentsCountByCityId(
       city.id,
-      currentUser.id,
     );
 
-    const userVisit = await this.cityVisitsService.getUserVisitByCityId(
-      city.id,
-      currentUser.id,
-    );
+    const isInterested = currentUser
+      ? await this.cityInterestsService.isUserInterestedInCity(
+          city.id,
+          currentUser.id,
+        )
+      : false;
+
+    const userVisit = currentUser
+      ? await this.cityVisitsService.getUserVisitByCityId(
+          city.id,
+          currentUser.id,
+        )
+      : null;
 
     return {
       ...city,
@@ -94,6 +95,8 @@ export class CitiesService {
       averageRating,
       visitsCount,
       interestsCount,
+      reviewsCount,
+      residentsCount,
     };
   }
 
@@ -140,7 +143,7 @@ export class CitiesService {
     cityId: number,
     page: number,
     count: number,
-  ): Promise<CityNearDto[]> {
+  ): Promise<CityPagination[]> {
     const city = await this.prisma.city.findUnique({
       where: {
         id: +cityId,
@@ -151,7 +154,7 @@ export class CitiesService {
       throw new NotFoundException();
     }
 
-    return await this.prisma.$queryRaw<CityNearDto[]>`
+    return await this.prisma.$queryRaw<CityPagination[]>`
       DECLARE @page INT = ${page || 1};
       DECLARE @count INT = ${count};
       DECLARE @searchLatitude FLOAT = ${city.latitude};

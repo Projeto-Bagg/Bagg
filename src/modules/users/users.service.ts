@@ -19,6 +19,8 @@ import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { UserSearchDto } from 'src/modules/users/dtos/user-search.dto';
 import { UserFullInfoDto } from 'src/modules/users/dtos/user-full-info.dto';
 import { FollowsService } from 'src/modules/follows/follows.service';
+import { FindUserByCityDto } from 'src/modules/users/dtos/find-user-by-city.dto';
+import { FindUserByCountryDto } from 'src/modules/users/dtos/find-user-by-country.dto';
 
 interface JwtPayload {
   email: string;
@@ -117,6 +119,62 @@ export class UsersService {
         currentUser,
       ),
     };
+  }
+
+  findByCity({
+    cityId,
+    count = 10,
+    page = 1,
+  }: FindUserByCityDto): Promise<UserEntity[]> {
+    return this.prisma.user.findMany({
+      where: {
+        cityId,
+      },
+      skip: count * (page - 1),
+      take: count,
+    });
+  }
+
+  getResidentsCountByCityId(cityId: number): Promise<number> {
+    return this.prisma.user.count({
+      where: {
+        cityId,
+      },
+    });
+  }
+
+  findByCountry({
+    countryIso2,
+    count = 10,
+    page = 1,
+  }: FindUserByCountryDto): Promise<UserEntity[]> {
+    return this.prisma.user.findMany({
+      where: {
+        city: {
+          region: {
+            country: {
+              iso2: countryIso2,
+            },
+          },
+        },
+      },
+      skip: count * (page - 1),
+      take: count,
+    });
+  }
+
+  getResidentsCountByIso2(countryIso2: string): Promise<number> {
+    return this.prisma.user.count({
+      where: {
+        city: {
+          region: {
+            country: {
+              iso2: countryIso2,
+            },
+          },
+        },
+      },
+    });
   }
 
   async search(query: UserSearchDto): Promise<UserEntity[]> {

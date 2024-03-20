@@ -27,12 +27,12 @@ export class CityVisitsController {
   constructor(private readonly cityVisitService: CityVisitsService) {}
 
   @Post()
-  @ApiResponse({ type: CityVisitEntity })
+  @ApiResponse({ type: CityVisitClientDto })
   @ApiBearerAuth()
   create(
     @Body() createCityVisitDto: CreateCityVisitDto,
     @CurrentUser() currentUser: UserFromJwt,
-  ): Promise<CityVisitEntity> {
+  ): Promise<CityVisitClientDto> {
     return this.cityVisitService.create(createCityVisitDto, currentUser);
   }
 

@@ -19,7 +19,7 @@ export class CityVisitsService {
   async create(
     createCityVisitDto: CreateCityVisitDto,
     currentUser: UserFromJwt,
-  ): Promise<CityVisitEntity> {
+  ): Promise<CityVisitClientDto> {
     const isUserInterestedInCity =
       await this.cityInterestService.isUserInterestedInCity(
         createCityVisitDto.cityId,
@@ -37,6 +37,9 @@ export class CityVisitsService {
       data: {
         ...createCityVisitDto,
         userId: currentUser.id,
+      },
+      include: {
+        user: true,
       },
     });
   }

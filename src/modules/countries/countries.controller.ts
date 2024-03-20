@@ -17,11 +17,17 @@ import { CountryVisitRankingDto } from 'src/modules/countries/dtos/country-visit
 import { CountryRatingRankingDto } from 'src/modules/countries/dtos/country-rating-ranking.dto';
 import { CountryImageDto } from 'src/modules/countries/dtos/country-image.dto';
 import { CountryImagesPaginationDto } from 'src/modules/countries/dtos/country-images-pagination.dto';
+import { UserEntity } from 'src/modules/users/entities/user.entity';
+import { PaginationDto } from 'src/commons/entities/pagination';
+import { UsersService } from 'src/modules/users/users.service';
 
 @Controller('countries')
 @ApiTags('countries')
 export class CountriesController {
-  constructor(private readonly countriesService: CountriesService) {}
+  constructor(
+    private readonly countriesService: CountriesService,
+    private readonly usersService: UsersService,
+  ) {}
 
   @Get()
   @IsPublic()
@@ -83,5 +89,22 @@ export class CountriesController {
       query.page,
       query.count,
     );
+  }
+
+  @Get(':iso2/residents')
+  @UseInterceptors(ClassSerializerInterceptor)
+  @IsPublic()
+  @ApiResponse({ type: UserEntity, isArray: true })
+  async residents(
+    @Param('iso2') iso2: string,
+    @Query() query: PaginationDto,
+  ): Promise<UserEntity[]> {
+    const users = await this.usersService.findByCountry({
+      countryIso2: iso2,
+      page: query.page,
+      count: query.count,
+    });
+
+    return users.map((user) => new UserEntity(user));
   }
 }

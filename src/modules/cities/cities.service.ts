@@ -15,7 +15,6 @@ import { CityPageDto } from 'src/modules/cities/dtos/city-page.dto';
 import { UsersService } from 'src/modules/users/users.service';
 import { CityImageDto } from 'src/modules/cities/dtos/city-image.dto';
 import { CityRankingDto } from 'src/modules/cities/dtos/city-ranking.dto';
-import { UserClientDto } from 'src/modules/users/dtos/user-client.dto';
 
 @Injectable()
 export class CitiesService {
@@ -64,6 +63,10 @@ export class CitiesService {
       city.id,
     );
 
+    const reviewsCount = await this.cityVisitsService.getReviewsCountByCityId(
+      city.id,
+    );
+
     const interestsCount =
       await this.cityInterestsService.getInterestsCountByCityId(city.id);
 
@@ -71,27 +74,19 @@ export class CitiesService {
       city.id,
     );
 
-    if (!currentUser) {
-      return {
-        ...city,
-        isInterested: false,
-        userVisit: null,
-        averageRating,
-        visitsCount,
-        interestsCount,
-        residentsCount,
-      };
-    }
+    const isInterested = currentUser
+      ? await this.cityInterestsService.isUserInterestedInCity(
+          city.id,
+          currentUser.id,
+        )
+      : false;
 
-    const isInterested = await this.cityInterestsService.isUserInterestedInCity(
-      city.id,
-      currentUser.id,
-    );
-
-    const userVisit = await this.cityVisitsService.getUserVisitByCityId(
-      city.id,
-      currentUser.id,
-    );
+    const userVisit = currentUser
+      ? await this.cityVisitsService.getUserVisitByCityId(
+          city.id,
+          currentUser.id,
+        )
+      : null;
 
     return {
       ...city,
@@ -100,6 +95,7 @@ export class CitiesService {
       averageRating,
       visitsCount,
       interestsCount,
+      reviewsCount,
       residentsCount,
     };
   }

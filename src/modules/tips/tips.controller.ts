@@ -54,6 +54,7 @@ export class TipsController {
   @Get('feed')
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiBearerAuth()
+  @IsPublic()
   @ApiResponse({ type: TipEntity, isArray: true })
   async findByUserCityInterest(
     @Query() query: TipsFeedDto,

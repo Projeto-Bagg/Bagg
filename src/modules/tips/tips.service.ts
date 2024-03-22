@@ -158,15 +158,15 @@ export class TipsService {
     count = 10,
     currentUser: UserFromJwt,
   ): Promise<TipEntity[]> {
-    const cities = (
-      await this.prisma.cityInterest.findMany({
-        where: { userId: currentUser.id },
-        select: { cityId: true },
-      })
-    ).map((city) => city.cityId);
+    // const cities = (
+    //   await this.prisma.cityInterest.findMany({
+    //     where: { userId: currentUser.id },
+    //     select: { cityId: true },
+    //   })
+    // ).map((city) => city.cityId);
 
     const tips = await this.prisma.tip.findMany({
-      where: { cityId: { in: cities } },
+      // where: { cityId: { in: cities } },
       orderBy: {
         createdAt: 'desc',
       },

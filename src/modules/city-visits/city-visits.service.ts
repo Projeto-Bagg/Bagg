@@ -129,6 +129,33 @@ export class CityVisitsService {
       },
     });
   }
+  async getReviewsCountByCityId(cityId: number): Promise<number> {
+    return await this.prisma.cityVisit.count({
+      where: {
+        cityId,
+        NOT: {
+          rating: null,
+        },
+      },
+    });
+  }
+
+  async getCountryReviewsCountByIso2(iso2: string): Promise<number> {
+    return await this.prisma.cityVisit.count({
+      where: {
+        city: {
+          region: {
+            country: {
+              iso2,
+            },
+          },
+        },
+        NOT: {
+          rating: null,
+        },
+      },
+    });
+  }
 
   async getVisitsByCityId(
     cityId: number,

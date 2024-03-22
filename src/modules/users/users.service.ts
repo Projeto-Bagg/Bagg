@@ -121,18 +121,31 @@ export class UsersService {
     };
   }
 
-  findByCity({
-    cityId,
-    count = 10,
-    page = 1,
-  }: FindUserByCityDto): Promise<UserEntity[]> {
-    return this.prisma.user.findMany({
+  async findByCity(
+    { cityId, count = 10, page = 1 }: FindUserByCityDto,
+    currentUser?: UserFromJwt,
+  ): Promise<UserClientDto[]> {
+    const users = await this.prisma.user.findMany({
       where: {
         cityId,
       },
       skip: count * (page - 1),
       take: count,
     });
+
+    return await Promise.all(
+      users.map(async (user) => {
+        const friendshipStatus = await this.followsService.friendshipStatus(
+          user.username,
+          currentUser,
+        );
+
+        return {
+          ...user,
+          friendshipStatus,
+        };
+      }),
+    );
   }
 
   getResidentsCountByCityId(cityId: number): Promise<number> {
@@ -143,12 +156,11 @@ export class UsersService {
     });
   }
 
-  findByCountry({
-    countryIso2,
-    count = 10,
-    page = 1,
-  }: FindUserByCountryDto): Promise<UserEntity[]> {
-    return this.prisma.user.findMany({
+  async findByCountry(
+    { countryIso2, count = 10, page = 1 }: FindUserByCountryDto,
+    currentUser?: UserFromJwt,
+  ): Promise<UserEntity[]> {
+    const users = await this.prisma.user.findMany({
       where: {
         city: {
           region: {
@@ -161,6 +173,20 @@ export class UsersService {
       skip: count * (page - 1),
       take: count,
     });
+
+    return await Promise.all(
+      users.map(async (user) => {
+        const friendshipStatus = await this.followsService.friendshipStatus(
+          user.username,
+          currentUser,
+        );
+
+        return {
+          ...user,
+          friendshipStatus,
+        };
+      }),
+    );
   }
 
   getResidentsCountByIso2(countryIso2: string): Promise<number> {

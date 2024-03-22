@@ -7,7 +7,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { CitiesService } from './cities.service';
-import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { IsPublic } from 'src/modules/auth/decorators/is-public.decorator';
 import { CurrentUser } from 'src/modules/auth/decorators/current-user.decorator';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
@@ -67,16 +67,21 @@ export class CitiesController {
   @Get(':id/residents')
   @UseInterceptors(ClassSerializerInterceptor)
   @IsPublic()
+  @ApiBearerAuth()
   @ApiResponse({ type: UserEntity, isArray: true })
   async residents(
     @Param('id') id: number,
     @Query() query: PaginationDto,
+    @CurrentUser() currentUser: UserFromJwt,
   ): Promise<UserEntity[]> {
-    const users = await this.usersService.findByCity({
-      cityId: id,
-      page: query.page,
-      count: query.count,
-    });
+    const users = await this.usersService.findByCity(
+      {
+        cityId: id,
+        page: query.page,
+        count: query.count,
+      },
+      currentUser,
+    );
 
     return users.map((user) => new UserEntity(user));
   }

@@ -95,6 +95,7 @@ model Tip {
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      Int
   createdAt   DateTime     @default(now())
+  tags        String?
   cityId      Int
   city        City         @relation(fields: [cityId], references: [id], onUpdate: NoAction)
   likedBy     TipLike[]

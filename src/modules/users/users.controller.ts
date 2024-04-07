@@ -11,6 +11,7 @@ import {
   UploadedFile,
   NotFoundException,
   ClassSerializerInterceptor,
+  ConflictException,
 } from '@nestjs/common';
 import { CreateUserDto } from './dtos/create-user.dto';
 import {
@@ -34,6 +35,8 @@ import { UserFullInfoDto } from 'src/modules/users/dtos/user-full-info.dto';
 import { CityVisitsService } from 'src/modules/city-visits/city-visits.service';
 import { UserCityVisitDto } from 'src/modules/city-visits/dtos/user-city-visit.dto';
 import { UserSearchDto } from 'src/modules/users/dtos/user-search.dto';
+import { UsernameDto } from 'src/modules/users/dtos/username.dto';
+import { EmailDto } from 'src/modules/users/dtos/email.dto';
 
 @Controller('users')
 @ApiTags('users')
@@ -124,6 +127,15 @@ export class UsersController {
     return users.map((user) => new UserEntity(user));
   }
 
+  @Put(':username')
+  @ApiBearerAuth()
+  async changeUsername(
+    @Param() params: UsernameDto,
+    @CurrentUser() currentUser: UserFromJwt,
+  ) {
+    await this.usersService.updateUsername(params.username, currentUser);
+  }
+
   @Get(':username')
   @ApiResponse({ type: UserFullInfoDto })
   @UseInterceptors(ClassSerializerInterceptor)
@@ -177,6 +189,46 @@ export class UsersController {
     @Param('username') username: string,
   ): Promise<UserCityVisitDto[]> {
     return this.cityVisitsService.getVisitsByUsername(username);
+  }
+
+  @Get('username-availability/:username')
+  @ApiResponse({
+    status: 200,
+    description: 'Available',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Not available',
+  })
+  @IsPublic()
+  async isUsernameAvailable(@Param() params: UsernameDto): Promise<void> {
+    const isUsernameAvailable = await this.usersService.isUsernameAvailable(
+      params.username,
+    );
+
+    if (!isUsernameAvailable) {
+      throw new ConflictException('Username not available');
+    }
+  }
+
+  @Get('email-availability/:email')
+  @ApiResponse({
+    status: 200,
+    description: 'Available',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Not available',
+  })
+  @IsPublic()
+  async isEmailAvailable(@Param() params: EmailDto): Promise<void> {
+    const isEmailAvailable = await this.usersService.isEmailAvailable(
+      params.email,
+    );
+
+    if (!isEmailAvailable) {
+      throw new ConflictException('Email not available');
+    }
   }
 
   @Delete('profile-pic')

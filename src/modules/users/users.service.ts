@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import {
   ConflictException,
+  ForbiddenException,
   NotFoundException,
-  UnauthorizedException,
 } from '@nestjs/common/exceptions';
 import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
@@ -203,6 +203,39 @@ export class UsersService {
     });
   }
 
+  async isUsernameAvailable(username: string): Promise<boolean> {
+    return !!!(await this.prisma.user.count({
+      where: {
+        username,
+      },
+    }));
+  }
+
+  async isEmailAvailable(email: string): Promise<boolean> {
+    return !!!(await this.prisma.user.count({
+      where: {
+        email,
+      },
+    }));
+  }
+
+  async updateUsername(username, currentUser: UserFromJwt): Promise<void> {
+    const isUsernameAvailable = await this.isUsernameAvailable(username);
+
+    if (!isUsernameAvailable) {
+      throw new ConflictException('Username not available');
+    }
+
+    await this.prisma.user.update({
+      data: {
+        username,
+      },
+      where: {
+        id: currentUser.id,
+      },
+    });
+  }
+
   async search(query: UserSearchDto): Promise<UserEntity[]> {
     return await this.prisma.$queryRaw<UserEntity[]>`
       DECLARE @page INT = ${query.page || 1};
@@ -277,7 +310,7 @@ export class UsersService {
     );
 
     if (!validPassword) {
-      throw new UnauthorizedException('Wrong password');
+      throw new ForbiddenException('Wrong password');
     }
 
     await this.prisma.user.delete({ where: { username } });
@@ -299,7 +332,7 @@ export class UsersService {
     );
 
     if (!validPassword) {
-      throw new UnauthorizedException('Wrong password');
+      throw new ConflictException('Wrong password');
     }
 
     const password = await bcrypt.hash(UpdatePasswordDto.newPassword, 10);

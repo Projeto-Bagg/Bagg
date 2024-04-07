@@ -27,7 +27,7 @@ lerna-debug.log*
 .settings/
 *.sublime-workspace
 .env
-/prisma/seed
+/prisma/seed/countries-states-cities.json
 .VSCodeCounter
 # IDE - VSCode
 .vscode/*

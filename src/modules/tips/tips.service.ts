@@ -11,6 +11,7 @@ import { MediaService } from '../media/media.service';
 import { UserClientDto } from 'src/modules/users/dtos/user-client.dto';
 import { TipCommentsService } from 'src/modules/tip-comments/tip-comments.service';
 import { FollowsService } from 'src/modules/follows/follows.service';
+import { Tip, TipWord } from '@prisma/client';
 
 @Injectable()
 export class TipsService {

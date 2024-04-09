@@ -101,6 +101,7 @@ model Tip {
   likedBy     TipLike[]
   tipComments TipComment[]
   tipMedias   TipMedia[]
+  TipWord     TipWord[]
 }
 
 model TipMedia {
@@ -217,4 +218,12 @@ model AccountDeactivation {
   userId      Int
   user        User     @relation(fields: [userId], references: [id])
   createdAt   DateTime @default(now())
+}
+
+model TipWord {
+  id        Int      @id @default(autoincrement())
+  tip       Tip      @relation(fields: [tipId], references: [id], onDelete: Cascade)
+  tipId     Int
+  word      String
+  createdAt DateTime @default(now())
 }

@@ -22,6 +22,7 @@ import { TripDiariesModule } from './modules/trip-diaries/trip-diaries.module';
 import { MediaModule } from './modules/media/media.module';
 import { DiaryPostLikesModule } from 'src/modules/diary-post-likes/diary-post-likes.module';
 import { FollowsModule } from 'src/modules/follows/follows.module';
+import { TipWordsModule } from './modules/tip-words/tip-words.module';
 
 @Module({
   imports: [
@@ -43,7 +44,7 @@ import { FollowsModule } from 'src/modules/follows/follows.module';
     CountriesModule,
     PrismaModule,
     MediaModule,
-
+    TipWordsModule,
     ConfigModule.forRoot(),
   ],
   providers: [

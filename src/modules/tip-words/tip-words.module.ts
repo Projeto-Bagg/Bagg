@@ -7,5 +7,6 @@ import { PrismaModule } from '../../prisma/prisma.module';
   imports: [PrismaModule],
   controllers: [TipWordsController],
   providers: [TipWordsService],
+  exports: [TipWordsService],
 })
 export class TipWordsModule {}

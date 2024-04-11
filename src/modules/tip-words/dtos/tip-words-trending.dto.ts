@@ -1,16 +1,16 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
 export class TipWordsTrendingDto {
-  @ApiProperty()
+  @ApiPropertyOptional()
   @Type(() => Boolean)
   sortByCount: boolean;
 
-  @ApiProperty()
+  @ApiPropertyOptional()
   @Type(() => Date)
-  startDate: Date;
+  startDate?: Date;
 
-  @ApiProperty()
+  @ApiPropertyOptional()
   @Type(() => Date)
-  endDate: Date;
+  endDate?: Date;
 }

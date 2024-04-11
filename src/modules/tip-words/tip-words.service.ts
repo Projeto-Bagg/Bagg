@@ -1,27 +1,32 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Prisma, Tip, TipWord } from '@prisma/client';
+import { TipWordByCountDto } from './dtos/tip-word-by-count.dto';
 
 @Injectable()
 export class TipWordsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findMany(sortByCount: boolean, startDate: Date, endDate: Date) {
-    const orderBy: Prisma.TipWordOrderByWithRelationInput[] = [
-      {
-        word: 'desc',
-      },
-    ];
-
-    return await this.prisma.tipWord.findMany({
-      orderBy: sortByCount ? orderBy : undefined,
-      where: {
-        createdAt: {
-          gte: startDate,
-          lte: endDate,
+  async findMany(sortByCount: boolean, startDate?: Date, endDate?: Date) {
+    return (
+      await this.prisma.tipWord.groupBy({
+        by: ['word'],
+        _count: { word: true },
+        orderBy: sortByCount ? { _count: { word: 'desc' } } : undefined,
+        where: {
+          createdAt: {
+            gte: startDate,
+            lte: endDate,
+          },
         },
-      },
-    });
+      })
+    ).map(
+      (tipWord) =>
+        ({
+          word: tipWord.word,
+          count: tipWord._count.word,
+        } as TipWordByCountDto),
+    );
   }
 
   async indexTipWords(tip: Tip) {

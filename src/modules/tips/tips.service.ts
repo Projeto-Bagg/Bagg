@@ -11,6 +11,7 @@ import { MediaService } from '../media/media.service';
 import { UserClientDto } from 'src/modules/users/dtos/user-client.dto';
 import { TipCommentsService } from 'src/modules/tip-comments/tip-comments.service';
 import { FollowsService } from 'src/modules/follows/follows.service';
+import { TipWordsService } from '../tip-words/tip-words.service';
 
 @Injectable()
 export class TipsService {
@@ -19,6 +20,7 @@ export class TipsService {
     private readonly mediaService: MediaService,
     private readonly tipCommentsService: TipCommentsService,
     private readonly followsService: FollowsService,
+    private readonly tipWordsService: TipWordsService,
   ) {}
 
   async create(
@@ -60,6 +62,8 @@ export class TipsService {
         });
       }),
     );
+
+    this.tipWordsService.indexTipWords(tip);
 
     return {
       ...tip,
@@ -265,5 +269,39 @@ export class TipsService {
         id,
       },
     });
+  }
+
+  async showRelevantTips(
+    currentUser: UserFromJwt,
+    wordCount: number,
+    startDate?: Date,
+    endDate?: Date,
+    tipStartDate?: Date,
+  ) {
+    const userMostUsedWords = await this.prisma.tipWord.findMany({
+      include: { tip: true },
+      where: {
+        tip: { userId: currentUser.id },
+        createdAt: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      orderBy: { word: 'desc' },
+      take: wordCount,
+    });
+    const words = userMostUsedWords.map((tipWord) => tipWord.word);
+    const tipIds = userMostUsedWords.map((tipWord) => tipWord.tipId);
+    const relevantTips = this.prisma.tipWord.findMany({
+      where: {
+        word: { in: words },
+        tipId: { notIn: tipIds },
+        createdAt: { lte: new Date(), gte: tipStartDate },
+      },
+      include: {
+        tip: { select: { likedBy: { orderBy: { userId: 'desc' } } } },
+      },
+    });
+    return relevantTips;
   }
 }

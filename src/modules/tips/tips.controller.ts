@@ -25,6 +25,7 @@ import { IsPublic } from 'src/modules/auth/decorators/is-public.decorator';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { UserClientDto } from 'src/modules/users/dtos/user-client.dto';
 import { TipsFeedDto } from 'src/modules/tips/dtos/tips-feed.dto';
+import { FeedFilterDto } from '../tip-words/dtos/feed-filter.dto';
 
 @Controller('tips')
 @ApiTags('tips')
@@ -58,12 +59,14 @@ export class TipsController {
   @ApiResponse({ type: TipEntity, isArray: true })
   async findByUserCityInterest(
     @Query() query: TipsFeedDto,
+    @Query() filter: FeedFilterDto,
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<TipEntity[]> {
     const tips = await this.tipsService.findByUserCityInterest(
       query.page,
       query.count,
       currentUser,
+      filter,
     );
 
     return tips.map((tip) => new TipEntity(tip));

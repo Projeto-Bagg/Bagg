@@ -34,7 +34,7 @@ export class TipWordsService {
       .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '')
       .replace(/\s{2,}/g, ' ')
       .split(' ')
-      .map((word) => ({ tipId: tip.id, word: word } as TipWord));
+      .map((word) => ({ word: word } as TipWord));
     await this.prisma.tipWord.createMany({
       data: tipWordsWithStrippedPunctuation,
     });

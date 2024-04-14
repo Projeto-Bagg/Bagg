@@ -285,9 +285,9 @@ export class TipsService {
     tipStartDate?: Date,
   ) {
     const userMostUsedWords = await this.prisma.tipWord.findMany({
-      include: { tip: true },
+      include: { tips: true },
       where: {
-        tip: { userId: currentUser.id },
+        tips: { some: { userId: currentUser.id } },
         createdAt: {
           gte: startDate,
           lte: endDate,
@@ -297,15 +297,16 @@ export class TipsService {
       take: wordCount,
     });
     const words = userMostUsedWords.map((tipWord) => tipWord.word);
-    const tipIds = userMostUsedWords.map((tipWord) => tipWord.tipId);
     const relevantTips = this.prisma.tipWord.findMany({
       where: {
         word: { in: words },
-        tipId: { notIn: tipIds },
         createdAt: { lte: new Date(), gte: tipStartDate },
       },
       include: {
-        tip: { select: { likedBy: { orderBy: { userId: 'desc' } } } },
+        tips: {
+          where: { userId: { not: currentUser.id } },
+          select: { likedBy: { orderBy: { userId: 'desc' } } },
+        },
       },
     });
     return relevantTips;

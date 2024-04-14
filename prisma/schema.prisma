@@ -222,8 +222,7 @@ model AccountDeactivation {
 
 model TipWord {
   id        Int      @id @default(autoincrement())
-  tip       Tip      @relation(fields: [tipId], references: [id], onDelete: Cascade)
-  tipId     Int
+  tips      Tip[]
   word      String
   createdAt DateTime @default(now())
 }

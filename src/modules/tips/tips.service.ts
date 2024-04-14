@@ -12,6 +12,7 @@ import { UserClientDto } from 'src/modules/users/dtos/user-client.dto';
 import { TipCommentsService } from 'src/modules/tip-comments/tip-comments.service';
 import { FollowsService } from 'src/modules/follows/follows.service';
 import { TipWordsService } from '../tip-words/tip-words.service';
+import { FeedFilterDto } from '../tip-words/dtos/feed-filter.dto';
 
 @Injectable()
 export class TipsService {
@@ -161,17 +162,22 @@ export class TipsService {
     page = 1,
     count = 10,
     currentUser: UserFromJwt,
+    filter: FeedFilterDto,
   ): Promise<TipEntity[]> {
-    // const cities = (
-    //   await this.prisma.cityInterest.findMany({
-    //     where: { userId: currentUser.id },
-    //     select: { cityId: true },
-    //   })
-    // ).map((city) => city.cityId);
-
     const tips = await this.prisma.tip.findMany({
-      // where: { cityId: { in: cities } },
+      where: {
+        ...(filter.cityInterest && {
+          city: { cityInterests: { some: { userId: currentUser.id } } },
+        }),
+        ...(filter.follows && {
+          user: { followers: { some: { followingId: currentUser.id } } },
+        }),
+        ...(filter.relevancy && {
+          city: { cityInterests: { some: { userId: currentUser.id } } },
+        }),
+      },
       orderBy: {
+        likedBy: { _count: 'desc' },
         createdAt: 'desc',
       },
       skip: count * (page - 1),

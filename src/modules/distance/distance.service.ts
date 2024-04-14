@@ -27,9 +27,11 @@ interface Place {
 export class DistanceService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getClosestPlaces(
+  private async getClosestPlaces(
     id: number,
     model: CityDelegate | RegionDelegate | CountryDelegate,
+    count?: number,
+    page?: number,
   ) {
     const allPlaces: Place[] = await model.findMany();
     const chosenPlace = allPlaces.find((place) => place.id == id);
@@ -44,31 +46,23 @@ export class DistanceService {
           chosenPlace?.longitude,
         ),
       }));
-      return (
+      const placesSortedByDistance = (
         placesWithDistance as
           | CityByDistanceDto[]
           | RegionByDistanceDto[]
           | CountryByDistanceDto[]
-      )
-        .sort((a, b) => a.distance - b.distance)
-        .slice(0, 5);
+      ).sort((a, b) => a.distance - b.distance);
+      return page && count
+        ? placesSortedByDistance.slice(
+            (page - 1) * count,
+            (page - 1) * count + count,
+          )
+        : placesSortedByDistance;
     }
     return [];
   }
 
-  async getClosestCities(id: number) {
-    return this.getClosestPlaces(id, this.prisma.city);
-  }
-
-  async getClosestRegions(id: number) {
-    return this.getClosestPlaces(id, this.prisma.region);
-  }
-
-  async getClosestCountries(id: number) {
-    return this.getClosestPlaces(id, this.prisma.country);
-  }
-
-  calculateDistance(
+  private calculateDistance(
     lat1: number,
     lon1: number,
     lat2: number,
@@ -94,5 +88,17 @@ export class DistanceService {
 
     const distance = earthRadiusKm * c;
     return distance;
+  }
+
+  async getClosestCities(id: number, count?: number, page?: number) {
+    return this.getClosestPlaces(id, this.prisma.city, count, page);
+  }
+
+  async getClosestRegions(id: number, count?: number, page?: number) {
+    return this.getClosestPlaces(id, this.prisma.region, count, page);
+  }
+
+  async getClosestCountries(id: number, count?: number, page?: number) {
+    return this.getClosestPlaces(id, this.prisma.country, count, page);
   }
 }

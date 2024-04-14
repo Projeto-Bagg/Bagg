@@ -1,10 +1,11 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiTags, ApiResponse } from '@nestjs/swagger';
 import { IsPublic } from '../auth/decorators/is-public.decorator';
 import { DistanceService } from './distance.service';
 import { CityByDistanceDto } from './dtos/city-by-distance.dto';
 import { RegionByDistanceDto } from './dtos/region-by-distance.dto';
 import { CountryByDistanceDto } from './dtos/country-by-distance.dto';
+import { PaginationDto } from 'src/commons/entities/pagination';
 
 @Controller('distance')
 @ApiTags('distance')
@@ -16,9 +17,12 @@ export class DistanceController {
   @ApiResponse({ type: CityByDistanceDto, isArray: true })
   async getClosestCities(
     @Param('id') id: number,
+    @Query() query: PaginationDto,
   ): Promise<CityByDistanceDto[]> {
     return (await this.distanceService.getClosestCities(
       +id,
+      query.count,
+      query.page,
     )) as CityByDistanceDto[];
   }
 
@@ -27,9 +31,12 @@ export class DistanceController {
   @ApiResponse({ type: RegionByDistanceDto, isArray: true })
   async getClosestRegions(
     @Param('id') id: number,
+    @Query() query: PaginationDto,
   ): Promise<RegionByDistanceDto[]> {
     return (await this.distanceService.getClosestRegions(
       +id,
+      query.count,
+      query.page,
     )) as RegionByDistanceDto[];
   }
 
@@ -38,9 +45,12 @@ export class DistanceController {
   @ApiResponse({ type: CountryByDistanceDto, isArray: true })
   async getClosestCountries(
     @Param('id') id: number,
+    @Query() query: PaginationDto,
   ): Promise<CountryByDistanceDto[]> {
     return (await this.distanceService.getClosestCountries(
       +id,
+      query.count,
+      query.page,
     )) as CountryByDistanceDto[];
   }
 }

@@ -1,9 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CityByDistanceDto } from './dtos/city-by-distance.dto';
 import { City, Country, Region } from '@prisma/client';
-import { RegionByDistanceDto } from './dtos/region-by-distance.dto';
-import { CountryByDistanceDto } from './dtos/country-by-distance.dto';
 
 interface CityDelegate {
   findMany(): Promise<City[]>;
@@ -23,6 +20,10 @@ interface Place {
   longitude: number;
 }
 
+interface PlaceWithDistance extends Place {
+  distance: number;
+}
+
 @Injectable()
 export class DistanceService {
   constructor(private readonly prisma: PrismaService) {}
@@ -30,8 +31,8 @@ export class DistanceService {
   private async getClosestPlaces(
     id: number,
     model: CityDelegate | RegionDelegate | CountryDelegate,
-    count?: number,
-    page?: number,
+    page = 1,
+    count = 10,
   ) {
     const allPlaces: Place[] = await model.findMany();
     const chosenPlace = allPlaces.find((place) => place.id == id);
@@ -47,10 +48,7 @@ export class DistanceService {
         ),
       }));
       const placesSortedByDistance = (
-        placesWithDistance as
-          | CityByDistanceDto[]
-          | RegionByDistanceDto[]
-          | CountryByDistanceDto[]
+        placesWithDistance as PlaceWithDistance[]
       ).sort((a, b) => a.distance - b.distance);
       return page && count
         ? placesSortedByDistance.slice(
@@ -90,15 +88,15 @@ export class DistanceService {
     return distance;
   }
 
-  async getClosestCities(id: number, count?: number, page?: number) {
-    return this.getClosestPlaces(id, this.prisma.city, count, page);
+  async getClosestCities(id: number, page = 1, count = 10) {
+    return this.getClosestPlaces(id, this.prisma.city, page, count);
   }
 
-  async getClosestRegions(id: number, count?: number, page?: number) {
-    return this.getClosestPlaces(id, this.prisma.region, count, page);
+  async getClosestRegions(id: number, page = 1, count = 10) {
+    return this.getClosestPlaces(id, this.prisma.region, page, count);
   }
 
-  async getClosestCountries(id: number, count?: number, page?: number) {
-    return this.getClosestPlaces(id, this.prisma.country, count, page);
+  async getClosestCountries(id: number, page = 1, count = 10) {
+    return this.getClosestPlaces(id, this.prisma.country, page, count);
   }
 }

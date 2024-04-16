@@ -21,8 +21,8 @@ export class DistanceController {
   ): Promise<CityByDistanceDto[]> {
     return (await this.distanceService.getClosestCities(
       +id,
-      query.count,
       query.page,
+      query.count,
     )) as CityByDistanceDto[];
   }
 
@@ -35,8 +35,8 @@ export class DistanceController {
   ): Promise<RegionByDistanceDto[]> {
     return (await this.distanceService.getClosestRegions(
       +id,
-      query.count,
       query.page,
+      query.count,
     )) as RegionByDistanceDto[];
   }
 
@@ -49,8 +49,8 @@ export class DistanceController {
   ): Promise<CountryByDistanceDto[]> {
     return (await this.distanceService.getClosestCountries(
       +id,
-      query.count,
       query.page,
+      query.count,
     )) as CountryByDistanceDto[];
   }
 }

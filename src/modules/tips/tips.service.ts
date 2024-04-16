@@ -261,8 +261,8 @@ export class TipsService {
 
     const tips = tipsByCityInterestAndFollows.concat(
       (tipsSortedByRelevancy as TipSortedByRelevancy[]).slice(
-        (page - 1) * count,
-        (page - 1) * count + count,
+        (page - 1) * count * 0.7,
+        (page - 1) * count + count * 0.7,
       ),
     );
 

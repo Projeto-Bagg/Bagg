@@ -164,40 +164,54 @@ export class TipsService {
     currentUser: UserFromJwt,
     filter: FeedFilterDto,
   ): Promise<TipEntity[]> {
-    const tips = await this.prisma.tip.findMany({
+    const include = {
+      user: true,
+      tipMedias: true,
+      likedBy: true,
+      city: {
+        include: {
+          region: {
+            include: {
+              country: true,
+            },
+          },
+        },
+      },
+    };
+
+    const tipsByCityInterest = await this.prisma.tip.findMany({
       where: {
         ...(filter.cityInterest && {
           city: { cityInterests: { some: { userId: currentUser.id } } },
         }),
         ...(filter.follows && {
-          user: { followers: { some: { followingId: currentUser.id } } },
-        }),
-        ...(filter.relevancy && {
-          city: { cityInterests: { some: { userId: currentUser.id } } },
-        }),
-      },
-      orderBy: {
-        likedBy: { _count: 'desc' },
-        createdAt: 'desc',
-      },
-      skip: count * (page - 1),
-      take: count,
-      include: {
-        user: true,
-        tipMedias: true,
-        likedBy: true,
-        city: {
-          include: {
-            region: {
-              include: {
-                country: true,
-              },
-            },
+          user: {
+            followers: { some: { followingId: { not: currentUser.id } } },
           },
-        },
+        }),
       },
+      include,
+      // skip: count * (page - 1),
+      // take: count * 0.6,
     });
 
+    const tipsByCityInterestAndFollows = await this.prisma.tip.findMany({
+      where: {
+        ...(filter.cityInterest && {
+          city: { cityInterests: { some: { userId: currentUser.id } } },
+        }),
+        ...(filter.follows && {
+          user: {
+            followers: { some: { followingId: currentUser.id } },
+          },
+        }),
+      },
+      include,
+      skip: count * (page - 1),
+      take: count * 0.4,
+    });
+
+    const tips = tipsByCityInterest.concat(tipsByCityInterestAndFollows);
     return await Promise.all(
       tips.map(async (tip) => {
         const commentsAmount =
@@ -311,4 +325,20 @@ export class TipsService {
     });
     return relevantTips;
   }
+
+  async calculateTipRelevancy(tipId: number, startDate: Date, endDate: Date) {
+    const tip = await this.prisma.tip.findUnique({
+      where: { id: tipId },
+      include: {
+        tipComments: { where: { createdAt: { gte: startDate, lte: endDate } } },
+        likedBy: { where: { createdAt: { gte: startDate, lte: endDate } } },
+      },
+    });
+
+    const relevancy =
+      tip && tip.likedBy.length * 0.3 * (tip.tipComments.length * 0.7);
+    return relevancy ?? 0;
+  }
+
+  findBy;
 }

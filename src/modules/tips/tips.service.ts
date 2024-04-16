@@ -13,6 +13,28 @@ import { TipCommentsService } from 'src/modules/tip-comments/tip-comments.servic
 import { FollowsService } from 'src/modules/follows/follows.service';
 import { TipWordsService } from '../tip-words/tip-words.service';
 import { FeedFilterDto } from '../tip-words/dtos/feed-filter.dto';
+import { Tip, TipComment, TipLike } from '@prisma/client';
+import { TipMediaEntity } from '../tip-medias/entities/tip-media.entity';
+import { UserEntity } from '../users/entities/user.entity';
+import { CityRegionCountryDto } from '../cities/dtos/city-region-country.dto';
+
+interface TipWithCommentsAndLikes extends Tip {
+  likedBy: TipLike[];
+  tipComments: TipComment[];
+}
+
+interface TipWithCreatedDateAtAsDate extends Tip {
+  createdAtAsDate: string;
+}
+
+interface TipSortedByRelevancy extends Tip {
+  createdAtAsDate: string;
+  city: CityRegionCountryDto;
+  tipMedias: TipMediaEntity[];
+  user: UserEntity;
+  likedBy: TipLike[];
+  tipComments: TipComment[];
+}
 
 @Injectable()
 export class TipsService {
@@ -158,7 +180,7 @@ export class TipsService {
     );
   }
 
-  async findByUserCityInterest(
+  async getTipsFeed(
     page = 1,
     count = 10,
     currentUser: UserFromJwt,
@@ -191,12 +213,38 @@ export class TipsService {
         }),
       },
       include,
-      // skip: count * (page - 1),
-      // take: count * 0.6,
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
+
+    let tipsSortedByRelevancy: TipSortedByRelevancy[] = [];
+    if (filter.relevancy) {
+      //separa por dia e filtra por relevancia no dia
+      const tipsWithCreatedAtAsDate: TipWithCreatedDateAtAsDate[] =
+        tipsByCityInterest.map((tip) => ({
+          ...tip,
+          createdAtAsDate: tip.createdAt.toDateString(),
+        }));
+
+      const tipsSeparatedByDate: Tip[][] =
+        this.separateArrayByProperty<TipWithCreatedDateAtAsDate>(
+          tipsWithCreatedAtAsDate as TipWithCreatedDateAtAsDate[],
+          'createdAt',
+        );
+
+      tipsSortedByRelevancy = tipsSeparatedByDate.flatMap((tips: Tip[]) =>
+        tips.sort(
+          (a, b) =>
+            this.calculateRelevancy(a as TipWithCommentsAndLikes) -
+            this.calculateRelevancy(b as TipWithCommentsAndLikes),
+        ),
+      ) as TipSortedByRelevancy[];
+    }
 
     const tipsByCityInterestAndFollows = await this.prisma.tip.findMany({
       where: {
+        id: { notIn: tipsSortedByRelevancy.map((tip) => tip.id) },
         ...(filter.cityInterest && {
           city: { cityInterests: { some: { userId: currentUser.id } } },
         }),
@@ -211,7 +259,13 @@ export class TipsService {
       take: count * 0.4,
     });
 
-    const tips = tipsByCityInterest.concat(tipsByCityInterestAndFollows);
+    const tips = tipsByCityInterestAndFollows.concat(
+      (tipsSortedByRelevancy as TipSortedByRelevancy[]).slice(
+        (page - 1) * count,
+        (page - 1) * count + count,
+      ),
+    );
+
     return await Promise.all(
       tips.map(async (tip) => {
         const commentsAmount =
@@ -340,5 +394,25 @@ export class TipsService {
     return relevancy ?? 0;
   }
 
-  findBy;
+  private calculateRelevancy(tip: TipWithCommentsAndLikes) {
+    const relevancy =
+      tip && tip.likedBy.length * 0.3 * ((tip.tipComments?.length ?? 0) * 0.7);
+    return relevancy ?? 0;
+  }
+
+  private separateArrayByProperty<T>(arr: T[], property: keyof T): T[][] {
+    const result: T[][] = [];
+    arr.forEach((obj) => {
+      const key = obj[property];
+      const index = result.findIndex(
+        (subArr) => subArr.length > 0 && subArr[0][property] === key,
+      );
+      if (index === -1) {
+        result.push([obj]);
+      } else {
+        result[index].push(obj);
+      }
+    });
+    return result;
+  }
 }

@@ -57,12 +57,12 @@ export class TipsController {
   @ApiBearerAuth()
   @IsPublic()
   @ApiResponse({ type: TipEntity, isArray: true })
-  async findByUserCityInterest(
+  async getTipsFeed(
     @Query() query: TipsFeedDto,
     @Query() filter: FeedFilterDto,
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<TipEntity[]> {
-    const tips = await this.tipsService.findByUserCityInterest(
+    const tips = await this.tipsService.getTipsFeed(
       query.page,
       query.count,
       currentUser,

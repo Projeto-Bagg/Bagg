@@ -23,6 +23,7 @@ import { MediaModule } from './modules/media/media.module';
 import { DiaryPostLikesModule } from 'src/modules/diary-post-likes/diary-post-likes.module';
 import { FollowsModule } from 'src/modules/follows/follows.module';
 import { TipWordsModule } from 'src/modules/tip-words/tip-words.module';
+import { EmailsModule } from './modules/emails/emails.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { TipWordsModule } from 'src/modules/tip-words/tip-words.module';
     PrismaModule,
     MediaModule,
     TipWordsModule,
+    EmailsModule,
     ConfigModule.forRoot(),
   ],
   providers: [

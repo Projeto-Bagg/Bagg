@@ -21,6 +21,7 @@ import { UserFullInfoDto } from 'src/modules/users/dtos/user-full-info.dto';
 import { FollowsService } from 'src/modules/follows/follows.service';
 import { FindUserByCityDto } from 'src/modules/users/dtos/find-user-by-city.dto';
 import { FindUserByCountryDto } from 'src/modules/users/dtos/find-user-by-country.dto';
+import { EmailsService } from '../emails/emails-service';
 
 interface JwtPayload {
   email: string;
@@ -32,6 +33,7 @@ export class UsersService {
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
     private readonly followsService: FollowsService,
+    private readonly emailsService: EmailsService,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<void> {
@@ -340,7 +342,7 @@ export class UsersService {
     await this.prisma.user.update({ data: { password }, where: { username } });
   }
 
-  async sendConfirmationEmail(id: number): Promise<boolean> {
+  async sendConfirmationEmail(id: number) {
     const user = await this.prisma.user.findUnique({ where: { id } });
 
     if (!user) {
@@ -352,33 +354,14 @@ export class UsersService {
       const verificationToken = this.jwt.sign({
         email: user.email,
       });
-      //precisa permitir que apps menos seguros usem seu gmail por conta da falta do oauth, se não não vai funcionar
-      const mailTransporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-          user: process.env.EMAIL,
-          pass: process.env.EMAIL_PASSWORD,
-        },
-      });
-
-      const mailDetails = {
-        from: process.env.EMAIL,
-        to: user.email,
-        subject: 'pretty subject',
-        text: 'pretty text',
-      };
-
-      mailTransporter.sendMail(mailDetails, function (err) {
-        if (err) {
-          return false;
-        } else {
-          return true;
-        }
-      });
+      return await this.emailsService.sendMail(
+        user.email,
+        'Confirme seu E-mail!',
+        verificationToken,
+      );
     } else {
       return false;
     }
-    return true;
   }
 
   async verifyConfirmationEmail(token: string): Promise<boolean> {

@@ -52,6 +52,12 @@ export class UsersController {
     return this.usersService.create(createUserDto);
   }
 
+  @Get('send-email-confirmation')
+  @ApiBearerAuth()
+  async sendEmailConfirmation(@CurrentUser() currentUser: UserFromJwt) {
+    return await this.usersService.sendConfirmationEmail(currentUser.id);
+  }
+
   @Put()
   @ApiBearerAuth()
   @UseInterceptors(FileInterceptor('profilePic'), ClassSerializerInterceptor)

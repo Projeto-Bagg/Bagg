@@ -363,7 +363,7 @@ export class UsersService {
     );
     const verificationUrl =
       (await app.getUrl()) +
-      '/verify-email-confirmation/?token=' +
+      '/users/verify-email-confirmation/?token=' +
       verificationToken;
     return await this.emailsService.sendMail(
       user.email,
@@ -392,7 +392,9 @@ export class UsersService {
       },
     );
     const resetUrl =
-      (await app.getUrl()) + '/reset-password/?token=' + verificationToken;
+      (await app.getUrl()) +
+      '/users/reset-password/?token=' +
+      verificationToken;
     return await this.emailsService.sendMail(
       user.email,
       'Renove sua senha!',

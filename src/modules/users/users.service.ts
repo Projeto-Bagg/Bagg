@@ -351,29 +351,25 @@ export class UsersService {
     if (user.emailVerified) {
       throw new BadRequestException('Email has already been verified');
     }
-    if (!user.emailVerified) {
-      //usar alguma biblioteca de template para passar o token para o html que vai ter no email
-      const verificationToken = this.jwt.sign(
-        {
-          email: user.email,
-        },
-        {
-          secret: process.env.JWT_ACCESS_TOKEN_SECRET,
-          expiresIn: '1h',
-        },
-      );
-      const verificationUrl =
-        (await app.getUrl()) +
-        '/verify-email-confirmation/?token=' +
-        verificationToken;
-      return await this.emailsService.sendMail(
-        user.email,
-        'Confirme seu Email!',
-        verificationUrl,
-      );
-    } else {
-      return false;
-    }
+    //usar alguma biblioteca de template para passar o token para o html que vai ter no email
+    const verificationToken = this.jwt.sign(
+      {
+        email: user.email,
+      },
+      {
+        secret: process.env.JWT_ACCESS_TOKEN_SECRET,
+        expiresIn: '1h',
+      },
+    );
+    const verificationUrl =
+      (await app.getUrl()) +
+      '/verify-email-confirmation/?token=' +
+      verificationToken;
+    return await this.emailsService.sendMail(
+      user.email,
+      'Confirme seu Email!',
+      verificationUrl,
+    );
   }
 
   async verifyEmailConfirmation(token: string): Promise<boolean> {

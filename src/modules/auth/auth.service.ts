@@ -29,11 +29,13 @@ export class AuthService {
   }
 
   async getTokens(payload: UserPayload): Promise<UserToken> {
+    const user = await this.usersService.findByUsername(payload.username);
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(
         {
           sub: payload.sub,
           username: payload.username,
+          hasEmailBeenVerified: user.emailVerified,
         },
         {
           secret: process.env.JWT_ACCESS_TOKEN_SECRET,
@@ -44,6 +46,7 @@ export class AuthService {
         {
           sub: payload.sub,
           username: payload.username,
+          hasEmailBeenVerified: user.emailVerified,
         },
         {
           secret: process.env.JWT_REFRESH_TOKEN_SECRET,

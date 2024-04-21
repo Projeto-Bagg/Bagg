@@ -352,7 +352,7 @@ export class UsersService {
       throw new BadRequestException('Email has already been verified');
     }
     //usar alguma biblioteca de template para passar o token para o html que vai ter no email
-    const verificationToken = this.jwt.sign(
+    const verificationToken = await this.jwt.signAsync(
       {
         email: user.email,
       },
@@ -382,7 +382,7 @@ export class UsersService {
     }
 
     //usar alguma biblioteca de template para passar o token para o html que vai ter no email
-    const verificationToken = this.jwt.sign(
+    const verificationToken = await this.jwt.signAsync(
       {
         email: user.email,
       },

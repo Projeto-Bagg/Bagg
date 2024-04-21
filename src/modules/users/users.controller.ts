@@ -52,10 +52,36 @@ export class UsersController {
     return this.usersService.create(createUserDto);
   }
 
-  @Get('send-email-confirmation')
-  @ApiBearerAuth()
-  async sendEmailConfirmation(@CurrentUser() currentUser: UserFromJwt) {
-    return await this.usersService.sendConfirmationEmail(currentUser.id);
+  @Get('send-email-confirmation/:email')
+  @ApiResponse({
+    status: 200,
+    description: 'Confirmation sent',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'No account has been registered with the given email',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Email has already been verified',
+  })
+  @IsPublic()
+  async sendEmailConfirmation(@Param('email') email: string) {
+    return await this.usersService.sendConfirmationEmail(email);
+  }
+
+  @Get('verify-email-confirmation/:token')
+  @ApiResponse({
+    status: 200,
+    description: 'Email has been verified',
+  })
+  @IsPublic()
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid token',
+  })
+  async verifyEmailConfirmation(@Param('token') token: string) {
+    return await this.usersService.verifyEmailConfirmation(token);
   }
 
   @Put()

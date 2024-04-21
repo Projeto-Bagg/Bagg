@@ -51,7 +51,6 @@ export class EmailsService {
       values = { error, response };
       smtpTransport.close();
     });
-    smtpTransport;
     return values;
   }
 }

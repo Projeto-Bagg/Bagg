@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   NotFoundException,
@@ -12,7 +13,6 @@ import { UserEntity } from './entities/user.entity';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { UpdatePasswordDto } from './dtos/update-password.dto';
 import { DeleteUserDto } from './dtos/delete-user.dto';
-import nodemailer from 'nodemailer';
 import { JwtService } from '@nestjs/jwt';
 import { UserClientDto } from './dtos/user-client.dto';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
@@ -22,10 +22,7 @@ import { FollowsService } from 'src/modules/follows/follows.service';
 import { FindUserByCityDto } from 'src/modules/users/dtos/find-user-by-city.dto';
 import { FindUserByCountryDto } from 'src/modules/users/dtos/find-user-by-country.dto';
 import { EmailsService } from '../emails/emails-service';
-
-interface JwtPayload {
-  email: string;
-}
+import { app } from 'src/main';
 
 @Injectable()
 export class UsersService {
@@ -342,37 +339,57 @@ export class UsersService {
     await this.prisma.user.update({ data: { password }, where: { username } });
   }
 
-  async sendConfirmationEmail(id: number) {
-    const user = await this.prisma.user.findUnique({ where: { id } });
+  async sendConfirmationEmail(email: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
 
     if (!user) {
-      throw new NotFoundException();
+      throw new NotFoundException(
+        'No account has been registered with the given email',
+      );
     }
 
+    if (user.emailVerified) {
+      throw new BadRequestException('Email has already been verified');
+    }
     if (!user.emailVerified) {
       //usar alguma biblioteca de template para passar o token para o html que vai ter no email
-      const verificationToken = this.jwt.sign({
-        email: user.email,
-      });
+      const verificationToken = this.jwt.sign(
+        {
+          email: user.email,
+        },
+        {
+          secret: process.env.JWT_ACCESS_TOKEN_SECRET,
+          expiresIn: '1h',
+        },
+      );
+      const verificationUrl =
+        (await app.getUrl()) +
+        '/verify-email-confirmation/?token=' +
+        verificationToken;
       return await this.emailsService.sendMail(
         user.email,
-        'Confirme seu E-mail!',
-        verificationToken,
+        'Confirme seu Email!',
+        verificationUrl,
       );
     } else {
       return false;
     }
   }
 
-  async verifyConfirmationEmail(token: string): Promise<boolean> {
-    const decoded = this.jwt.decode(token) as JwtPayload;
+  async verifyEmailConfirmation(token: string): Promise<boolean> {
+    try {
+      const decoded = await this.jwt.verifyAsync(token, {
+        secret: process.env.JWT_ACCESS_TOKEN_SECRET,
+      });
+      await this.prisma.user.update({
+        data: { emailVerified: true },
+        where: { email: decoded.email },
+      });
 
-    await this.prisma.user.update({
-      data: { emailVerified: true },
-      where: { email: decoded.email },
-    });
-
-    return true;
+      return true;
+    } catch (e) {
+      throw new BadRequestException('Invalid token');
+    }
   }
 
   async following(

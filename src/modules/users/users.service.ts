@@ -372,6 +372,34 @@ export class UsersService {
     );
   }
 
+  async sendPasswordReset(email: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      throw new NotFoundException(
+        'No account has been registered with the given email',
+      );
+    }
+
+    //usar alguma biblioteca de template para passar o token para o html que vai ter no email
+    const verificationToken = this.jwt.sign(
+      {
+        email: user.email,
+      },
+      {
+        secret: process.env.JWT_ACCESS_TOKEN_SECRET,
+        expiresIn: '1h',
+      },
+    );
+    const resetUrl =
+      (await app.getUrl()) + '/reset-password/?token=' + verificationToken;
+    return await this.emailsService.sendMail(
+      user.email,
+      'Renove sua senha!',
+      resetUrl,
+    );
+  }
+
   async verifyEmailConfirmation(token: string): Promise<boolean> {
     try {
       const decoded = await this.jwt.verifyAsync(token, {
@@ -388,6 +416,20 @@ export class UsersService {
     }
   }
 
+  async resetPassword(token: string, password: string) {
+    try {
+      const decoded = await this.jwt.verifyAsync(token, {
+        secret: process.env.JWT_ACCESS_TOKEN_SECRET,
+      });
+      await this.prisma.user.update({
+        data: { password: await bcrypt.hash(password, 10) },
+        where: { email: decoded.email },
+      });
+      //mandar um email por seguranca q a senha do usuario foi trocada
+    } catch (e) {
+      throw new BadRequestException('Invalid token');
+    }
+  }
   async following(
     username: string,
     currentUser?: UserFromJwt,

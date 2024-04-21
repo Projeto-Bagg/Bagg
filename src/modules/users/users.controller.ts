@@ -37,6 +37,7 @@ import { UserCityVisitDto } from 'src/modules/city-visits/dtos/user-city-visit.d
 import { UserSearchDto } from 'src/modules/users/dtos/user-search.dto';
 import { UsernameDto } from 'src/modules/users/dtos/username.dto';
 import { EmailDto } from 'src/modules/users/dtos/email.dto';
+import { PasswordDto } from './dtos/password.dto';
 
 @Controller('users')
 @ApiTags('users')
@@ -68,6 +69,41 @@ export class UsersController {
   @IsPublic()
   async sendEmailConfirmation(@Param('email') email: string) {
     return await this.usersService.sendConfirmationEmail(email);
+  }
+
+  @Get('send-reset-password/:email')
+  @ApiResponse({
+    status: 200,
+    description: 'Confirmation sent',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'No account has been registered with the given email',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Email has already been verified',
+  })
+  @IsPublic()
+  async sendPasswordReset(@Param('email') email: string) {
+    return await this.usersService.sendPasswordReset(email);
+  }
+
+  @Post('reset-password/:token')
+  @ApiResponse({
+    status: 200,
+    description: 'Password has been changed',
+  })
+  @IsPublic()
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid token',
+  })
+  async resetPassword(
+    @Param('token') token: string,
+    @Body() body: PasswordDto,
+  ) {
+    return await this.usersService.resetPassword(token, body.password);
   }
 
   @Get('verify-email-confirmation/:token')

@@ -183,8 +183,8 @@ export class TipsService {
   async getTipsFeed(
     page = 1,
     count = 10,
-    currentUser: UserFromJwt,
     filter: FeedFilterDto,
+    currentUser?: UserFromJwt,
   ): Promise<TipEntity[]> {
     const include = {
       user: true,
@@ -204,12 +204,7 @@ export class TipsService {
     const tipsByCityInterest = await this.prisma.tip.findMany({
       where: {
         ...(filter.cityInterest && {
-          city: { cityInterests: { some: { userId: currentUser.id } } },
-        }),
-        ...(filter.follows && {
-          user: {
-            followers: { some: { followingId: { not: currentUser.id } } },
-          },
+          city: { cityInterests: { some: { userId: currentUser?.id } } },
         }),
       },
       include,
@@ -242,24 +237,24 @@ export class TipsService {
       ) as TipSortedByRelevancy[];
     }
 
-    const tipsByCityInterestAndFollows = await this.prisma.tip.findMany({
-      where: {
-        id: { notIn: tipsSortedByRelevancy.map((tip) => tip.id) },
-        ...(filter.cityInterest && {
-          city: { cityInterests: { some: { userId: currentUser.id } } },
-        }),
-        ...(filter.follows && {
-          user: {
-            followers: { some: { followingId: currentUser.id } },
+    const tipsByFollows = filter.follows
+      ? await this.prisma.tip.findMany({
+          where: {
+            id: { notIn: tipsSortedByRelevancy.map((tip) => tip.id) },
+            user: {
+              followers: { some: { followerId: currentUser?.id } },
+            },
           },
-        }),
-      },
-      include,
-      skip: count * (page - 1),
-      take: count * 0.4,
-    });
+          orderBy: {
+            createdAt: 'desc',
+          },
+          include,
+          skip: count * (page - 1),
+          take: count * 0.4,
+        })
+      : [];
 
-    const tips = tipsByCityInterestAndFollows.concat(
+    const tips = tipsByFollows.concat(
       (tipsSortedByRelevancy as TipSortedByRelevancy[]).slice(
         (page - 1) * count * 0.7,
         (page - 1) * count + count * 0.7,

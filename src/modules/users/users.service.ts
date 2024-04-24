@@ -391,9 +391,10 @@ export class UsersService {
         expiresIn: '1h',
       },
     );
+
     const resetUrl =
-      (await app.getUrl()) +
-      '/users/reset-password/?token=' +
+      process.env.BAGG_WEBSITE_URL +
+      '/settings/reset-password/reset?token=' +
       verificationToken;
     return await this.emailsService.sendMail(
       user.email,

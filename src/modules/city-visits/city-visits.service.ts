@@ -47,7 +47,7 @@ export class CityVisitsService {
   async update(
     updateCityVisitDto: UpdateCityVisitDto,
     currentUser: UserFromJwt,
-  ): Promise<CityVisitEntity> {
+  ): Promise<CityVisitClientDto> {
     return await this.prisma.cityVisit.update({
       where: {
         userId_cityId: {
@@ -58,6 +58,9 @@ export class CityVisitsService {
       data: {
         message: updateCityVisitDto.message,
         rating: updateCityVisitDto.rating,
+      },
+      include: {
+        user: true,
       },
     });
   }

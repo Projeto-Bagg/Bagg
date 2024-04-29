@@ -6,4 +6,7 @@ export class UserFromJwt {
 
   @ApiProperty()
   username: string;
+
+  @ApiProperty()
+  hasEmailBeenVerified?: boolean;
 }

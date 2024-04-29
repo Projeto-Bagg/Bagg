@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import {
+  BadRequestException,
   ConflictException,
+  ForbiddenException,
   NotFoundException,
-  UnauthorizedException,
 } from '@nestjs/common/exceptions';
 import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
@@ -12,7 +13,6 @@ import { UserEntity } from './entities/user.entity';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { UpdatePasswordDto } from './dtos/update-password.dto';
 import { DeleteUserDto } from './dtos/delete-user.dto';
-import nodemailer from 'nodemailer';
 import { JwtService } from '@nestjs/jwt';
 import { UserClientDto } from './dtos/user-client.dto';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
@@ -21,10 +21,8 @@ import { UserFullInfoDto } from 'src/modules/users/dtos/user-full-info.dto';
 import { FollowsService } from 'src/modules/follows/follows.service';
 import { FindUserByCityDto } from 'src/modules/users/dtos/find-user-by-city.dto';
 import { FindUserByCountryDto } from 'src/modules/users/dtos/find-user-by-country.dto';
-
-interface JwtPayload {
-  email: string;
-}
+import { EmailsService } from '../emails/emails-service';
+import { app } from 'src/main';
 
 @Injectable()
 export class UsersService {
@@ -32,6 +30,7 @@ export class UsersService {
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
     private readonly followsService: FollowsService,
+    private readonly emailsService: EmailsService,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<void> {
@@ -203,6 +202,39 @@ export class UsersService {
     });
   }
 
+  async isUsernameAvailable(username: string): Promise<boolean> {
+    return !!!(await this.prisma.user.count({
+      where: {
+        username,
+      },
+    }));
+  }
+
+  async isEmailAvailable(email: string): Promise<boolean> {
+    return !!!(await this.prisma.user.count({
+      where: {
+        email,
+      },
+    }));
+  }
+
+  async updateUsername(username, currentUser: UserFromJwt): Promise<void> {
+    const isUsernameAvailable = await this.isUsernameAvailable(username);
+
+    if (!isUsernameAvailable) {
+      throw new ConflictException('Username not available');
+    }
+
+    await this.prisma.user.update({
+      data: {
+        username,
+      },
+      where: {
+        id: currentUser.id,
+      },
+    });
+  }
+
   async search(query: UserSearchDto): Promise<UserEntity[]> {
     return await this.prisma.$queryRaw<UserEntity[]>`
       DECLARE @page INT = ${query.page || 1};
@@ -277,7 +309,7 @@ export class UsersService {
     );
 
     if (!validPassword) {
-      throw new UnauthorizedException('Wrong password');
+      throw new ForbiddenException('Wrong password');
     }
 
     await this.prisma.user.delete({ where: { username } });
@@ -299,7 +331,7 @@ export class UsersService {
     );
 
     if (!validPassword) {
-      throw new UnauthorizedException('Wrong password');
+      throw new ConflictException('Wrong password');
     }
 
     const password = await bcrypt.hash(UpdatePasswordDto.newPassword, 10);
@@ -307,58 +339,118 @@ export class UsersService {
     await this.prisma.user.update({ data: { password }, where: { username } });
   }
 
-  async sendConfirmationEmail(id: number): Promise<boolean> {
-    const user = await this.prisma.user.findUnique({ where: { id } });
+  async isEmailVerified(currentUser: UserFromJwt): Promise<void> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: currentUser.id },
+    });
 
     if (!user) {
-      throw new NotFoundException();
+      throw new NotFoundException(
+        'No account has been registered with the given id',
+      );
     }
 
     if (!user.emailVerified) {
-      //usar alguma biblioteca de template para passar o token para o html que vai ter no email
-      const verificationToken = this.jwt.sign({
-        email: user.email,
-      });
-      //precisa permitir que apps menos seguros usem seu gmail por conta da falta do oauth, se não não vai funcionar
-      const mailTransporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-          user: process.env.EMAIL,
-          pass: process.env.EMAIL_PASSWORD,
-        },
-      });
-
-      const mailDetails = {
-        from: process.env.EMAIL,
-        to: user.email,
-        subject: 'pretty subject',
-        text: 'pretty text',
-      };
-
-      mailTransporter.sendMail(mailDetails, function (err) {
-        if (err) {
-          return false;
-        } else {
-          return true;
-        }
-      });
-    } else {
-      return false;
+      throw new BadRequestException("Email hasn't already been verified");
     }
-    return true;
   }
 
-  async verifyConfirmationEmail(token: string): Promise<boolean> {
-    const decoded = this.jwt.decode(token) as JwtPayload;
-
-    await this.prisma.user.update({
-      data: { emailVerified: true },
-      where: { email: decoded.email },
+  async sendConfirmationEmail(currentUser: UserFromJwt) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: currentUser.id },
     });
 
-    return true;
+    if (!user) {
+      throw new NotFoundException(
+        'No account has been registered with the given id',
+      );
+    }
+
+    if (user.emailVerified) {
+      throw new BadRequestException('Email has already been verified');
+    }
+    //usar alguma biblioteca de template para passar o token para o html que vai ter no email
+    const verificationToken = await this.jwt.signAsync(
+      {
+        email: user.email,
+      },
+      {
+        secret: process.env.JWT_ACCESS_TOKEN_SECRET,
+        expiresIn: '1h',
+      },
+    );
+    const verificationUrl =
+      process.env.BAGG_WEBSITE_URL +
+      '/settings/verify-email/verify/?token=' +
+      verificationToken;
+    return await this.emailsService.sendMail(
+      user.email,
+      'Confirme seu Email!',
+      verificationUrl,
+    );
   }
 
+  async sendPasswordReset(email: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      throw new NotFoundException(
+        'No account has been registered with the given email',
+      );
+    }
+
+    //usar alguma biblioteca de template para passar o token para o html que vai ter no email
+    const verificationToken = await this.jwt.signAsync(
+      {
+        email: user.email,
+      },
+      {
+        secret: process.env.JWT_ACCESS_TOKEN_SECRET,
+        expiresIn: '1h',
+      },
+    );
+
+    const resetUrl =
+      process.env.BAGG_WEBSITE_URL +
+      '/settings/reset-password/reset?token=' +
+      verificationToken;
+    return await this.emailsService.sendMail(
+      user.email,
+      'Renove sua senha!',
+      resetUrl,
+    );
+  }
+
+  async verifyEmailConfirmation(token: string): Promise<boolean> {
+    try {
+      const decoded = await this.jwt.verifyAsync(token, {
+        secret: process.env.JWT_ACCESS_TOKEN_SECRET,
+      });
+      await this.prisma.user.update({
+        data: { emailVerified: true },
+        where: { email: decoded.email },
+      });
+
+      return true;
+    } catch (e) {
+      throw new BadRequestException('Invalid token');
+    }
+  }
+
+  async resetPassword(token: string, password: string) {
+    try {
+      const decoded = await this.jwt.verifyAsync(token, {
+        secret: process.env.JWT_ACCESS_TOKEN_SECRET,
+      });
+      await this.prisma.user.update({
+        data: { password: await bcrypt.hash(password, 10) },
+        where: { email: decoded.email },
+      });
+      //mandar um email por seguranca q a senha do usuario foi trocada
+    } catch (e) {
+      throw new BadRequestException('Invalid token');
+    }
+  }
   async following(
     username: string,
     currentUser?: UserFromJwt,

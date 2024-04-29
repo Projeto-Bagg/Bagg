@@ -339,12 +339,30 @@ export class UsersService {
     await this.prisma.user.update({ data: { password }, where: { username } });
   }
 
-  async sendConfirmationEmail(email: string) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
+  async isEmailVerified(currentUser: UserFromJwt): Promise<void> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: currentUser.id },
+    });
 
     if (!user) {
       throw new NotFoundException(
-        'No account has been registered with the given email',
+        'No account has been registered with the given id',
+      );
+    }
+
+    if (!user.emailVerified) {
+      throw new BadRequestException("Email hasn't already been verified");
+    }
+  }
+
+  async sendConfirmationEmail(currentUser: UserFromJwt) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: currentUser.id },
+    });
+
+    if (!user) {
+      throw new NotFoundException(
+        'No account has been registered with the given id',
       );
     }
 
@@ -362,8 +380,8 @@ export class UsersService {
       },
     );
     const verificationUrl =
-      (await app.getUrl()) +
-      '/users/verify-email-confirmation/?token=' +
+      process.env.BAGG_WEBSITE_URL +
+      '/settings/verify-email/verify/?token=' +
       verificationToken;
     return await this.emailsService.sendMail(
       user.email,

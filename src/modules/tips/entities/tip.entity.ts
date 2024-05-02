@@ -33,6 +33,9 @@ export class TipEntity implements Tip {
   tags: string | null;
 
   @ApiProperty()
+  active: boolean;
+
+  @ApiProperty()
   isLiked: boolean;
 
   @ApiProperty()

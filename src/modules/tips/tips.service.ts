@@ -295,7 +295,7 @@ export class TipsService {
         return {
           ...user,
           friendshipStatus: await this.followsService.friendshipStatus(
-            user.username,
+            user.id,
             currentUser,
           ),
         };

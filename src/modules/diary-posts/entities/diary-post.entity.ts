@@ -30,6 +30,9 @@ export class DiaryPostEntity implements DiaryPost {
   likedBy: number;
 
   @ApiProperty()
+  active: boolean;
+
+  @ApiProperty()
   isLiked: boolean;
 
   @ApiProperty({ type: DiaryPostMediaEntity, isArray: true })

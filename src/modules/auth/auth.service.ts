@@ -5,36 +5,37 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { UnauthorizedError } from './errors/unauthorized.error';
 import { UsersService } from '../users/users.service';
 import { UserPayload } from './models/UserPayload';
 import { UserToken } from './models/UserToken';
 import { UserFromJwt } from './models/UserFromJwt';
-import { UserEntity } from '../users/entities/user.entity';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { AccountEntity } from 'src/modules/account/entities/account.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly usersService: UsersService,
+    private readonly prismaService: PrismaService,
   ) {}
 
   async login(user: UserFromJwt): Promise<UserToken> {
     const payload: UserPayload = {
       sub: user.id,
-      username: user.username,
+      role: user.role,
     };
 
     return await this.getTokens(payload);
   }
 
   async getTokens(payload: UserPayload): Promise<UserToken> {
-    const user = await this.usersService.findByUsername(payload.username);
+    const user = await this.usersService.findById(payload.sub);
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(
         {
           sub: payload.sub,
-          username: payload.username,
+          role: payload.role,
           hasEmailBeenVerified: user.emailVerified,
         },
         {
@@ -45,7 +46,7 @@ export class AuthService {
       this.jwtService.signAsync(
         {
           sub: payload.sub,
-          username: payload.username,
+          role: payload.role,
           hasEmailBeenVerified: user.emailVerified,
         },
         {
@@ -61,11 +62,13 @@ export class AuthService {
     };
   }
 
-  async checkRefreshToken(refreshToken: string): Promise<UserEntity> {
+  async checkRefreshToken(refreshToken: string): Promise<AccountEntity> {
     const id = this.jwtService.decode(refreshToken)?.['sub'];
-    const user = await this.usersService.findById(id);
+    const account = await this.prismaService.account.findUnique({
+      where: { id },
+    });
 
-    if (!user) {
+    if (!account) {
       throw new NotFoundException('User not found');
     }
 
@@ -73,7 +76,7 @@ export class AuthService {
       this.jwtService.verify(refreshToken, {
         secret: process.env.JWT_REFRESH_TOKEN_SECRET,
       });
-      return user;
+      return account;
     } catch (err: any) {
       if (err.name === 'JsonWebTokenError') {
         throw new UnauthorizedException('JWT Error');
@@ -85,20 +88,22 @@ export class AuthService {
     }
   }
 
-  async validateUser(login: string, password: string): Promise<UserEntity> {
-    const user = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(login)
-      ? await this.usersService.findByEmail(login)
-      : await this.usersService.findByUsername(login);
+  async validateUser(login: string, password: string): Promise<AccountEntity> {
+    const account = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(login)
+      ? await this.prismaService.account.findUnique({ where: { email: login } })
+      : await this.prismaService.account.findFirst({
+          where: { user: { username: login } },
+        });
 
-    if (user) {
-      const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (account) {
+      const isPasswordValid = await bcrypt.compare(password, account.password);
 
       if (isPasswordValid) {
-        return user;
+        return account;
       }
     }
 
-    throw new UnauthorizedError(
+    throw new UnauthorizedException(
       'Email address or password provided is incorrect.',
     );
   }

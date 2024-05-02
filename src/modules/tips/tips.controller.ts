@@ -26,11 +26,32 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import { UserClientDto } from 'src/modules/users/dtos/user-client.dto';
 import { FeedFilterDto } from '../tip-words/dtos/feed-filter.dto';
 import { PaginationDto } from 'src/commons/entities/pagination';
+import { SearchTipsDto } from './dtos/search-tips.dto';
 
 @Controller('tips')
 @ApiTags('tips')
 export class TipsController {
   constructor(private readonly tipsService: TipsService) {}
+
+  @Get('search')
+  @UseInterceptors(ClassSerializerInterceptor)
+  @ApiBearerAuth()
+  @IsPublic()
+  @ApiResponse({ type: TipEntity, isArray: true })
+  async searchTips(
+    @CurrentUser() currentUser: UserFromJwt,
+    @Query() query: SearchTipsDto,
+  ): Promise<TipEntity[]> {
+    const tips = await this.tipsService.searchTips(
+      currentUser,
+      query.text,
+      query.tags,
+      query.count,
+      query.page,
+    );
+
+    return tips.map((tip) => new TipEntity(tip));
+  }
 
   @Post()
   @UseInterceptors(ClassSerializerInterceptor)

@@ -19,6 +19,9 @@ export class TipCommentEntity implements TipComment {
   createdAt: Date;
 
   @ApiProperty()
+  active: boolean;
+
+  @ApiProperty()
   user: UserEntity;
 
   constructor(partial: TipCommentEntity) {

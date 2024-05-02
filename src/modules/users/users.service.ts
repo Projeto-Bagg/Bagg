@@ -22,7 +22,6 @@ import { FollowsService } from 'src/modules/follows/follows.service';
 import { FindUserByCityDto } from 'src/modules/users/dtos/find-user-by-city.dto';
 import { FindUserByCountryDto } from 'src/modules/users/dtos/find-user-by-country.dto';
 import { EmailsService } from '../emails/emails-service';
-import { app } from 'src/main';
 
 @Injectable()
 export class UsersService {
@@ -34,7 +33,7 @@ export class UsersService {
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<void> {
-    const emailAlreadyExist = await this.prisma.user.findUnique({
+    const emailAlreadyExist = await this.prisma.account.findUnique({
       where: { email: createUserDto.email },
     });
 
@@ -59,16 +58,30 @@ export class UsersService {
       });
     }
 
-    const data: Prisma.UserCreateInput = {
-      ...createUserDto,
-      password: await bcrypt.hash(createUserDto.password, 10),
-    };
+    const account = await this.prisma.account.create({
+      data: {
+        email: createUserDto.email,
+        password: await bcrypt.hash(createUserDto.password, 10),
+      },
+    });
 
-    await this.prisma.user.create({ data });
+    await this.prisma.user.create({
+      data: {
+        id: account.id,
+        birthdate: createUserDto.birthdate,
+        fullName: createUserDto.fullName,
+        username: createUserDto.username,
+        account: {
+          connect: { id: account.id },
+        },
+      },
+    });
   }
 
   async findByEmail(email: string): Promise<UserEntity> {
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const user = await this.prisma.user.findFirst({
+      where: { account: { email } },
+    });
 
     if (!user) {
       throw new NotFoundException();
@@ -85,6 +98,39 @@ export class UsersService {
     }
 
     return user;
+  }
+
+  async fullInfoUserById(
+    id: number,
+    currentUser?: UserFromJwt,
+  ): Promise<UserFullInfoDto> {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      include: {
+        city: {
+          include: {
+            region: {
+              include: {
+                country: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException();
+    }
+
+    return {
+      ...user,
+      ...(await this.followsService.friendshipCount(user.id)),
+      friendshipStatus: await this.followsService.friendshipStatus(
+        user.id,
+        currentUser,
+      ),
+    };
   }
 
   async findByUsername(
@@ -112,9 +158,9 @@ export class UsersService {
 
     return {
       ...user,
-      ...(await this.followsService.friendshipCount(user.username)),
+      ...(await this.followsService.friendshipCount(user.id)),
       friendshipStatus: await this.followsService.friendshipStatus(
-        user.username,
+        user.id,
         currentUser,
       ),
     };
@@ -135,7 +181,7 @@ export class UsersService {
     return await Promise.all(
       users.map(async (user) => {
         const friendshipStatus = await this.followsService.friendshipStatus(
-          user.username,
+          user.id,
           currentUser,
         );
 
@@ -176,7 +222,7 @@ export class UsersService {
     return await Promise.all(
       users.map(async (user) => {
         const friendshipStatus = await this.followsService.friendshipStatus(
-          user.username,
+          user.id,
           currentUser,
         );
 
@@ -213,7 +259,9 @@ export class UsersService {
   async isEmailAvailable(email: string): Promise<boolean> {
     return !!!(await this.prisma.user.count({
       where: {
-        email,
+        account: {
+          email,
+        },
       },
     }));
   }
@@ -255,40 +303,36 @@ export class UsersService {
     currentUser: UserFromJwt,
   ): Promise<UserFullInfoDto> {
     const data: Prisma.UserUpdateInput = {
-      ...updateUserDto,
-      password: updateUserDto.password
-        ? await bcrypt.hash(updateUserDto.password, 10)
-        : undefined,
+      bio: updateUserDto.bio,
+      birthdate: updateUserDto.birthdate,
+      city: {
+        connect: {
+          id: updateUserDto.cityId,
+        },
+      },
+      fullName: updateUserDto.fullName,
+      image: updateUserDto.image,
     };
 
-    const user = await this.prisma.user
-      .update({
-        data,
-        where: { id: currentUser.id },
-        include: {
-          city: {
-            include: {
-              region: {
-                include: {
-                  country: true,
-                },
+    const user = await this.prisma.user.update({
+      data,
+      where: { id: currentUser.id },
+      include: {
+        city: {
+          include: {
+            region: {
+              include: {
+                country: true,
               },
             },
           },
         },
-      })
-      .catch(() => {
-        throw new ConflictException({
-          username: {
-            description: 'Username not available',
-            code: 'username-not-available',
-          },
-        });
-      });
+      },
+    });
 
     return {
       ...user,
-      ...(await this.followsService.friendshipCount(currentUser.username)),
+      ...(await this.followsService.friendshipCount(currentUser.id)),
       friendshipStatus: {
         isFollowing: false,
         followedBy: false,
@@ -296,38 +340,45 @@ export class UsersService {
     };
   }
 
-  async delete(DeleteUserDto: DeleteUserDto, username: string): Promise<void> {
-    const user = await this.prisma.user.findUnique({ where: { username } });
+  async delete(
+    DeleteUserDto: DeleteUserDto,
+    currentUser: UserFromJwt,
+  ): Promise<void> {
+    const account = await this.prisma.account.findUnique({
+      where: { id: currentUser.id },
+    });
 
-    if (!user) {
+    if (!account) {
       throw new NotFoundException();
     }
 
     const validPassword = await bcrypt.compare(
       DeleteUserDto.currentPassword,
-      user.password,
+      account.password,
     );
 
     if (!validPassword) {
       throw new ForbiddenException('Wrong password');
     }
 
-    await this.prisma.user.delete({ where: { username } });
+    await this.prisma.account.delete({ where: { id: currentUser.id } });
   }
 
   async updatePassword(
     UpdatePasswordDto: UpdatePasswordDto,
-    username: string,
+    currentUser: UserFromJwt,
   ): Promise<void> {
-    const user = await this.prisma.user.findUnique({ where: { username } });
+    const account = await this.prisma.account.findUnique({
+      where: { id: currentUser.id },
+    });
 
-    if (!user) {
+    if (!account) {
       throw new NotFoundException();
     }
 
     const validPassword = await bcrypt.compare(
       UpdatePasswordDto.currentPassword,
-      user.password,
+      account.password,
     );
 
     if (!validPassword) {
@@ -336,7 +387,10 @@ export class UsersService {
 
     const password = await bcrypt.hash(UpdatePasswordDto.newPassword, 10);
 
-    await this.prisma.user.update({ data: { password }, where: { username } });
+    await this.prisma.account.update({
+      data: { password },
+      where: { id: currentUser.id },
+    });
   }
 
   async isEmailVerified(currentUser: UserFromJwt): Promise<void> {
@@ -358,6 +412,9 @@ export class UsersService {
   async sendConfirmationEmail(currentUser: UserFromJwt) {
     const user = await this.prisma.user.findUnique({
       where: { id: currentUser.id },
+      include: {
+        account: true,
+      },
     });
 
     if (!user) {
@@ -372,7 +429,8 @@ export class UsersService {
     //usar alguma biblioteca de template para passar o token para o html que vai ter no email
     const verificationToken = await this.jwt.signAsync(
       {
-        email: user.email,
+        email: user.account.email,
+        sub: user.id,
       },
       {
         secret: process.env.JWT_ACCESS_TOKEN_SECRET,
@@ -384,16 +442,16 @@ export class UsersService {
       '/settings/verify-email/verify/?token=' +
       verificationToken;
     return await this.emailsService.sendMail(
-      user.email,
+      user.account.email,
       'Confirme seu Email!',
       verificationUrl,
     );
   }
 
   async sendPasswordReset(email: string) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const account = await this.prisma.account.findUnique({ where: { email } });
 
-    if (!user) {
+    if (!account) {
       throw new NotFoundException(
         'No account has been registered with the given email',
       );
@@ -402,7 +460,7 @@ export class UsersService {
     //usar alguma biblioteca de template para passar o token para o html que vai ter no email
     const verificationToken = await this.jwt.signAsync(
       {
-        email: user.email,
+        email: account.email,
       },
       {
         secret: process.env.JWT_ACCESS_TOKEN_SECRET,
@@ -415,7 +473,7 @@ export class UsersService {
       '/settings/reset-password/reset?token=' +
       verificationToken;
     return await this.emailsService.sendMail(
-      user.email,
+      account.email,
       'Renove sua senha!',
       resetUrl,
     );
@@ -428,7 +486,7 @@ export class UsersService {
       });
       await this.prisma.user.update({
         data: { emailVerified: true },
-        where: { email: decoded.email },
+        where: { id: decoded.sub },
       });
 
       return true;
@@ -442,7 +500,7 @@ export class UsersService {
       const decoded = await this.jwt.verifyAsync(token, {
         secret: process.env.JWT_ACCESS_TOKEN_SECRET,
       });
-      await this.prisma.user.update({
+      await this.prisma.account.update({
         data: { password: await bcrypt.hash(password, 10) },
         where: { email: decoded.email },
       });
@@ -472,7 +530,7 @@ export class UsersService {
         return {
           ...user,
           friendshipStatus: await this.followsService.friendshipStatus(
-            user.username,
+            user.id,
             currentUser,
           ),
         };
@@ -501,7 +559,7 @@ export class UsersService {
         return {
           ...user,
           friendshipStatus: await this.followsService.friendshipStatus(
-            user.username,
+            user.id,
             currentUser,
           ),
         };

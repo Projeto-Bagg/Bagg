@@ -16,10 +16,4 @@ export class RegionEntity implements Region {
 
   @ApiProperty()
   longitude: number;
-
-  @ApiProperty()
-  stateCode: string;
-
-  @ApiProperty({ type: String })
-  type: string | null;
 }

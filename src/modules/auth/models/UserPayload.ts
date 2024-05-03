@@ -3,5 +3,5 @@ export interface UserPayload {
   iat?: number;
   exp?: number;
   hasEmailBeenVerified?: boolean;
-  role: string;
+  role?: string;
 }

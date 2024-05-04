@@ -18,9 +18,7 @@ import { TipMediaEntity } from '../tip-medias/entities/tip-media.entity';
 import { UserEntity } from '../users/entities/user.entity';
 import { CityRegionCountryDto } from '../cities/dtos/city-region-country.dto';
 import { CreateTipReportDto } from 'src/modules/tips/dtos/create-tip-report.dto';
-import { UsersService } from 'src/modules/users/users.service';
 import { CityInterestsService } from 'src/modules/city-interests/city-interests.service';
-import { CityVisitsService } from 'src/modules/city-visits/city-visits.service';
 
 interface TipWithCommentsAndLikes extends Tip {
   likedBy: TipLike[];
@@ -332,17 +330,17 @@ export class TipsService {
       throw new UnauthorizedException();
     }
 
-    if (tip.tipMedias && tip.tipMedias.length > 0) {
-      tip.tipMedias.forEach(async (media) => {
-        const fileName = media.url.split('/').pop();
+    // if (tip.tipMedias && tip.tipMedias.length > 0) {
+    //   tip.tipMedias.forEach(async (media) => {
+    //     const fileName = media.url.split('/').pop();
 
-        if (!fileName) {
-          return;
-        }
+    //     if (!fileName) {
+    //       return;
+    //     }
 
-        await this.mediaService.deleteFile(fileName, 'tips');
-      });
-    }
+    //     await this.mediaService.deleteFile(fileName, 'tips');
+    //   });
+    // }
 
     await this.prisma.tip.update({
       data: {

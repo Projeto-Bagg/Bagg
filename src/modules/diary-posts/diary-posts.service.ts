@@ -245,17 +245,17 @@ export class DiaryPostsService {
       throw new UnauthorizedException();
     }
 
-    if (post.diaryPostMedias && post.diaryPostMedias.length > 0) {
-      post.diaryPostMedias.forEach(async (media) => {
-        const fileName = media.url.split('/').pop();
+    // if (post.diaryPostMedias && post.diaryPostMedias.length > 0) {
+    //   post.diaryPostMedias.forEach(async (media) => {
+    //     const fileName = media.url.split('/').pop();
 
-        if (!fileName) {
-          return;
-        }
+    //     if (!fileName) {
+    //       return;
+    //     }
 
-        await this.mediaService.deleteFile(fileName, 'diary-posts');
-      });
-    }
+    //     await this.mediaService.deleteFile(fileName, 'diary-posts');
+    //   });
+    // }
 
     await this.prisma.diaryPost.update({
       data: {

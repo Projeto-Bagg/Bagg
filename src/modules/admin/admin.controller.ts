@@ -1,14 +1,33 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { isAdmin } from 'src/modules/auth/decorators/is-admin.decorator';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { PaginationDto } from 'src/commons/entities/pagination';
+import { CurrentUser } from 'src/modules/auth/decorators/current-user.decorator';
+import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
+import { CreateAdminDto } from 'src/modules/admin/dto/create-admin.dto';
 
 @Controller('admin')
+@ApiTags('admin')
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
+  @Post()
+  @ApiBearerAuth()
+  @isAdmin()
+  async create(@Body() createAdminDto: CreateAdminDto) {
+    return this.adminService.create(createAdminDto);
+  }
+
+  @Get('me')
+  @ApiBearerAuth()
+  @isAdmin()
+  async me(@CurrentUser() currentUser: UserFromJwt) {
+    return this.adminService.findById(currentUser.id);
+  }
+
   @Get('overview')
+  @ApiBearerAuth()
   @isAdmin()
   overview() {
     return this.adminService.overview();

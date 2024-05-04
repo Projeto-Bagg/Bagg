@@ -10,6 +10,7 @@ import { MediaService } from 'src/modules/media/media.service';
 import { DiaryPostEntity } from 'src/modules/diary-posts/entities/diary-post.entity';
 import { UserClientDto } from 'src/modules/users/dtos/user-client.dto';
 import { FollowsService } from 'src/modules/follows/follows.service';
+import { CreateDiaryPostReportDto } from 'src/modules/diary-posts/dtos/create-diary-post-report.dto';
 
 @Injectable()
 export class DiaryPostsService {
@@ -75,6 +76,8 @@ export class DiaryPostsService {
     const post = await this.prisma.diaryPost.findUnique({
       where: {
         id,
+        status: 'active',
+        softDelete: false,
       },
       include: {
         diaryPostMedias: true,
@@ -133,6 +136,8 @@ export class DiaryPostsService {
         user: {
           username,
         },
+        softDelete: false,
+        status: 'active',
       },
       skip: count * (page - 1),
       take: count,
@@ -154,6 +159,72 @@ export class DiaryPostsService {
         likedBy: post.likedBy.length,
       };
     });
+  }
+
+  async report(
+    id: number,
+    createDiaryPostReportDto: CreateDiaryPostReportDto,
+    currentUser: UserFromJwt,
+  ) {
+    await this.prisma.diaryPostReport.create({
+      data: {
+        reason: createDiaryPostReportDto.reason,
+        diaryPost: {
+          connect: {
+            id,
+          },
+        },
+        user: {
+          connect: {
+            id: currentUser.id,
+          },
+        },
+      },
+    });
+
+    const minReportsLength = 7;
+
+    const reportsLength = await this.prisma.diaryPostReport.count({
+      where: { diaryPostId: id },
+    });
+
+    if (reportsLength <= minReportsLength) {
+      return;
+    }
+
+    const diaryPost = await this.prisma.diaryPost.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        user: {
+          include: {
+            followers: true,
+          },
+        },
+        likedBy: true,
+      },
+    });
+
+    if (!diaryPost) {
+      return;
+    }
+
+    const interactions =
+      diaryPost.likedBy.length + diaryPost.user.followers.length;
+
+    if (
+      Math.ceil(
+        (Math.log2(interactions) / 100) * 0.1 * interactions + minReportsLength,
+      ) >= reportsLength
+    ) {
+      await this.prisma.diaryPost.update({
+        where: { id },
+        data: {
+          status: 'in-review',
+        },
+      });
+    }
   }
 
   async delete(id: number, currentUser: UserFromJwt): Promise<void> {
@@ -186,7 +257,10 @@ export class DiaryPostsService {
       });
     }
 
-    await this.prisma.diaryPost.delete({
+    await this.prisma.diaryPost.update({
+      data: {
+        softDelete: true,
+      },
       where: {
         id,
       },

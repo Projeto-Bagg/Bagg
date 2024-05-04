@@ -6,6 +6,7 @@ import { MediaModule } from '../media/media.module';
 import { TipCommentsModule } from 'src/modules/tip-comments/tip-comments.module';
 import { FollowsModule } from 'src/modules/follows/follows.module';
 import { TipWordsModule } from '../tip-words/tip-words.module';
+import { CityInterestsModule } from 'src/modules/city-interests/city-interests.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { TipWordsModule } from '../tip-words/tip-words.module';
     FollowsModule,
     TipCommentsModule,
     TipWordsModule,
+    CityInterestsModule,
   ],
   controllers: [TipsController],
   providers: [TipsService],

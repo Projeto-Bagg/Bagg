@@ -15,5 +15,5 @@ export class TipReportEntity implements TipReport {
   userId: number;
 
   @ApiProperty()
-  description: string;
+  reason: string;
 }

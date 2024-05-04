@@ -15,5 +15,5 @@ export class DiaryPostReportEntity implements DiaryPostReport {
   userId: number;
 
   @ApiProperty()
-  description: string;
+  reason: string;
 }

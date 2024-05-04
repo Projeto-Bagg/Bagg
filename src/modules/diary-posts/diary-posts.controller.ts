@@ -24,7 +24,8 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import { DiaryPostEntity } from 'src/modules/diary-posts/entities/diary-post.entity';
 import { IsPublic } from 'src/modules/auth/decorators/is-public.decorator';
 import { UserClientDto } from 'src/modules/users/dtos/user-client.dto';
-import { TipsFeedDto } from 'src/modules/tips/dtos/tips-feed.dto';
+import { PaginationDto } from 'src/commons/entities/pagination';
+import { CreateDiaryPostReportDto } from 'src/modules/diary-posts/dtos/create-diary-post-report.dto';
 
 @Controller('diary-posts')
 @ApiTags('diary posts')
@@ -56,7 +57,7 @@ export class DiaryPostsController {
   @UseInterceptors(ClassSerializerInterceptor)
   async getByUser(
     @Param('username') username: string,
-    @Query() query: TipsFeedDto,
+    @Query() query: PaginationDto,
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<DiaryPostEntity[]> {
     const posts = await this.diaryPostsService.findByUsername(
@@ -97,6 +98,20 @@ export class DiaryPostsController {
     const users = await this.diaryPostsService.likedBy(id, currentUser);
 
     return users.map((user) => new UserClientDto(user));
+  }
+
+  @Post('report/:id')
+  @ApiBearerAuth()
+  report(
+    @Param('id') id: number,
+    @Body() createDiaryPostReport: CreateDiaryPostReportDto,
+    @CurrentUser() currentUser: UserFromJwt,
+  ) {
+    return this.diaryPostsService.report(
+      id,
+      createDiaryPostReport,
+      currentUser,
+    );
   }
 
   @Delete(':id')

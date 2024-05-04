@@ -10,31 +10,31 @@ import { FollowsService } from 'src/modules/follows/follows.service';
 export class FollowsController {
   constructor(private readonly followsService: FollowsService) {}
 
-  @Post(':username')
+  @Post(':userId')
   @ApiBearerAuth()
   follow(
-    @Param('username') username: string,
+    @Param('userId') userId: number,
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<void> {
-    return this.followsService.follow(username, currentUser);
+    return this.followsService.follow(userId, currentUser);
   }
 
-  @Delete(':username')
+  @Delete(':userId')
   @ApiBearerAuth()
   unfollow(
-    @Param('username') username: string,
+    @Param('userId') userId: number,
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<void> {
-    return this.followsService.unfollow(username, currentUser);
+    return this.followsService.unfollow(userId, currentUser);
   }
 
-  @Get('friendshipStatus/:username')
+  @Get('friendshipStatus/:userId')
   @ApiBearerAuth()
   @ApiResponse({ type: FriendshipStatusDto })
   friendshipStatus(
-    @Param('username') username: string,
+    @Param('userId') userId: number,
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<FriendshipStatusDto> {
-    return this.followsService.friendshipStatus(username, currentUser);
+    return this.followsService.friendshipStatus(userId, currentUser);
   }
 }

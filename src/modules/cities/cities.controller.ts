@@ -7,7 +7,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { CitiesService } from './cities.service';
-import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { IsPublic } from 'src/modules/auth/decorators/is-public.decorator';
 import { CurrentUser } from 'src/modules/auth/decorators/current-user.decorator';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
@@ -18,13 +18,18 @@ import { CityVisitRankingDto } from 'src/modules/cities/dtos/city-visit-ranking.
 import { CityRatingRankingDto } from 'src/modules/cities/dtos/city-rating-ranking.dto';
 import { CityPageDto } from 'src/modules/cities/dtos/city-page.dto';
 import { CitySearchResponseDto } from 'src/modules/cities/dtos/city-search-response';
-import { CityImagesPaginationDto } from 'src/modules/cities/dtos/city-images-pagination.dto';
 import { CityImageDto } from 'src/modules/cities/dtos/city-image.dto';
+import { UsersService } from 'src/modules/users/users.service';
+import { UserEntity } from 'src/modules/users/entities/user.entity';
+import { PaginationDto } from 'src/commons/entities/pagination';
 
 @Controller('cities')
 @ApiTags('cities')
 export class CitiesController {
-  constructor(private readonly citiesService: CitiesService) {}
+  constructor(
+    private readonly citiesService: CitiesService,
+    private readonly usersService: UsersService,
+  ) {}
 
   @Get('search')
   @IsPublic()
@@ -54,9 +59,31 @@ export class CitiesController {
   @ApiResponse({ type: CityImageDto, isArray: true })
   images(
     @Param('id') id: number,
-    @Query() query: CityImagesPaginationDto,
+    @Query() query: PaginationDto,
   ): Promise<CityImageDto[]> {
     return this.citiesService.getCityImages(+id, query.page, query.count);
+  }
+
+  @Get(':id/residents')
+  @UseInterceptors(ClassSerializerInterceptor)
+  @IsPublic()
+  @ApiBearerAuth()
+  @ApiResponse({ type: UserEntity, isArray: true })
+  async residents(
+    @Param('id') id: number,
+    @Query() query: PaginationDto,
+    @CurrentUser() currentUser: UserFromJwt,
+  ): Promise<UserEntity[]> {
+    const users = await this.usersService.findByCity(
+      {
+        cityId: id,
+        page: query.page,
+        count: query.count,
+      },
+      currentUser,
+    );
+
+    return users.map((user) => new UserEntity(user));
   }
 
   @Get('ranking/interest')

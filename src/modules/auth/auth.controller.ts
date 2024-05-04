@@ -36,11 +36,10 @@ export class AuthController {
   @ApiResponse({ type: UserToken })
   @ApiBody({ type: RefreshTokenDto })
   async refreshToken(@Body() body: RefreshTokenDto): Promise<UserToken> {
-    const user = await this.authService.checkRefreshToken(body.refreshToken);
+    const account = await this.authService.checkRefreshToken(body.refreshToken);
 
     return this.authService.getTokens({
-      sub: user.id,
-      username: user.username,
+      sub: account.id,
     });
   }
 }

@@ -16,10 +16,10 @@ import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { DeleteCityVisitDto } from 'src/modules/city-visits/dtos/delete-city-visit.dto';
 import { CityVisitEntity } from 'src/modules/city-visits/entities/city-visit.entity';
 import { UpdateCityVisitDto } from 'src/modules/city-visits/dtos/update-city-visit.dto';
-import { MediaEntity } from 'src/modules/media/entities/media.entity';
 import { CityVisitPaginationDto } from 'src/modules/city-visits/dtos/city-visit-pagination.dto';
 import { CityVisitClientDto } from 'src/modules/city-visits/dtos/city-visit-client.dto';
 import { IsPublic } from 'src/modules/auth/decorators/is-public.decorator';
+import { CountryCityVisitDto } from 'src/modules/city-visits/dtos/country-city-visit.dto';
 
 @Controller('city-visits')
 @ApiTags('city visits')
@@ -27,12 +27,12 @@ export class CityVisitsController {
   constructor(private readonly cityVisitService: CityVisitsService) {}
 
   @Post()
-  @ApiResponse({ type: CityVisitEntity })
+  @ApiResponse({ type: CityVisitClientDto })
   @ApiBearerAuth()
   create(
     @Body() createCityVisitDto: CreateCityVisitDto,
     @CurrentUser() currentUser: UserFromJwt,
-  ): Promise<CityVisitEntity> {
+  ): Promise<CityVisitClientDto> {
     return this.cityVisitService.create(createCityVisitDto, currentUser);
   }
 
@@ -49,15 +49,33 @@ export class CityVisitsController {
   @Get(':cityId')
   @ApiResponse({ type: CityVisitClientDto, isArray: true })
   @IsPublic()
-  get(
+  async get(
     @Param('cityId') cityId: number,
     @Query() query: CityVisitPaginationDto,
   ): Promise<CityVisitClientDto[]> {
-    return this.cityVisitService.getVisitsByCityId(
+    const visits = await this.cityVisitService.getVisitsByCityId(
       +cityId,
       query.page,
       query.count,
     );
+
+    return visits.map((visit) => new CityVisitClientDto(visit));
+  }
+
+  @Get('/country/:countryIso2')
+  @ApiResponse({ type: CountryCityVisitDto, isArray: true })
+  @IsPublic()
+  async getByCountry(
+    @Param('countryIso2') countryIso2: string,
+    @Query() query: CityVisitPaginationDto,
+  ): Promise<CountryCityVisitDto[]> {
+    const visits = await this.cityVisitService.getVisitsByCountryIso2(
+      countryIso2,
+      query.page,
+      query.count,
+    );
+
+    return visits.map((visit) => new CountryCityVisitDto(visit));
   }
 
   @Delete(':cityId')

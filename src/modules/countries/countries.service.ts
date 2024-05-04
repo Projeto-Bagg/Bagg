@@ -46,11 +46,20 @@ export class CountriesService {
         country.iso2,
       );
 
+    const residentsCount = await this.usersService.getResidentsCountByIso2(
+      country.iso2,
+    );
+
+    const reviewsCount =
+      await this.cityVisitsService.getCountryReviewsCountByIso2(country.iso2);
+
     return {
       ...country,
       averageRating,
       visitsCount,
       interestsCount,
+      residentsCount,
+      reviewsCount,
     };
   }
 

@@ -7,6 +7,7 @@ import { CityVisitEntity } from 'src/modules/city-visits/entities/city-visit.ent
 import { CityVisitClientDto } from 'src/modules/city-visits/dtos/city-visit-client.dto';
 import { UpdateCityVisitDto } from 'src/modules/city-visits/dtos/update-city-visit.dto';
 import { UserCityVisitDto } from 'src/modules/city-visits/dtos/user-city-visit.dto';
+import { CountryCityVisitDto } from 'src/modules/city-visits/dtos/country-city-visit.dto';
 
 @Injectable()
 export class CityVisitsService {
@@ -18,7 +19,7 @@ export class CityVisitsService {
   async create(
     createCityVisitDto: CreateCityVisitDto,
     currentUser: UserFromJwt,
-  ): Promise<CityVisitEntity> {
+  ): Promise<CityVisitClientDto> {
     const isUserInterestedInCity =
       await this.cityInterestService.isUserInterestedInCity(
         createCityVisitDto.cityId,
@@ -32,19 +33,34 @@ export class CityVisitsService {
       );
     }
 
-    return this.prisma.cityVisit.create({
+    const cityVisit = await this.prisma.cityVisit.create({
       data: {
         ...createCityVisitDto,
         userId: currentUser.id,
       },
+      include: {
+        user: {
+          include: {
+            account: true,
+          },
+        },
+      },
     });
+
+    return {
+      ...cityVisit,
+      user: {
+        ...cityVisit.user,
+        ...cityVisit.user.account,
+      },
+    };
   }
 
   async update(
     updateCityVisitDto: UpdateCityVisitDto,
     currentUser: UserFromJwt,
-  ): Promise<CityVisitEntity> {
-    return await this.prisma.cityVisit.update({
+  ): Promise<CityVisitClientDto> {
+    const cityVisit = await this.prisma.cityVisit.update({
       where: {
         userId_cityId: {
           cityId: updateCityVisitDto.cityId,
@@ -55,7 +71,22 @@ export class CityVisitsService {
         message: updateCityVisitDto.message,
         rating: updateCityVisitDto.rating,
       },
+      include: {
+        user: {
+          include: {
+            account: true,
+          },
+        },
+      },
     });
+
+    return {
+      ...cityVisit,
+      user: {
+        ...cityVisit.user,
+        ...cityVisit.user.account,
+      },
+    };
   }
 
   async getUserVisitByCityId(
@@ -125,13 +156,40 @@ export class CityVisitsService {
       },
     });
   }
+  async getReviewsCountByCityId(cityId: number): Promise<number> {
+    return await this.prisma.cityVisit.count({
+      where: {
+        cityId,
+        NOT: {
+          rating: null,
+        },
+      },
+    });
+  }
+
+  async getCountryReviewsCountByIso2(iso2: string): Promise<number> {
+    return await this.prisma.cityVisit.count({
+      where: {
+        city: {
+          region: {
+            country: {
+              iso2,
+            },
+          },
+        },
+        NOT: {
+          rating: null,
+        },
+      },
+    });
+  }
 
   async getVisitsByCityId(
     cityId: number,
     page = 1,
     count = 5,
   ): Promise<CityVisitClientDto[]> {
-    const visits = await this.prisma.cityVisit.findMany({
+    const cityVisits = await this.prisma.cityVisit.findMany({
       take: count,
       skip: (page - 1) * count,
       orderBy: {
@@ -142,11 +200,65 @@ export class CityVisitsService {
         NOT: [{ message: null }],
       },
       include: {
-        user: true,
+        user: {
+          include: {
+            account: true,
+          },
+        },
       },
     });
 
-    return visits;
+    return cityVisits.map((cityVisit) => {
+      return {
+        ...cityVisit,
+        user: {
+          ...cityVisit.user,
+          ...cityVisit.user.account,
+        },
+      };
+    });
+  }
+
+  async getVisitsByCountryIso2(
+    countryIso2: string,
+    page = 1,
+    count = 5,
+  ): Promise<CountryCityVisitDto[]> {
+    const cityVisits = await this.prisma.cityVisit.findMany({
+      take: count,
+      skip: (page - 1) * count,
+      orderBy: {
+        createdAt: 'desc',
+      },
+      where: {
+        city: {
+          region: {
+            country: {
+              iso2: countryIso2,
+            },
+          },
+        },
+        NOT: [{ message: null }],
+      },
+      include: {
+        user: {
+          include: {
+            account: true,
+          },
+        },
+        city: true,
+      },
+    });
+
+    return cityVisits.map((cityVisit) => {
+      return {
+        ...cityVisit,
+        user: {
+          ...cityVisit.user,
+          ...cityVisit.user.account,
+        },
+      };
+    });
   }
 
   async getVisitsByUsername(username: string): Promise<UserCityVisitDto[]> {

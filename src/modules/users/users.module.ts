@@ -6,6 +6,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { MediaModule } from '../media/media.module';
 import { CityVisitsModule } from 'src/modules/city-visits/city-visits.module';
 import { FollowsModule } from 'src/modules/follows/follows.module';
+import { EmailsModule } from '../emails/emails.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { FollowsModule } from 'src/modules/follows/follows.module';
     MediaModule,
     CityVisitsModule,
     FollowsModule,
+    EmailsModule,
   ],
   controllers: [UsersController],
   providers: [UsersService],

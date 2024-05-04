@@ -40,7 +40,6 @@ export class AuthController {
 
     return this.authService.getTokens({
       sub: account.id,
-      role: account.admin ? 'ADMIN' : 'USER',
     });
   }
 }

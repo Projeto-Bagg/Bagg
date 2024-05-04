@@ -27,10 +27,14 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
     if (user) {
       if (user.role !== 'ADMIN' && isAdmin) {
-        throw new UnauthorizedException('insufficient permission');
+        throw new UnauthorizedException('Insufficient permission');
       }
 
-      if (!user.hasEmailBeenVerified && !isEmailVerificationUnneeded) {
+      if (
+        !user.hasEmailBeenVerified &&
+        !isEmailVerificationUnneeded &&
+        user.role !== 'ADMIN'
+      ) {
         throw new UnauthorizedException('Email has not been verified');
       }
       return user;

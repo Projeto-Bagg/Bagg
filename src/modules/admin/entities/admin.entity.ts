@@ -7,4 +7,7 @@ export class AdminEntity implements Admin {
 
   @ApiProperty()
   id: number;
+
+  @ApiProperty()
+  privilege: number;
 }

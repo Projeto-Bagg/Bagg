@@ -330,17 +330,17 @@ export class TipsService {
       throw new UnauthorizedException();
     }
 
-    if (tip.tipMedias && tip.tipMedias.length > 0) {
-      tip.tipMedias.forEach(async (media) => {
-        const fileName = media.url.split('/').pop();
+    // if (tip.tipMedias && tip.tipMedias.length > 0) {
+    //   tip.tipMedias.forEach(async (media) => {
+    //     const fileName = media.url.split('/').pop();
 
-        if (!fileName) {
-          return;
-        }
+    //     if (!fileName) {
+    //       return;
+    //     }
 
-        await this.mediaService.deleteFile(fileName, 'tips');
-      });
-    }
+    //     await this.mediaService.deleteFile(fileName, 'tips');
+    //   });
+    // }
 
     await this.prisma.tip.update({
       data: {

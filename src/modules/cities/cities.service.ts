@@ -116,12 +116,12 @@ export class CitiesService {
       FROM [dbo].[DiaryPostMedia] m
       JOIN [dbo].[DiaryPost] dp ON dp.id = m.diaryPostId
       JOIN [dbo].[TripDiary] td ON td.id = dp.tripDiaryId
-      WHERE td.cityId = @cityId)
+      WHERE td.cityId = @cityId AND softDelete = 0 AND status = 'active')
       UNION ALL
       (SELECT m.id, m.url, m.createdAt, t.userId
       FROM [dbo].[TipMedia] m
       JOIN [dbo].[Tip] t ON t.id = m.tipId
-      WHERE t.cityId = @cityId)
+      WHERE t.cityId = @cityId AND softDelete = 0 AND status = 'active')
       ORDER BY createdAt DESC
       OFFSET @count * (@page - 1) ROWS
       FETCH NEXT @count ROWS ONLY

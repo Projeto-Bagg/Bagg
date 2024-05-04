@@ -4,7 +4,7 @@ import { IsEnum } from 'class-validator';
 
 export enum ReportReasonEnum {
   hate = 'hate',
-  'violent-speech' = 'violent-speech',
+  violent = 'violent',
   spam = 'spam',
   nudity = 'nudity',
   'false-information' = 'false-information',

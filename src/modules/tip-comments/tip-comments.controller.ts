@@ -15,6 +15,7 @@ import { TipCommentEntity } from './entities/tip-comment.entity';
 import { CreateTipCommentDto } from './dtos/create-tip-comment.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { UserFromJwt } from '../auth/models/UserFromJwt';
+import { CreateTipCommentReportDto } from 'src/modules/tip-comments/dtos/create-tip-comment-report.dto';
 
 @Controller('tip-comments')
 @ApiTags('tip-comments')
@@ -44,6 +45,20 @@ export class TipCommentsController {
     );
 
     return new TipCommentEntity(comment);
+  }
+
+  @Post('report/:id')
+  @ApiBearerAuth()
+  report(
+    @Param('id') id: number,
+    @Body() createTipCommentReport: CreateTipCommentReportDto,
+    @CurrentUser() currentUser: UserFromJwt,
+  ) {
+    return this.tipCommentsService.report(
+      id,
+      createTipCommentReport,
+      currentUser,
+    );
   }
 
   @Delete(':id')

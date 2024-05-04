@@ -8,13 +8,4 @@ export class TipCommentReportEntity
 {
   @ApiProperty()
   tipCommentId: number;
-<<<<<<< Updated upstream
-
-  @ApiProperty()
-  userId: number;
-
-  @ApiProperty()
-  description: string;
-=======
->>>>>>> Stashed changes
 }

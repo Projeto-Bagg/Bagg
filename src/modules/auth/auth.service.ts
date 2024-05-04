@@ -5,7 +5,6 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { UsersService } from '../users/users.service';
 import { UserPayload } from './models/UserPayload';
 import { UserToken } from './models/UserToken';
 import { UserFromJwt } from './models/UserFromJwt';
@@ -16,7 +15,6 @@ import { AccountEntity } from 'src/modules/account/entities/account.entity';
 export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
-    private readonly usersService: UsersService,
     private readonly prismaService: PrismaService,
   ) {}
 
@@ -30,13 +28,24 @@ export class AuthService {
   }
 
   async getTokens(payload: UserPayload): Promise<UserToken> {
-    const user = await this.usersService.findById(payload.sub);
+    const account = await this.prismaService.account.findUnique({
+      where: { id: payload.sub },
+      include: {
+        admin: true,
+        user: true,
+      },
+    });
+
+    if (!account) {
+      throw new UnauthorizedException('User does not exist');
+    }
+
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(
         {
           sub: payload.sub,
-          role: payload.role,
-          hasEmailBeenVerified: user.emailVerified,
+          role: account.admin ? 'ADMIN' : 'USER',
+          hasEmailBeenVerified: account.user?.emailVerified,
         },
         {
           secret: process.env.JWT_ACCESS_TOKEN_SECRET,
@@ -47,7 +56,7 @@ export class AuthService {
         {
           sub: payload.sub,
           role: payload.role,
-          hasEmailBeenVerified: user.emailVerified,
+          hasEmailBeenVerified: account.user?.emailVerified,
         },
         {
           secret: process.env.JWT_REFRESH_TOKEN_SECRET,

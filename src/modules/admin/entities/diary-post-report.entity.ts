@@ -8,13 +8,4 @@ export class DiaryPostReportEntity
 {
   @ApiProperty()
   diaryPostId: number;
-<<<<<<< Updated upstream
-
-  @ApiProperty()
-  userId: number;
-
-  @ApiProperty()
-  description: string;
-=======
->>>>>>> Stashed changes
 }

@@ -83,7 +83,8 @@ model DiaryPost {
   userId          Int
   tripDiary       TripDiary         @relation(fields: [tripDiaryId], references: [id], onDelete: Cascade)
   tripDiaryId     Int
-  active          Boolean           @default(true)
+  status          String            @default("active")
+  softDelete      Boolean           @default(false)
   likedBy         DiaryPostLike[]
   diaryPostMedias DiaryPostMedia[]
   diaryPostReport DiaryPostReport[]
@@ -96,7 +97,7 @@ model DiaryPostReport {
   createdAt   DateTime  @default(now())
   user        User      @relation(fields: [userId], references: [id], onUpdate: NoAction)
   userId      Int
-  description String
+  reason      String
 
   @@unique([userId, diaryPostId])
 }
@@ -127,7 +128,8 @@ model Tip {
   userId      Int
   createdAt   DateTime     @default(now())
   tags        String?
-  active      Boolean      @default(true)
+  status      String       @default("active")
+  softDelete  Boolean      @default(false)
   cityId      Int
   city        City         @relation(fields: [cityId], references: [id], onUpdate: NoAction)
   likedBy     TipLike[]
@@ -138,13 +140,13 @@ model Tip {
 }
 
 model TipReport {
-  id          Int      @id @default(autoincrement())
-  createdAt   DateTime
-  tip         Tip      @relation(fields: [tipId], references: [id], onUpdate: NoAction)
-  tipId       Int
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      Int
-  description String
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  tip       Tip      @relation(fields: [tipId], references: [id], onUpdate: NoAction)
+  tipId     Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  reason    String
 
   @@unique([userId, tipId])
 }
@@ -176,18 +178,19 @@ model TipComment {
   tipId            Int
   message          String
   createdAt        DateTime           @default(now())
-  active           Boolean            @default(true)
+  status           String             @default("active")
+  softDelete       Boolean            @default(false)
   tipCommentReport TipCommentReport[]
 }
 
 model TipCommentReport {
   id           Int        @id @default(autoincrement())
-  createdAt    DateTime
+  createdAt    DateTime   @default(now())
   tipComment   TipComment @relation(fields: [tipCommentId], references: [id], onUpdate: NoAction)
   tipCommentId Int
   user         User       @relation(fields: [userId], references: [id], onUpdate: NoAction)
   userId       Int
-  description  String
+  reason       String
 
   @@unique([userId, tipCommentId])
 }

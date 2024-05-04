@@ -1,10 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-<<<<<<< Updated upstream
-import { TipReportEntity } from 'src/modules/admin/entities/tip-report.entity';
-import { TipCommentReportEntity } from 'src/modules/admin/entities/tip-comment-report.entity';
-import { DiaryPostReportEntity } from 'src/modules/admin/entities/diary-post-report.entity';
-=======
 import { CreateAdminDto } from 'src/modules/admin/dto/create-admin.dto';
 import * as bcrypt from 'bcrypt';
 import { DiaryPostEntity } from 'src/modules/diary-posts/entities/diary-post.entity';
@@ -23,11 +18,38 @@ interface TipCommentDelegate {
 interface DiaryPostDelegate {
   update({ where: { id }, data: { status } }): Promise<DiaryPost>;
 }
->>>>>>> Stashed changes
 
 @Injectable()
 export class AdminService {
   constructor(private readonly prismaService: PrismaService) {}
+
+  async create(createAdminDto: CreateAdminDto) {
+    const account = await this.prismaService.account.create({
+      data: {
+        email: createAdminDto.email,
+        password: await bcrypt.hash(createAdminDto.password, 10),
+      },
+    });
+
+    await this.prismaService.admin.create({
+      data: {
+        id: account.id,
+        account: {
+          connect: {
+            id: account.id,
+          },
+        },
+      },
+    });
+  }
+
+  async findById(id: number) {
+    return this.prismaService.admin.findUnique({
+      where: {
+        id,
+      },
+    });
+  }
 
   async overview() {
     return 'overview';
@@ -37,8 +59,6 @@ export class AdminService {
     const posts = await this.prismaService.tip.findMany({
       skip: count * (page - 1),
       take: count,
-<<<<<<< Updated upstream
-=======
       where: {
         status: 'in-review',
       },
@@ -66,7 +86,6 @@ export class AdminService {
           },
         },
       },
->>>>>>> Stashed changes
     });
 
     return await Promise.all(
@@ -101,8 +120,6 @@ export class AdminService {
     const tipComments = await this.prismaService.tipComment.findMany({
       skip: count * (page - 1),
       take: count,
-<<<<<<< Updated upstream
-=======
       where: {
         status: 'in-review',
       },
@@ -119,7 +136,6 @@ export class AdminService {
           },
         },
       },
->>>>>>> Stashed changes
     });
 
     return await Promise.all(
@@ -151,8 +167,6 @@ export class AdminService {
     const posts = await this.prismaService.diaryPost.findMany({
       skip: count * (page - 1),
       take: count,
-<<<<<<< Updated upstream
-=======
       where: {
         status: 'in-review',
       },
@@ -172,7 +186,6 @@ export class AdminService {
           },
         },
       },
->>>>>>> Stashed changes
     });
 
     return await Promise.all(

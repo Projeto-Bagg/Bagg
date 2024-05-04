@@ -1,4 +1,8 @@
+<<<<<<< Updated upstream
 import { Controller, Get, Query } from '@nestjs/common';
+=======
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+>>>>>>> Stashed changes
 import { AdminService } from './admin.service';
 import { isAdmin } from 'src/modules/auth/decorators/is-admin.decorator';
 import { ApiBearerAuth } from '@nestjs/swagger';
@@ -21,11 +25,39 @@ export class AdminController {
     return this.adminService.tipReports(query.page, query.count);
   }
 
-  @Get('tip-comments-reports')
+  @Post('tip-reports/:id/reject')
+  @isAdmin()
+  @ApiBearerAuth()
+  async rejectTipReport(@Param('id') id: number) {
+    return this.adminService.rejectTipReport(id);
+  }
+
+  @Post('tip-reports/:id/accept')
+  @isAdmin()
+  @ApiBearerAuth()
+  async acceptTipReport(@Param('id') id: number) {
+    return this.adminService.acceptTipReport(id);
+  }
+
+  @Get('tip-comment-reports')
   @isAdmin()
   @ApiBearerAuth()
   async tipCommentReports(@Query() query: PaginationDto) {
     return this.adminService.tipCommentReports(query.page, query.count);
+  }
+
+  @Post('tip-comment-reports/:id/reject')
+  @isAdmin()
+  @ApiBearerAuth()
+  async rejectTipCommentsReport(@Param('id') id: number) {
+    return this.adminService.rejectTipCommentReport(id);
+  }
+
+  @Post('tip-comment-reports/:id/accept')
+  @isAdmin()
+  @ApiBearerAuth()
+  async acceptTipCommentReport(@Param('id') id: number) {
+    return this.adminService.acceptTipCommentReport(id);
   }
 
   @Get('diary-post-reports')
@@ -33,5 +65,19 @@ export class AdminController {
   @ApiBearerAuth()
   async diaryPostsReports(@Query() query: PaginationDto) {
     return this.adminService.diaryPostReports(query.page, query.count);
+  }
+
+  @Post('diary-post-reports/:id/reject')
+  @isAdmin()
+  @ApiBearerAuth()
+  async rejectDiaryPostReport(@Param('id') id: number) {
+    return this.adminService.rejectDiaryPostReport(id);
+  }
+
+  @Post('diary-post-reports/:id/accept')
+  @isAdmin()
+  @ApiBearerAuth()
+  async acceptDiaryPostReport(@Param('id') id: number) {
+    return this.adminService.acceptDiaryPostReport(id);
   }
 }

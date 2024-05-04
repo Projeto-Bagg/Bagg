@@ -17,6 +17,11 @@ import { Tip, TipComment, TipLike } from '@prisma/client';
 import { TipMediaEntity } from '../tip-medias/entities/tip-media.entity';
 import { UserEntity } from '../users/entities/user.entity';
 import { CityRegionCountryDto } from '../cities/dtos/city-region-country.dto';
+<<<<<<< Updated upstream
+=======
+import { CreateTipReportDto } from 'src/modules/tips/dtos/create-tip-report.dto';
+import { CityInterestsService } from 'src/modules/city-interests/city-interests.service';
+>>>>>>> Stashed changes
 
 interface TipWithCommentsAndLikes extends Tip {
   likedBy: TipLike[];

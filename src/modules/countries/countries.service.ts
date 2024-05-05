@@ -138,38 +138,16 @@ export class CountriesService {
     );
   }
 
-  async interestRanking({
-    page = 1,
-    count = 10,
-    date,
-  }: CountryRankingDto): Promise<CountryInterestRankingDto[]> {
-    return await this.prisma.$queryRaw<CountryInterestRankingDto[]>`
-      DECLARE @page INT = ${page};
-      DECLARE @date INT = ${date || null};
-      DECLARE @count INT = ${count};
-
-      SELECT c.name, c.iso2,
-        COUNT(ci.userId) AS totalInterest
-      FROM [dbo].[Country] c
-      JOIN [dbo].[Region] r ON c.id = r.countryId
-      JOIN [dbo].[City] ct ON r.id = ct.regionId
-      JOIN [dbo].[CityInterest] ci ON ct.id = ci.cityId
-      WHERE (DATEDIFF(DAY, ci.createdAt, GETDATE()) <= @date OR @date IS NULL)
-      GROUP BY c.name, c.iso2
-      ORDER BY totalInterest DESC
-      OFFSET @count * (@page - 1) ROWS
-      FETCH NEXT @count ROWS ONLY
-    `;
-  }
-
   async visitRanking({
     page = 1,
     count = 10,
     date,
+    continent,
   }: CountryRankingDto): Promise<CountryVisitRankingDto[]> {
     return await this.prisma.$queryRaw<CountryVisitRankingDto[]>`
       DECLARE @page INT = ${page};
       DECLARE @date INT = ${date || null};
+      DECLARE @continent INT = ${continent || null};
       DECLARE @count INT = ${count};
 
       SELECT c.name, c.iso2,
@@ -179,6 +157,7 @@ export class CountriesService {
       JOIN [dbo].[City] ct ON r.id = ct.regionId
       JOIN [dbo].[CityVisit] cv ON ct.id = cv.cityId
       WHERE (DATEDIFF(DAY, cv.createdAt, GETDATE()) <= @date OR @date IS NULL)
+      AND (c.continentId = @continent OR @continent is NULL)
       GROUP BY c.name, c.iso2
       ORDER BY totalVisit DESC
       OFFSET @count * (@page - 1) ROWS
@@ -190,10 +169,12 @@ export class CountriesService {
     page = 1,
     count = 10,
     date,
+    continent,
   }: CountryRankingDto): Promise<CountryRatingRankingDto[]> {
     return await this.prisma.$queryRaw<CountryRatingRankingDto[]>`
       DECLARE @page INT = ${page};
       DECLARE @date INT = ${date || null};
+      DECLARE @continent INT = ${continent || null};
       DECLARE @count INT = ${count};
 
       SELECT c.name, c.iso2, ROUND(AVG(CAST(cv.rating AS FLOAT)), 1) AS averageRating
@@ -202,6 +183,7 @@ export class CountriesService {
       JOIN [dbo].[City] ct ON r.id = ct.regionId
       JOIN [dbo].[CityVisit] cv ON ct.id = cv.cityId
       WHERE (DATEDIFF(DAY, cv.createdAt, GETDATE()) <= @date OR @date IS NULL)
+      AND (c.continentId = @continent OR @continent is NULL)
       GROUP BY c.name, c.iso2
       HAVING ROUND(AVG(CAST(cv.rating AS FLOAT)), 1) IS NOT NULL
       ORDER BY averageRating DESC

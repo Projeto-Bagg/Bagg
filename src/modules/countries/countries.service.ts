@@ -2,7 +2,6 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CityInterestsService } from 'src/modules/city-interests/city-interests.service';
 import { CityVisitsService } from 'src/modules/city-visits/city-visits.service';
 import { CountryImageDto } from 'src/modules/countries/dtos/country-image.dto';
-import { CountryInterestRankingDto } from 'src/modules/countries/dtos/country-interest-ranking.dto';
 import { CountryPageDto } from 'src/modules/countries/dtos/country-page.dto';
 import { CountryRankingDto } from 'src/modules/countries/dtos/country-ranking.dto';
 import { CountryRatingRankingDto } from 'src/modules/countries/dtos/country-rating-ranking.dto';

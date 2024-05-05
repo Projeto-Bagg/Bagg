@@ -12,7 +12,6 @@ import { IsPublic } from 'src/modules/auth/decorators/is-public.decorator';
 import { CurrentUser } from 'src/modules/auth/decorators/current-user.decorator';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { CityRankingDto } from 'src/modules/cities/dtos/city-ranking.dto';
-import { CityInterestRankingDto } from 'src/modules/cities/dtos/city-interest-ranking.dto';
 import { CitySearchDto } from 'src/modules/cities/dtos/city-search.dto';
 import { CityVisitRankingDto } from 'src/modules/cities/dtos/city-visit-ranking.dto';
 import { CityRatingRankingDto } from 'src/modules/cities/dtos/city-rating-ranking.dto';
@@ -84,15 +83,6 @@ export class CitiesController {
     );
 
     return users.map((user) => new UserEntity(user));
-  }
-
-  @Get('ranking/interest')
-  @IsPublic()
-  @ApiResponse({ type: CityInterestRankingDto, isArray: true })
-  interestRanking(
-    @Query() cityRankingDto: CityRankingDto,
-  ): Promise<CityInterestRankingDto[]> {
-    return this.citiesService.interestRanking(cityRankingDto);
   }
 
   @Get('ranking/visit')

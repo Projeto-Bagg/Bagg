@@ -26,6 +26,7 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import { UserClientDto } from 'src/modules/users/dtos/user-client.dto';
 import { FeedFilterDto } from '../tip-words/dtos/feed-filter.dto';
 import { PaginationDto } from 'src/commons/entities/pagination';
+import { PlaceWithDistance } from '../distance/distance.service';
 
 @Controller('tips')
 @ApiTags('tips')
@@ -130,5 +131,32 @@ export class TipsController {
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<void> {
     return this.tipsService.delete(+id, currentUser);
+  }
+
+  @Get('recommend/cities')
+  @ApiBearerAuth()
+  async getRecommendedCities(
+    @Query() query: PaginationDto,
+    @CurrentUser() currentUser: UserFromJwt,
+  ): Promise<PlaceWithDistance[]> {
+    return await this.tipsService.recommendNearbyCitiesByUserCityInterests(
+      currentUser,
+      query.page,
+      query.count,
+    );
+  }
+
+  @Get('recommend/tips-from-nearby-cities')
+  @ApiBearerAuth()
+  async getTipsFromRecommendedCities(
+    @Query() query: PaginationDto,
+    @CurrentUser() currentUser: UserFromJwt,
+  ): Promise<TipEntity[]> {
+    const tips = await this.tipsService.getTipsFromRecommendedCities(
+      currentUser,
+      query.page,
+      query.count,
+    );
+    return tips.map((tip) => new TipEntity(tip));
   }
 }

@@ -12,7 +12,6 @@ import { IsPublic } from 'src/modules/auth/decorators/is-public.decorator';
 import { CountryRankingDto } from 'src/modules/countries/dtos/country-ranking.dto';
 import { CountryEntity } from 'src/modules/countries/entities/country.entity';
 import { CountrySearchDto } from 'src/modules/countries/dtos/country-search.dto';
-import { CountryInterestRankingDto } from 'src/modules/countries/dtos/country-interest-ranking.dto';
 import { CountryVisitRankingDto } from 'src/modules/countries/dtos/country-visit-ranking.dto';
 import { CountryRatingRankingDto } from 'src/modules/countries/dtos/country-rating-ranking.dto';
 import { CountryImageDto } from 'src/modules/countries/dtos/country-image.dto';
@@ -43,15 +42,6 @@ export class CountriesController {
   @ApiResponse({ type: CountryEntity, isArray: true })
   async search(@Query() query: CountrySearchDto): Promise<CountryEntity[]> {
     return await this.countriesService.search(query);
-  }
-
-  @Get('ranking/interest')
-  @ApiResponse({ type: CountryInterestRankingDto, isArray: true })
-  @IsPublic()
-  interestRanking(
-    @Query() countryRankingDto: CountryRankingDto,
-  ): Promise<CountryInterestRankingDto[]> {
-    return this.countriesService.interestRanking(countryRankingDto);
   }
 
   @Get('ranking/visit')

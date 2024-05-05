@@ -27,6 +27,7 @@ import { UserClientDto } from 'src/modules/users/dtos/user-client.dto';
 import { FeedFilterDto } from '../tip-words/dtos/feed-filter.dto';
 import { PaginationDto } from 'src/commons/entities/pagination';
 import { PlaceWithDistance } from '../distance/distance.service';
+import { CreateTipReportDto } from './dtos/create-tip-report.dto';
 
 @Controller('tips')
 @ApiTags('tips')
@@ -158,5 +159,15 @@ export class TipsController {
       query.count,
     );
     return tips.map((tip) => new TipEntity(tip));
+  }
+
+  @Post('report/:id')
+  @ApiBearerAuth()
+  report(
+    @Param('id') id: number,
+    @Body() createTipReport: CreateTipReportDto,
+    @CurrentUser() currentUser: UserFromJwt,
+  ) {
+    return this.tipsService.report(id, createTipReport, currentUser);
   }
 }

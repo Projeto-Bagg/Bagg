@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { CitySearchDto } from 'src/modules/cities/dtos/city-search.dto';
-import { CityInterestRankingDto } from 'src/modules/cities/dtos/city-interest-ranking.dto';
 import { CityRatingRankingDto } from 'src/modules/cities/dtos/city-rating-ranking.dto';
 import { CityVisitRankingDto } from 'src/modules/cities/dtos/city-visit-ranking.dto';
 import { CityEntity } from 'src/modules/cities/entities/city.entity';
@@ -9,7 +8,6 @@ import { CityInterestsService } from 'src/modules/city-interests/city-interests.
 import { CityVisitsService } from 'src/modules/city-visits/city-visits.service';
 import { MediaEntity } from 'src/modules/media/entities/media.entity';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CityPagination } from 'src/modules/cities/dtos/city-pagination.dto';
 import { CitySearchResponseDto } from 'src/modules/cities/dtos/city-search-response';
 import { CityPageDto } from 'src/modules/cities/dtos/city-page.dto';
 import { UsersService } from 'src/modules/users/users.service';
@@ -116,12 +114,12 @@ export class CitiesService {
       FROM [dbo].[DiaryPostMedia] m
       JOIN [dbo].[DiaryPost] dp ON dp.id = m.diaryPostId
       JOIN [dbo].[TripDiary] td ON td.id = dp.tripDiaryId
-      WHERE td.cityId = @cityId)
+      WHERE td.cityId = @cityId AND softDelete = 0 AND status = 'active')
       UNION ALL
       (SELECT m.id, m.url, m.createdAt, t.userId
       FROM [dbo].[TipMedia] m
       JOIN [dbo].[Tip] t ON t.id = m.tipId
-      WHERE t.cityId = @cityId)
+      WHERE t.cityId = @cityId AND softDelete = 0 AND status = 'active')
       ORDER BY createdAt DESC
       OFFSET @count * (@page - 1) ROWS
       FETCH NEXT @count ROWS ONLY
@@ -137,42 +135,6 @@ export class CitiesService {
         };
       }),
     );
-  }
-
-  async getNearCities(
-    cityId: number,
-    page: number,
-    count: number,
-  ): Promise<CityPagination[]> {
-    const city = await this.prisma.city.findUnique({
-      where: {
-        id: +cityId,
-      },
-    });
-
-    if (!city) {
-      throw new NotFoundException();
-    }
-
-    return await this.prisma.$queryRaw<CityPagination[]>`
-      DECLARE @page INT = ${page || 1};
-      DECLARE @count INT = ${count};
-      DECLARE @searchLatitude FLOAT = ${city.latitude};
-      DECLARE @searchLongitude FLOAT = ${city.longitude};
-
-      SELECT name, distance, averageRating
-      FROM (
-          SELECT name, ROUND(AVG(CAST(cv.rating AS FLOAT)), 1) AS averageRating, ( 6371 * acos( cos( radians(@searchLatitude) ) * cos( radians( c.latitude ) ) 
-              * cos( radians( c.longitude ) - radians(@searchLongitude) ) + sin( radians(@searchLatitude) ) * sin(radians(c.latitude)) ) ) AS distance 
-          FROM [dbo].[City] c
-          LEFT JOIN [dbo].[CityVisit] cv ON c.id = cv.cityId
-          WHERE latitude != @searchLatitude AND longitude != @searchLongitude
-          GROUP BY c.name, c.latitude, longitude
-      ) AS sub
-      ORDER BY distance
-      OFFSET @count * (@page - 1) ROWS
-      FETCH NEXT @count ROWS ONLY
-    `;
   }
 
   async search(query: CitySearchDto): Promise<CitySearchResponseDto[]> {
@@ -194,32 +156,6 @@ export class CitiesService {
           [dbo].[Country] co ON r.countryId = co.id
       WHERE CONTAINS(c.name, ${'"' + query.q + '*"'})
       ORDER BY totalInterest DESC, LEN(c.name) ASC
-      OFFSET @count * (@page - 1) ROWS
-      FETCH NEXT @count ROWS ONLY
-    `;
-  }
-
-  async interestRanking({
-    page = 1,
-    count = 10,
-    countryIso2,
-    date,
-  }: CityRankingDto): Promise<CityInterestRankingDto[]> {
-    return await this.prisma.$queryRaw<CityInterestRankingDto[]>`
-      DECLARE @page INT = ${page};
-      DECLARE @count INT = ${count};
-      DECLARE @countryIso2 VARCHAR(50) = ${countryIso2 || null};
-      DECLARE @date INT = ${date || null};
-
-      SELECT ci.*, r.name AS region, c.iso2, c.name AS country, COUNT(cis.id) AS totalInterest
-      FROM [dbo].[City] ci
-      JOIN [dbo].[Region] r ON ci.regionId = r.id
-      JOIN [dbo].[Country] c ON c.id = r.countryId
-      JOIN [dbo].[CityInterest] cis ON ci.id = cis.cityId
-      WHERE (c.iso2 = @countryIso2 OR @countryIso2 is NULL)
-      AND (DATEDIFF(DAY, cis.createdAt, GETDATE()) <= @date OR @date IS NULL)
-      GROUP BY ci.name, ci.latitude, ci.longitude, ci.id, ci.regionId, r.name, c.iso2, c.name
-      ORDER BY totalInterest DESC
       OFFSET @count * (@page - 1) ROWS
       FETCH NEXT @count ROWS ONLY
     `;

@@ -8,31 +8,48 @@ datasource db {
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
+model Account {
+  id       Int     @id @default(autoincrement())
+  email    String  @unique
+  password String
+  active   Boolean @default(true)
+  user     User?
+  admin    Admin?
+}
+
 model User {
-  id                  Int                   @id @default(autoincrement())
-  fullName            String
-  username            String                @unique
-  email               String                @unique
-  birthdate           DateTime
-  image               String?
-  emailVerified       Boolean               @default(false)
-  createdAt           DateTime              @default(now())
-  password            String
-  bio                 String?
-  cityId              Int?
-  city                City?                 @relation(fields: [cityId], references: [id])
-  diaryPosts          DiaryPost[]
-  followers           Follow[]              @relation("following")
-  following           Follow[]              @relation("follower")
-  tipLikes            TipLike[]
-  tips                Tip[]
-  tipComments         TipComment[]
-  diaryPostLikes      DiaryPostLike[]
-  tripDiaries         TripDiary[]
-  cityVisits          CityVisit[]
-  cityInterests       CityInterest[]
-  accountDeactivation AccountDeactivation[]
-  userSubscribesPlan  UserSubscribesPlan[]
+  id                 Int                  @id
+  createdAt          DateTime             @default(now())
+  username           String               @unique
+  fullName           String
+  birthdate          DateTime
+  image              String?
+  emailVerified      Boolean              @default(false)
+  bio                String?
+  cityId             Int?
+  account            Account              @relation(fields: [accountId], references: [id])
+  accountId          Int                  @unique
+  city               City?                @relation(fields: [cityId], references: [id])
+  diaryPosts         DiaryPost[]
+  followers          Follow[]             @relation("following")
+  following          Follow[]             @relation("follower")
+  tipLikes           TipLike[]
+  tips               Tip[]
+  tipComments        TipComment[]
+  diaryPostLikes     DiaryPostLike[]
+  tripDiaries        TripDiary[]
+  cityVisits         CityVisit[]
+  cityInterests      CityInterest[]
+  userSubscribesPlan UserSubscribesPlan[]
+  diaryPostReport    DiaryPostReport[]
+  tipReport          TipReport[]
+  tipCommentReport   TipCommentReport[]
+}
+
+model Admin {
+  id        Int     @id
+  account   Account @relation(fields: [accountId], references: [id])
+  accountId Int     @unique
 }
 
 model Follow {
@@ -59,15 +76,30 @@ model TripDiary {
 }
 
 model DiaryPost {
-  id              Int              @id @default(autoincrement())
+  id              Int               @id @default(autoincrement())
   message         String
-  createdAt       DateTime         @default(now())
-  user            User             @relation(fields: [userId], references: [id], onUpdate: NoAction)
+  createdAt       DateTime          @default(now())
+  user            User              @relation(fields: [userId], references: [id], onUpdate: NoAction)
   userId          Int
-  tripDiary       TripDiary        @relation(fields: [tripDiaryId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tripDiary       TripDiary         @relation(fields: [tripDiaryId], references: [id], onDelete: Cascade)
   tripDiaryId     Int
+  status          String            @default("active")
+  softDelete      Boolean           @default(false)
   likedBy         DiaryPostLike[]
   diaryPostMedias DiaryPostMedia[]
+  diaryPostReport DiaryPostReport[]
+}
+
+model DiaryPostReport {
+  id          Int       @id @default(autoincrement())
+  diaryPost   DiaryPost @relation(fields: [diaryPostId], references: [id], onDelete: Cascade)
+  diaryPostId Int
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onUpdate: NoAction)
+  userId      Int
+  reason      String
+
+  @@unique([userId, diaryPostId])
 }
 
 model DiaryPostMedia {
@@ -96,12 +128,27 @@ model Tip {
   userId      Int
   createdAt   DateTime     @default(now())
   tags        String?
+  status      String       @default("active")
+  softDelete  Boolean      @default(false)
   cityId      Int
   city        City         @relation(fields: [cityId], references: [id], onUpdate: NoAction)
   likedBy     TipLike[]
   tipComments TipComment[]
   tipMedias   TipMedia[]
-  TipWord     TipWord[]
+  tipWord     TipWord[]
+  tipReport   TipReport[]
+}
+
+model TipReport {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  tip       Tip      @relation(fields: [tipId], references: [id], onUpdate: NoAction)
+  tipId     Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  reason    String
+
+  @@unique([userId, tipId])
 }
 
 model TipMedia {
@@ -124,23 +171,46 @@ model TipLike {
 }
 
 model TipComment {
-  id        Int      @id @default(autoincrement())
-  user      User     @relation(fields: [userId], references: [id], onUpdate: NoAction)
-  userId    Int
-  tip       Tip      @relation(fields: [tipId], references: [id], onDelete: Cascade)
-  tipId     Int
-  message   String
-  createdAt DateTime @default(now())
+  id               Int                @id @default(autoincrement())
+  user             User               @relation(fields: [userId], references: [id], onUpdate: NoAction)
+  userId           Int
+  tip              Tip                @relation(fields: [tipId], references: [id], onDelete: Cascade)
+  tipId            Int
+  message          String
+  createdAt        DateTime           @default(now())
+  status           String             @default("active")
+  softDelete       Boolean            @default(false)
+  tipCommentReport TipCommentReport[]
+}
+
+model TipCommentReport {
+  id           Int        @id @default(autoincrement())
+  createdAt    DateTime   @default(now())
+  tipComment   TipComment @relation(fields: [tipCommentId], references: [id], onUpdate: NoAction)
+  tipCommentId Int
+  user         User       @relation(fields: [userId], references: [id], onUpdate: NoAction)
+  userId       Int
+  reason       String
+
+  @@unique([userId, tipCommentId])
+}
+
+model Continent {
+  id      Int       @id
+  name    String
+  Country Country[]
 }
 
 model Country {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  iso2      String   @unique
-  capital   String
-  latitude  Float
-  longitude Float
-  regions   Region[]
+  id          Int        @id @default(autoincrement())
+  name        String     @unique
+  iso2        String     @unique
+  capital     String
+  latitude    Float
+  longitude   Float
+  regions     Region[]
+  continent   Continent? @relation(fields: [continentId], references: [id])
+  continentId Int?
 }
 
 model Region {
@@ -150,8 +220,6 @@ model Region {
   countryId Int
   latitude  Float
   longitude Float
-  stateCode String
-  type      String?
   cities    City[]
 }
 
@@ -166,7 +234,7 @@ model City {
   cityInterests CityInterest[]
   tips          Tip[]
   users         User[]
-  TripDiary     TripDiary[]
+  tripDiary     TripDiary[]
 }
 
 model CityVisit {
@@ -209,15 +277,6 @@ model UserSubscribesPlan {
   subscriptionPlanId Int
   user               User             @relation(fields: [userId], references: [id])
   userId             Int
-}
-
-model AccountDeactivation {
-  id          Int      @id @default(autoincrement())
-  requestDate DateTime @default(now())
-  reason      String
-  userId      Int
-  user        User     @relation(fields: [userId], references: [id])
-  createdAt   DateTime @default(now())
 }
 
 model TipWord {

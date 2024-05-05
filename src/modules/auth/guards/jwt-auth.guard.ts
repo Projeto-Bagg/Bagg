@@ -3,6 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 import { IS_PUBLIC_KEY } from '../decorators/is-public.decorator';
 import { IS_EMAIL_VERIFICATION_UNNEEDED } from '../decorators/is-email-verification-unneeded.decorator';
+import { IS_ADMIN_KEY } from 'src/modules/auth/decorators/is-admin.decorator';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
@@ -19,9 +20,21 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       IS_EMAIL_VERIFICATION_UNNEEDED,
       context.getHandler(),
     );
+    const isAdmin = this.reflector.get<string[]>(
+      IS_ADMIN_KEY,
+      context.getHandler(),
+    );
 
     if (user) {
-      if (!user.hasEmailBeenVerified && !isEmailVerificationUnneeded) {
+      if (user.role !== 'ADMIN' && isAdmin) {
+        throw new UnauthorizedException('Insufficient permission');
+      }
+
+      if (
+        !user.hasEmailBeenVerified &&
+        !isEmailVerificationUnneeded &&
+        user.role !== 'ADMIN'
+      ) {
         throw new UnauthorizedException('Email has not been verified');
       }
       return user;

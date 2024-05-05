@@ -9,4 +9,7 @@ export class CountryRankingDto {
 
   @ApiPropertyOptional()
   date?: number;
+
+  @ApiPropertyOptional()
+  continent?: number;
 }

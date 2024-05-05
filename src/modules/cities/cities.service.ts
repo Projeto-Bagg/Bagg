@@ -139,42 +139,6 @@ export class CitiesService {
     );
   }
 
-  async getNearCities(
-    cityId: number,
-    page: number,
-    count: number,
-  ): Promise<CityPagination[]> {
-    const city = await this.prisma.city.findUnique({
-      where: {
-        id: +cityId,
-      },
-    });
-
-    if (!city) {
-      throw new NotFoundException();
-    }
-
-    return await this.prisma.$queryRaw<CityPagination[]>`
-      DECLARE @page INT = ${page || 1};
-      DECLARE @count INT = ${count};
-      DECLARE @searchLatitude FLOAT = ${city.latitude};
-      DECLARE @searchLongitude FLOAT = ${city.longitude};
-
-      SELECT name, distance, averageRating
-      FROM (
-          SELECT name, ROUND(AVG(CAST(cv.rating AS FLOAT)), 1) AS averageRating, ( 6371 * acos( cos( radians(@searchLatitude) ) * cos( radians( c.latitude ) ) 
-              * cos( radians( c.longitude ) - radians(@searchLongitude) ) + sin( radians(@searchLatitude) ) * sin(radians(c.latitude)) ) ) AS distance 
-          FROM [dbo].[City] c
-          LEFT JOIN [dbo].[CityVisit] cv ON c.id = cv.cityId
-          WHERE latitude != @searchLatitude AND longitude != @searchLongitude
-          GROUP BY c.name, c.latitude, longitude
-      ) AS sub
-      ORDER BY distance
-      OFFSET @count * (@page - 1) ROWS
-      FETCH NEXT @count ROWS ONLY
-    `;
-  }
-
   async search(query: CitySearchDto): Promise<CitySearchResponseDto[]> {
     return await this.prisma.$queryRaw<CitySearchResponseDto[]>`
       DECLARE @page INT = ${query.page || 1};
@@ -194,32 +158,6 @@ export class CitiesService {
           [dbo].[Country] co ON r.countryId = co.id
       WHERE CONTAINS(c.name, ${'"' + query.q + '*"'})
       ORDER BY totalInterest DESC, LEN(c.name) ASC
-      OFFSET @count * (@page - 1) ROWS
-      FETCH NEXT @count ROWS ONLY
-    `;
-  }
-
-  async interestRanking({
-    page = 1,
-    count = 10,
-    countryIso2,
-    date,
-  }: CityRankingDto): Promise<CityInterestRankingDto[]> {
-    return await this.prisma.$queryRaw<CityInterestRankingDto[]>`
-      DECLARE @page INT = ${page};
-      DECLARE @count INT = ${count};
-      DECLARE @countryIso2 VARCHAR(50) = ${countryIso2 || null};
-      DECLARE @date INT = ${date || null};
-
-      SELECT ci.*, r.name AS region, c.iso2, c.name AS country, COUNT(cis.id) AS totalInterest
-      FROM [dbo].[City] ci
-      JOIN [dbo].[Region] r ON ci.regionId = r.id
-      JOIN [dbo].[Country] c ON c.id = r.countryId
-      JOIN [dbo].[CityInterest] cis ON ci.id = cis.cityId
-      WHERE (c.iso2 = @countryIso2 OR @countryIso2 is NULL)
-      AND (DATEDIFF(DAY, cis.createdAt, GETDATE()) <= @date OR @date IS NULL)
-      GROUP BY ci.name, ci.latitude, ci.longitude, ci.id, ci.regionId, r.name, c.iso2, c.name
-      ORDER BY totalInterest DESC
       OFFSET @count * (@page - 1) ROWS
       FETCH NEXT @count ROWS ONLY
     `;

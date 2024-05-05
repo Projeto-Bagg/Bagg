@@ -33,22 +33,34 @@ export class CityVisitsService {
       );
     }
 
-    return this.prisma.cityVisit.create({
+    const cityVisit = await this.prisma.cityVisit.create({
       data: {
         ...createCityVisitDto,
         userId: currentUser.id,
       },
       include: {
-        user: true,
+        user: {
+          include: {
+            account: true,
+          },
+        },
       },
     });
+
+    return {
+      ...cityVisit,
+      user: {
+        ...cityVisit.user,
+        ...cityVisit.user.account,
+      },
+    };
   }
 
   async update(
     updateCityVisitDto: UpdateCityVisitDto,
     currentUser: UserFromJwt,
-  ): Promise<CityVisitEntity> {
-    return await this.prisma.cityVisit.update({
+  ): Promise<CityVisitClientDto> {
+    const cityVisit = await this.prisma.cityVisit.update({
       where: {
         userId_cityId: {
           cityId: updateCityVisitDto.cityId,
@@ -59,7 +71,22 @@ export class CityVisitsService {
         message: updateCityVisitDto.message,
         rating: updateCityVisitDto.rating,
       },
+      include: {
+        user: {
+          include: {
+            account: true,
+          },
+        },
+      },
     });
+
+    return {
+      ...cityVisit,
+      user: {
+        ...cityVisit.user,
+        ...cityVisit.user.account,
+      },
+    };
   }
 
   async getUserVisitByCityId(
@@ -162,7 +189,7 @@ export class CityVisitsService {
     page = 1,
     count = 5,
   ): Promise<CityVisitClientDto[]> {
-    const visits = await this.prisma.cityVisit.findMany({
+    const cityVisits = await this.prisma.cityVisit.findMany({
       take: count,
       skip: (page - 1) * count,
       orderBy: {
@@ -173,11 +200,23 @@ export class CityVisitsService {
         NOT: [{ message: null }],
       },
       include: {
-        user: true,
+        user: {
+          include: {
+            account: true,
+          },
+        },
       },
     });
 
-    return visits;
+    return cityVisits.map((cityVisit) => {
+      return {
+        ...cityVisit,
+        user: {
+          ...cityVisit.user,
+          ...cityVisit.user.account,
+        },
+      };
+    });
   }
 
   async getVisitsByCountryIso2(
@@ -185,7 +224,7 @@ export class CityVisitsService {
     page = 1,
     count = 5,
   ): Promise<CountryCityVisitDto[]> {
-    return await this.prisma.cityVisit.findMany({
+    const cityVisits = await this.prisma.cityVisit.findMany({
       take: count,
       skip: (page - 1) * count,
       orderBy: {
@@ -202,9 +241,23 @@ export class CityVisitsService {
         NOT: [{ message: null }],
       },
       include: {
-        user: true,
+        user: {
+          include: {
+            account: true,
+          },
+        },
         city: true,
       },
+    });
+
+    return cityVisits.map((cityVisit) => {
+      return {
+        ...cityVisit,
+        user: {
+          ...cityVisit.user,
+          ...cityVisit.user.account,
+        },
+      };
     });
   }
 

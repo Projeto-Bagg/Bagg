@@ -12,9 +12,6 @@ export class UserEntity implements User {
   @ApiProperty()
   username: string;
 
-  @Exclude()
-  email: string;
-
   @ApiPropertyOptional({ type: String })
   bio: string | null;
 
@@ -27,11 +24,11 @@ export class UserEntity implements User {
   @ApiProperty({ type: String })
   image: string | null;
 
-  @Exclude()
-  password: string;
-
   @ApiPropertyOptional({ type: Number })
   cityId: number | null;
+
+  @ApiProperty()
+  accountId: number;
 
   @ApiProperty()
   createdAt: Date;

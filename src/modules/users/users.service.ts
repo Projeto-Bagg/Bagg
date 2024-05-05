@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   NotFoundException,
@@ -12,7 +13,6 @@ import { UserEntity } from './entities/user.entity';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { UpdatePasswordDto } from './dtos/update-password.dto';
 import { DeleteUserDto } from './dtos/delete-user.dto';
-import nodemailer from 'nodemailer';
 import { JwtService } from '@nestjs/jwt';
 import { UserClientDto } from './dtos/user-client.dto';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
@@ -21,10 +21,7 @@ import { UserFullInfoDto } from 'src/modules/users/dtos/user-full-info.dto';
 import { FollowsService } from 'src/modules/follows/follows.service';
 import { FindUserByCityDto } from 'src/modules/users/dtos/find-user-by-city.dto';
 import { FindUserByCountryDto } from 'src/modules/users/dtos/find-user-by-country.dto';
-
-interface JwtPayload {
-  email: string;
-}
+import { EmailsService } from '../emails/emails-service';
 
 @Injectable()
 export class UsersService {
@@ -32,10 +29,11 @@ export class UsersService {
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
     private readonly followsService: FollowsService,
+    private readonly emailsService: EmailsService,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<void> {
-    const emailAlreadyExist = await this.prisma.user.findUnique({
+    const emailAlreadyExist = await this.prisma.account.findUnique({
       where: { email: createUserDto.email },
     });
 
@@ -60,16 +58,30 @@ export class UsersService {
       });
     }
 
-    const data: Prisma.UserCreateInput = {
-      ...createUserDto,
-      password: await bcrypt.hash(createUserDto.password, 10),
-    };
+    const account = await this.prisma.account.create({
+      data: {
+        email: createUserDto.email,
+        password: await bcrypt.hash(createUserDto.password, 10),
+      },
+    });
 
-    await this.prisma.user.create({ data });
+    await this.prisma.user.create({
+      data: {
+        id: account.id,
+        birthdate: createUserDto.birthdate,
+        fullName: createUserDto.fullName,
+        username: createUserDto.username,
+        account: {
+          connect: { id: account.id },
+        },
+      },
+    });
   }
 
   async findByEmail(email: string): Promise<UserEntity> {
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const user = await this.prisma.user.findFirst({
+      where: { account: { email } },
+    });
 
     if (!user) {
       throw new NotFoundException();
@@ -86,6 +98,39 @@ export class UsersService {
     }
 
     return user;
+  }
+
+  async fullInfoUserById(
+    id: number,
+    currentUser?: UserFromJwt,
+  ): Promise<UserFullInfoDto> {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      include: {
+        city: {
+          include: {
+            region: {
+              include: {
+                country: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException();
+    }
+
+    return {
+      ...user,
+      ...(await this.followsService.friendshipCount(user.id)),
+      friendshipStatus: await this.followsService.friendshipStatus(
+        user.id,
+        currentUser,
+      ),
+    };
   }
 
   async findByUsername(
@@ -113,9 +158,9 @@ export class UsersService {
 
     return {
       ...user,
-      ...(await this.followsService.friendshipCount(user.username)),
+      ...(await this.followsService.friendshipCount(user.id)),
       friendshipStatus: await this.followsService.friendshipStatus(
-        user.username,
+        user.id,
         currentUser,
       ),
     };
@@ -136,7 +181,7 @@ export class UsersService {
     return await Promise.all(
       users.map(async (user) => {
         const friendshipStatus = await this.followsService.friendshipStatus(
-          user.username,
+          user.id,
           currentUser,
         );
 
@@ -177,7 +222,7 @@ export class UsersService {
     return await Promise.all(
       users.map(async (user) => {
         const friendshipStatus = await this.followsService.friendshipStatus(
-          user.username,
+          user.id,
           currentUser,
         );
 
@@ -214,7 +259,9 @@ export class UsersService {
   async isEmailAvailable(email: string): Promise<boolean> {
     return !!!(await this.prisma.user.count({
       where: {
-        email,
+        account: {
+          email,
+        },
       },
     }));
   }
@@ -256,40 +303,36 @@ export class UsersService {
     currentUser: UserFromJwt,
   ): Promise<UserFullInfoDto> {
     const data: Prisma.UserUpdateInput = {
-      ...updateUserDto,
-      password: updateUserDto.password
-        ? await bcrypt.hash(updateUserDto.password, 10)
-        : undefined,
+      bio: updateUserDto.bio,
+      birthdate: updateUserDto.birthdate,
+      city: {
+        connect: {
+          id: updateUserDto.cityId,
+        },
+      },
+      fullName: updateUserDto.fullName,
+      image: updateUserDto.image,
     };
 
-    const user = await this.prisma.user
-      .update({
-        data,
-        where: { id: currentUser.id },
-        include: {
-          city: {
-            include: {
-              region: {
-                include: {
-                  country: true,
-                },
+    const user = await this.prisma.user.update({
+      data,
+      where: { id: currentUser.id },
+      include: {
+        city: {
+          include: {
+            region: {
+              include: {
+                country: true,
               },
             },
           },
         },
-      })
-      .catch(() => {
-        throw new ConflictException({
-          username: {
-            description: 'Username not available',
-            code: 'username-not-available',
-          },
-        });
-      });
+      },
+    });
 
     return {
       ...user,
-      ...(await this.followsService.friendshipCount(currentUser.username)),
+      ...(await this.followsService.friendshipCount(currentUser.id)),
       friendshipStatus: {
         isFollowing: false,
         followedBy: false,
@@ -297,38 +340,45 @@ export class UsersService {
     };
   }
 
-  async delete(DeleteUserDto: DeleteUserDto, username: string): Promise<void> {
-    const user = await this.prisma.user.findUnique({ where: { username } });
+  async delete(
+    DeleteUserDto: DeleteUserDto,
+    currentUser: UserFromJwt,
+  ): Promise<void> {
+    const account = await this.prisma.account.findUnique({
+      where: { id: currentUser.id },
+    });
 
-    if (!user) {
+    if (!account) {
       throw new NotFoundException();
     }
 
     const validPassword = await bcrypt.compare(
       DeleteUserDto.currentPassword,
-      user.password,
+      account.password,
     );
 
     if (!validPassword) {
       throw new ForbiddenException('Wrong password');
     }
 
-    await this.prisma.user.delete({ where: { username } });
+    await this.prisma.account.delete({ where: { id: currentUser.id } });
   }
 
   async updatePassword(
     UpdatePasswordDto: UpdatePasswordDto,
-    username: string,
+    currentUser: UserFromJwt,
   ): Promise<void> {
-    const user = await this.prisma.user.findUnique({ where: { username } });
+    const account = await this.prisma.account.findUnique({
+      where: { id: currentUser.id },
+    });
 
-    if (!user) {
+    if (!account) {
       throw new NotFoundException();
     }
 
     const validPassword = await bcrypt.compare(
       UpdatePasswordDto.currentPassword,
-      user.password,
+      account.password,
     );
 
     if (!validPassword) {
@@ -337,61 +387,128 @@ export class UsersService {
 
     const password = await bcrypt.hash(UpdatePasswordDto.newPassword, 10);
 
-    await this.prisma.user.update({ data: { password }, where: { username } });
+    await this.prisma.account.update({
+      data: { password },
+      where: { id: currentUser.id },
+    });
   }
 
-  async sendConfirmationEmail(id: number): Promise<boolean> {
-    const user = await this.prisma.user.findUnique({ where: { id } });
+  async isEmailVerified(currentUser: UserFromJwt): Promise<void> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: currentUser.id },
+    });
 
     if (!user) {
-      throw new NotFoundException();
+      throw new NotFoundException(
+        'No account has been registered with the given id',
+      );
     }
 
     if (!user.emailVerified) {
-      //usar alguma biblioteca de template para passar o token para o html que vai ter no email
-      const verificationToken = this.jwt.sign({
-        email: user.email,
-      });
-      //precisa permitir que apps menos seguros usem seu gmail por conta da falta do oauth, se não não vai funcionar
-      const mailTransporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-          user: process.env.EMAIL,
-          pass: process.env.EMAIL_PASSWORD,
-        },
-      });
-
-      const mailDetails = {
-        from: process.env.EMAIL,
-        to: user.email,
-        subject: 'pretty subject',
-        text: 'pretty text',
-      };
-
-      mailTransporter.sendMail(mailDetails, function (err) {
-        if (err) {
-          return false;
-        } else {
-          return true;
-        }
-      });
-    } else {
-      return false;
+      throw new BadRequestException("Email hasn't already been verified");
     }
-    return true;
   }
 
-  async verifyConfirmationEmail(token: string): Promise<boolean> {
-    const decoded = this.jwt.decode(token) as JwtPayload;
-
-    await this.prisma.user.update({
-      data: { emailVerified: true },
-      where: { email: decoded.email },
+  async sendConfirmationEmail(currentUser: UserFromJwt) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: currentUser.id },
+      include: {
+        account: true,
+      },
     });
 
-    return true;
+    if (!user) {
+      throw new NotFoundException(
+        'No account has been registered with the given id',
+      );
+    }
+
+    if (user.emailVerified) {
+      throw new BadRequestException('Email has already been verified');
+    }
+    //usar alguma biblioteca de template para passar o token para o html que vai ter no email
+    const verificationToken = await this.jwt.signAsync(
+      {
+        email: user.account.email,
+        sub: user.id,
+      },
+      {
+        secret: process.env.JWT_ACCESS_TOKEN_SECRET,
+        expiresIn: '1h',
+      },
+    );
+    const verificationUrl =
+      process.env.BAGG_WEBSITE_URL +
+      '/settings/verify-email/verify/?token=' +
+      verificationToken;
+    return await this.emailsService.sendMail(
+      user.account.email,
+      'Confirme seu Email!',
+      verificationUrl,
+    );
   }
 
+  async sendPasswordReset(email: string) {
+    const account = await this.prisma.account.findUnique({ where: { email } });
+
+    if (!account) {
+      throw new NotFoundException(
+        'No account has been registered with the given email',
+      );
+    }
+
+    //usar alguma biblioteca de template para passar o token para o html que vai ter no email
+    const verificationToken = await this.jwt.signAsync(
+      {
+        email: account.email,
+      },
+      {
+        secret: process.env.JWT_ACCESS_TOKEN_SECRET,
+        expiresIn: '1h',
+      },
+    );
+
+    const resetUrl =
+      process.env.BAGG_WEBSITE_URL +
+      '/settings/reset-password/reset?token=' +
+      verificationToken;
+    return await this.emailsService.sendMail(
+      account.email,
+      'Renove sua senha!',
+      resetUrl,
+    );
+  }
+
+  async verifyEmailConfirmation(token: string): Promise<boolean> {
+    try {
+      const decoded = await this.jwt.verifyAsync(token, {
+        secret: process.env.JWT_ACCESS_TOKEN_SECRET,
+      });
+      await this.prisma.user.update({
+        data: { emailVerified: true },
+        where: { id: decoded.sub },
+      });
+
+      return true;
+    } catch (e) {
+      throw new BadRequestException('Invalid token');
+    }
+  }
+
+  async resetPassword(token: string, password: string) {
+    try {
+      const decoded = await this.jwt.verifyAsync(token, {
+        secret: process.env.JWT_ACCESS_TOKEN_SECRET,
+      });
+      await this.prisma.account.update({
+        data: { password: await bcrypt.hash(password, 10) },
+        where: { email: decoded.email },
+      });
+      //mandar um email por seguranca q a senha do usuario foi trocada
+    } catch (e) {
+      throw new BadRequestException('Invalid token');
+    }
+  }
   async following(
     username: string,
     currentUser?: UserFromJwt,
@@ -413,7 +530,7 @@ export class UsersService {
         return {
           ...user,
           friendshipStatus: await this.followsService.friendshipStatus(
-            user.username,
+            user.id,
             currentUser,
           ),
         };
@@ -442,7 +559,7 @@ export class UsersService {
         return {
           ...user,
           friendshipStatus: await this.followsService.friendshipStatus(
-            user.username,
+            user.id,
             currentUser,
           ),
         };

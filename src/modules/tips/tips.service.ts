@@ -12,6 +12,31 @@ import { UserClientDto } from 'src/modules/users/dtos/user-client.dto';
 import { TipCommentsService } from 'src/modules/tip-comments/tip-comments.service';
 import { FollowsService } from 'src/modules/follows/follows.service';
 import { TipWordsService } from '../tip-words/tip-words.service';
+import { FeedFilterDto } from '../tip-words/dtos/feed-filter.dto';
+import { Tip, TipComment, TipLike } from '@prisma/client';
+import { TipMediaEntity } from '../tip-medias/entities/tip-media.entity';
+import { UserEntity } from '../users/entities/user.entity';
+import { CityRegionCountryDto } from '../cities/dtos/city-region-country.dto';
+import { CreateTipReportDto } from 'src/modules/tips/dtos/create-tip-report.dto';
+import { CityInterestsService } from 'src/modules/city-interests/city-interests.service';
+
+interface TipWithCommentsAndLikes extends Tip {
+  likedBy: TipLike[];
+  tipComments: TipComment[];
+}
+
+interface TipWithCreatedDateAtAsDate extends Tip {
+  createdAtAsDate: string;
+}
+
+interface TipSortedByRelevancy extends Tip {
+  createdAtAsDate: string;
+  city: CityRegionCountryDto;
+  tipMedias: TipMediaEntity[];
+  user: UserEntity;
+  likedBy: TipLike[];
+  tipComments: TipComment[];
+}
 
 @Injectable()
 export class TipsService {
@@ -21,6 +46,7 @@ export class TipsService {
     private readonly tipCommentsService: TipCommentsService,
     private readonly followsService: FollowsService,
     private readonly tipWordsService: TipWordsService,
+    private readonly cityInterestsService: CityInterestsService,
   ) {}
 
   async create(
@@ -76,7 +102,7 @@ export class TipsService {
 
   async findUnique(id: number, currentUser: UserFromJwt): Promise<TipEntity> {
     const tip = await this.prisma.tip.findUnique({
-      where: { id },
+      where: { id, softDelete: false, status: 'active' },
       include: {
         user: true,
         tipMedias: true,
@@ -120,6 +146,8 @@ export class TipsService {
         user: {
           username,
         },
+        softDelete: false,
+        status: 'active',
       },
       skip: count * (page - 1),
       take: count,
@@ -157,40 +185,90 @@ export class TipsService {
     );
   }
 
-  async findByUserCityInterest(
+  async getTipsFeed(
     page = 1,
     count = 10,
-    currentUser: UserFromJwt,
+    filter: FeedFilterDto,
+    currentUser?: UserFromJwt,
   ): Promise<TipEntity[]> {
-    // const cities = (
-    //   await this.prisma.cityInterest.findMany({
-    //     where: { userId: currentUser.id },
-    //     select: { cityId: true },
-    //   })
-    // ).map((city) => city.cityId);
-
-    const tips = await this.prisma.tip.findMany({
-      // where: { cityId: { in: cities } },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      skip: count * (page - 1),
-      take: count,
-      include: {
-        user: true,
-        tipMedias: true,
-        likedBy: true,
-        city: {
-          include: {
-            region: {
-              include: {
-                country: true,
-              },
+    const include = {
+      user: true,
+      tipMedias: true,
+      likedBy: true,
+      city: {
+        include: {
+          region: {
+            include: {
+              country: true,
             },
           },
         },
       },
+    };
+
+    const tipsByCityInterest = await this.prisma.tip.findMany({
+      where: {
+        ...(filter.cityInterest && {
+          city: { cityInterests: { some: { userId: currentUser?.id } } },
+        }),
+        softDelete: false,
+        status: 'active',
+      },
+      include,
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
+
+    let tipsSortedByRelevancy: TipSortedByRelevancy[] = [];
+    if (filter.relevancy) {
+      //separa por dia e filtra por relevancia no dia
+      const tipsWithCreatedAtAsDate: TipWithCreatedDateAtAsDate[] =
+        tipsByCityInterest.map((tip) => ({
+          ...tip,
+          createdAtAsDate: tip.createdAt.toDateString(),
+        }));
+
+      const tipsSeparatedByDate: Tip[][] =
+        this.separateArrayByProperty<TipWithCreatedDateAtAsDate>(
+          tipsWithCreatedAtAsDate as TipWithCreatedDateAtAsDate[],
+          'createdAt',
+        );
+
+      tipsSortedByRelevancy = tipsSeparatedByDate.flatMap((tips: Tip[]) =>
+        tips.sort(
+          (a, b) =>
+            this.calculateRelevancy(a as TipWithCommentsAndLikes) -
+            this.calculateRelevancy(b as TipWithCommentsAndLikes),
+        ),
+      ) as TipSortedByRelevancy[];
+    }
+
+    const tipsByFollows = filter.follows
+      ? await this.prisma.tip.findMany({
+          where: {
+            id: { notIn: tipsSortedByRelevancy.map((tip) => tip.id) },
+            user: {
+              followers: { some: { followerId: currentUser?.id } },
+            },
+            softDelete: false,
+            status: 'active',
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+          include,
+          skip: count * (page - 1),
+          take: count * 0.4,
+        })
+      : [];
+
+    const tips = tipsByFollows.concat(
+      (tipsSortedByRelevancy as TipSortedByRelevancy[]).slice(
+        (page - 1) * count * 0.7,
+        (page - 1) * count + count * 0.7,
+      ),
+    );
 
     return await Promise.all(
       tips.map(async (tip) => {
@@ -226,7 +304,7 @@ export class TipsService {
         return {
           ...user,
           friendshipStatus: await this.followsService.friendshipStatus(
-            user.username,
+            user.id,
             currentUser,
           ),
         };
@@ -252,23 +330,102 @@ export class TipsService {
       throw new UnauthorizedException();
     }
 
-    if (tip.tipMedias && tip.tipMedias.length > 0) {
-      tip.tipMedias.forEach(async (media) => {
-        const fileName = media.url.split('/').pop();
+    // if (tip.tipMedias && tip.tipMedias.length > 0) {
+    //   tip.tipMedias.forEach(async (media) => {
+    //     const fileName = media.url.split('/').pop();
 
-        if (!fileName) {
-          return;
-        }
+    //     if (!fileName) {
+    //       return;
+    //     }
 
-        await this.mediaService.deleteFile(fileName, 'tips');
-      });
-    }
+    //     await this.mediaService.deleteFile(fileName, 'tips');
+    //   });
+    // }
 
-    await this.prisma.tip.delete({
+    await this.prisma.tip.update({
+      data: {
+        softDelete: true,
+      },
       where: {
         id,
       },
     });
+  }
+
+  async report(
+    id: number,
+    createTipReportDto: CreateTipReportDto,
+    currentUser: UserFromJwt,
+  ) {
+    await this.prisma.tipReport.create({
+      data: {
+        reason: createTipReportDto.reason,
+        tip: {
+          connect: {
+            id,
+          },
+        },
+        user: {
+          connect: {
+            id: currentUser.id,
+          },
+        },
+      },
+    });
+
+    const minReportsLength = 7;
+
+    const reportsLength = await this.prisma.tipReport.count({
+      where: { tipId: id },
+    });
+
+    if (reportsLength <= minReportsLength) {
+      return;
+    }
+
+    const tip = await this.prisma.tip.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        user: {
+          include: {
+            followers: true,
+          },
+        },
+        likedBy: true,
+      },
+    });
+
+    if (!tip) {
+      return;
+    }
+
+    const interestAmountInCity =
+      await this.cityInterestsService.getInterestsCountByCityId(tip.cityId);
+
+    const commentsAmount = await this.tipCommentsService.getTipCommentsAmount(
+      tip.id,
+    );
+
+    const interactions =
+      tip.likedBy.length +
+      tip.user.followers.length +
+      interestAmountInCity * 0.3 +
+      commentsAmount;
+
+    if (
+      Math.ceil(
+        (Math.log2(interactions) / 100) * 0.1 * interactions + minReportsLength,
+      ) >= reportsLength
+    ) {
+      await this.prisma.tip.update({
+        where: { id },
+        data: {
+          status: 'in-review',
+        },
+      });
+    }
   }
 
   async showRelevantTips(
@@ -279,9 +436,9 @@ export class TipsService {
     tipStartDate?: Date,
   ) {
     const userMostUsedWords = await this.prisma.tipWord.findMany({
-      include: { tip: true },
+      include: { tips: true },
       where: {
-        tip: { userId: currentUser.id },
+        tips: { some: { userId: currentUser.id } },
         createdAt: {
           gte: startDate,
           lte: endDate,
@@ -291,17 +448,54 @@ export class TipsService {
       take: wordCount,
     });
     const words = userMostUsedWords.map((tipWord) => tipWord.word);
-    const tipIds = userMostUsedWords.map((tipWord) => tipWord.tipId);
     const relevantTips = this.prisma.tipWord.findMany({
       where: {
         word: { in: words },
-        tipId: { notIn: tipIds },
         createdAt: { lte: new Date(), gte: tipStartDate },
       },
       include: {
-        tip: { select: { likedBy: { orderBy: { userId: 'desc' } } } },
+        tips: {
+          where: { userId: { not: currentUser.id } },
+          select: { likedBy: { orderBy: { userId: 'desc' } } },
+        },
       },
     });
     return relevantTips;
+  }
+
+  async calculateTipRelevancy(tipId: number, startDate: Date, endDate: Date) {
+    const tip = await this.prisma.tip.findUnique({
+      where: { id: tipId, softDelete: false, status: 'active' },
+      include: {
+        tipComments: { where: { createdAt: { gte: startDate, lte: endDate } } },
+        likedBy: { where: { createdAt: { gte: startDate, lte: endDate } } },
+      },
+    });
+
+    const relevancy =
+      tip && tip.likedBy.length * 0.3 * (tip.tipComments.length * 0.7);
+    return relevancy ?? 0;
+  }
+
+  private calculateRelevancy(tip: TipWithCommentsAndLikes) {
+    const relevancy =
+      tip && tip.likedBy.length * 0.3 * ((tip.tipComments?.length ?? 0) * 0.7);
+    return relevancy ?? 0;
+  }
+
+  private separateArrayByProperty<T>(arr: T[], property: keyof T): T[][] {
+    const result: T[][] = [];
+    arr.forEach((obj) => {
+      const key = obj[property];
+      const index = result.findIndex(
+        (subArr) => subArr.length > 0 && subArr[0][property] === key,
+      );
+      if (index === -1) {
+        result.push([obj]);
+      } else {
+        result[index].push(obj);
+      }
+    });
+    return result;
   }
 }

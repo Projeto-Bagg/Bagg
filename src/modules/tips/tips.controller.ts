@@ -24,7 +24,9 @@ import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { IsPublic } from 'src/modules/auth/decorators/is-public.decorator';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { UserClientDto } from 'src/modules/users/dtos/user-client.dto';
-import { TipsFeedDto } from 'src/modules/tips/dtos/tips-feed.dto';
+import { FeedFilterDto } from '../tip-words/dtos/feed-filter.dto';
+import { PaginationDto } from 'src/commons/entities/pagination';
+import { CreateTipReportDto } from 'src/modules/tips/dtos/create-tip-report.dto';
 
 @Controller('tips')
 @ApiTags('tips')
@@ -56,13 +58,15 @@ export class TipsController {
   @ApiBearerAuth()
   @IsPublic()
   @ApiResponse({ type: TipEntity, isArray: true })
-  async findByUserCityInterest(
-    @Query() query: TipsFeedDto,
+  async getTipsFeed(
+    @Query() query: PaginationDto,
+    @Query() filter: FeedFilterDto,
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<TipEntity[]> {
-    const tips = await this.tipsService.findByUserCityInterest(
+    const tips = await this.tipsService.getTipsFeed(
       query.page,
       query.count,
+      filter,
       currentUser,
     );
 
@@ -89,8 +93,8 @@ export class TipsController {
   @ApiBearerAuth()
   @UseInterceptors(ClassSerializerInterceptor)
   async getByUser(
+    @Query() query: PaginationDto,
     @Param('username') username: string,
-    @Query() query: TipsFeedDto,
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<TipEntity[]> {
     const posts = await this.tipsService.findByUsername(
@@ -127,5 +131,15 @@ export class TipsController {
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<void> {
     return this.tipsService.delete(+id, currentUser);
+  }
+
+  @Post('report/:id')
+  @ApiBearerAuth()
+  report(
+    @Param('id') id: number,
+    @Body() createTipReport: CreateTipReportDto,
+    @CurrentUser() currentUser: UserFromJwt,
+  ) {
+    return this.tipsService.report(id, createTipReport, currentUser);
   }
 }

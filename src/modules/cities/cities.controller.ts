@@ -40,6 +40,12 @@ export class CitiesController {
     return await this.citiesService.search(query);
   }
 
+  @Get('trending')
+  @IsPublic()
+  trending() {
+    return this.citiesService.trending();
+  }
+
   @Get(':id')
   @IsPublic()
   @UseInterceptors(ClassSerializerInterceptor)

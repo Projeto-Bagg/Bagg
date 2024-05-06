@@ -215,4 +215,105 @@ export class CitiesService {
       FETCH NEXT @count ROWS ONLY
     `;
   }
+  async trending() {
+    const today = new Date();
+    const thirtyDaysAgo = new Date(
+      today.getFullYear(),
+      today.getMonth() - 1,
+      today.getDate(),
+    );
+
+    const sixtyDaysAgo = new Date(
+      today.getFullYear(),
+      today.getMonth() - 2,
+      today.getDate(),
+    );
+
+    const interestsCount = await this.prisma.cityInterest.count({
+      where: {
+        createdAt: {
+          gte: thirtyDaysAgo,
+          lte: today,
+        },
+      },
+    });
+
+    const cityInterests = await this.prisma.cityInterest.groupBy({
+      by: ['cityId'],
+      take: 10,
+      _count: {
+        cityId: true,
+      },
+      where: {
+        createdAt: {
+          gte: thirtyDaysAgo,
+          lte: today,
+        },
+      },
+      orderBy: {
+        _count: {
+          id: 'desc',
+        },
+      },
+    });
+
+    const cities = await this.prisma.city.findMany({
+      where: {
+        id: {
+          in: cityInterests.map((interest) => interest.cityId),
+        },
+      },
+      include: {
+        region: {
+          include: {
+            country: true,
+          },
+        },
+      },
+    });
+
+    const cityInterests2MonthsAgo = await this.prisma.cityInterest.groupBy({
+      by: ['cityId'],
+      take: 10,
+      _count: {
+        cityId: true,
+      },
+      where: {
+        cityId: {
+          in: cityInterests.map((interest) => interest.cityId),
+        },
+        createdAt: {
+          gte: sixtyDaysAgo,
+          lte: thirtyDaysAgo,
+        },
+      },
+      orderBy: {
+        _count: {
+          id: 'desc',
+        },
+      },
+    });
+
+    return cities.map((city, index) => {
+      const variation =
+        cityInterests[index]._count.cityId -
+          cityInterests2MonthsAgo[index]?._count?.cityId || 0;
+
+      return {
+        ...city,
+        interestsCount: cityInterests[index]._count.cityId,
+        percentFromTotal: +(
+          (cityInterests[index]._count.cityId / interestsCount) *
+          100
+        ).toFixed(1),
+        variation: variation,
+        variationPercentage: cityInterests2MonthsAgo[index]
+          ? (
+              (variation / cityInterests2MonthsAgo[index]._count.cityId) *
+              100
+            ).toFixed(1)
+          : null,
+      };
+    });
+  }
 }

@@ -20,6 +20,7 @@ import { CityRegionCountryDto } from '../cities/dtos/city-region-country.dto';
 import { DistanceService } from '../distance/distance.service';
 import { CreateTipReportDto } from 'src/modules/tips/dtos/create-tip-report.dto';
 import { CityInterestsService } from 'src/modules/city-interests/city-interests.service';
+import { ids } from 'googleapis/build/src/apis/ids';
 
 interface TipWithCommentsAndLikes extends Tip {
   likedBy: TipLike[];
@@ -430,39 +431,84 @@ export class TipsService {
     }
   }
 
-  async showRelevantTips(
+  async getRelevantTips(
     currentUser: UserFromJwt,
-    wordCount: number,
+    wordCount?: number,
+    //serve pra ver a data das palavras curtidas/usadas
     startDate?: Date,
     endDate?: Date,
+    //serve pra puxar as tips relevantes
     tipStartDate?: Date,
+    page = 1,
+    count = 10,
   ) {
-    const userMostUsedWords = await this.prisma.tipWord.findMany({
-      include: { tips: true },
+    const tips = await this.prisma.tip.findMany({
       where: {
-        tips: { some: { userId: currentUser.id } },
-        createdAt: {
-          gte: startDate,
-          lte: endDate,
-        },
+        AND: [
+          {
+            OR: [
+              { likedBy: { some: { userId: currentUser.id } } },
+              { userId: currentUser.id },
+            ],
+          },
+          {
+            AND: [
+              { createdAt: { gte: startDate } },
+              { createdAt: { lte: endDate } },
+            ],
+          },
+        ],
       },
-      orderBy: { word: 'desc' },
+      include: { tipWord: true },
       take: wordCount,
     });
-    const words = userMostUsedWords.map((tipWord) => tipWord.word);
-    const relevantTips = this.prisma.tipWord.findMany({
+
+    const idsToIgnore = tips.map((tip) => tip.id);
+    const relevantWords = Array.from(
+      new Set(
+        tips.flatMap((tip) => tip.tipWord.map((tipWord) => tipWord.word)),
+      ),
+    );
+
+    const relevantTips = await this.prisma.tip.findMany({
       where: {
-        word: { in: words },
-        createdAt: { lte: new Date(), gte: tipStartDate },
+        AND: [
+          { tipWord: { some: { word: { in: relevantWords } } } },
+          { id: { notIn: idsToIgnore } },
+          { createdAt: { lte: new Date(), gte: tipStartDate } },
+        ],
       },
       include: {
-        tips: {
-          where: { userId: { not: currentUser.id } },
-          select: { likedBy: { orderBy: { userId: 'desc' } } },
+        user: true,
+        tipMedias: true,
+        likedBy: true,
+        city: {
+          include: {
+            region: {
+              include: {
+                country: true,
+              },
+            },
+          },
         },
       },
+      take: count,
+      skip: count * (page - 1),
     });
-    return relevantTips;
+
+    return await Promise.all(
+      relevantTips.map(async (tip) => {
+        const commentsAmount =
+          await this.tipCommentsService.getTipCommentsAmount(tip.id);
+
+        return {
+          ...tip,
+          isLiked: tip.likedBy.some((like) => like.userId === currentUser?.id),
+          likedBy: tip.likedBy.length,
+          commentsAmount,
+        };
+      }),
+    );
   }
 
   async recommendNearbyCitiesByUserCityInterests(

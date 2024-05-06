@@ -28,6 +28,7 @@ import { FeedFilterDto } from '../tip-words/dtos/feed-filter.dto';
 import { PaginationDto } from 'src/commons/entities/pagination';
 import { PlaceWithDistance } from '../distance/distance.service';
 import { CreateTipReportDto } from './dtos/create-tip-report.dto';
+import { RelevantTipsDto } from '../tip-words/dtos/relevant-tips-dto';
 
 @Controller('tips')
 @ApiTags('tips')
@@ -161,6 +162,24 @@ export class TipsController {
     return tips.map((tip) => new TipEntity(tip));
   }
 
+  @Get('recommend/tips-from-relevant-words')
+  @ApiBearerAuth()
+  async getRelevantTips(
+    @Query() query: PaginationDto,
+    @CurrentUser() currentUser: UserFromJwt,
+    @Query() relevantTipsQuery: RelevantTipsDto,
+  ): Promise<TipEntity[]> {
+    const tips = await this.tipsService.getRelevantTips(
+      currentUser,
+      relevantTipsQuery.wordCount,
+      relevantTipsQuery.startDate,
+      relevantTipsQuery.endDate,
+      relevantTipsQuery.tipStartDate,
+      query.page,
+      query.count,
+    );
+    return tips.map((tip) => new TipEntity(tip));
+  }
   @Post('report/:id')
   @ApiBearerAuth()
   report(

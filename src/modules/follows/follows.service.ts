@@ -67,10 +67,10 @@ export class FollowsService {
 
   async friendshipCount(id: number): Promise<FriendshipCountDto> {
     const followers = await this.prisma.follow.count({
-      where: { id },
+      where: { followingId: id },
     });
     const following = await this.prisma.follow.count({
-      where: { id },
+      where: { followerId: id },
     });
 
     return {

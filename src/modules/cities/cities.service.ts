@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { CitySearchDto } from 'src/modules/cities/dtos/city-search.dto';
-import { CityInterestRankingDto } from 'src/modules/cities/dtos/city-interest-ranking.dto';
 import { CityRatingRankingDto } from 'src/modules/cities/dtos/city-rating-ranking.dto';
 import { CityVisitRankingDto } from 'src/modules/cities/dtos/city-visit-ranking.dto';
 import { CityEntity } from 'src/modules/cities/entities/city.entity';
@@ -9,7 +8,6 @@ import { CityInterestsService } from 'src/modules/city-interests/city-interests.
 import { CityVisitsService } from 'src/modules/city-visits/city-visits.service';
 import { MediaEntity } from 'src/modules/media/entities/media.entity';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CityPagination } from 'src/modules/cities/dtos/city-pagination.dto';
 import { CitySearchResponseDto } from 'src/modules/cities/dtos/city-search-response';
 import { CityPageDto } from 'src/modules/cities/dtos/city-page.dto';
 import { UsersService } from 'src/modules/users/users.service';

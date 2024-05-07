@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { CityEntity } from 'src/modules/cities/entities/city.entity';
+import { CityRegionCountryDto } from 'src/modules/cities/dtos/city-region-country.dto';
 
-export class CityByDistanceDto extends CityEntity {
+export class CityByDistanceDto extends CityRegionCountryDto {
   @ApiProperty({ type: Number })
   distance: number;
 

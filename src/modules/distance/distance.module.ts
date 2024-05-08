@@ -7,5 +7,6 @@ import { DistanceController } from './distance.controller';
   imports: [PrismaModule],
   controllers: [DistanceController],
   providers: [DistanceService],
+  exports: [DistanceService],
 })
 export class DistanceModule {}

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { Prisma, Tip, TipWord } from '@prisma/client';
+import { Tip, TipWord } from '@prisma/client';
 import { TipWordByCountDto } from './dtos/tip-word-by-count.dto';
 
 @Injectable()
@@ -34,7 +34,10 @@ export class TipWordsService {
       .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '')
       .replace(/\s{2,}/g, ' ')
       .split(' ')
-      .map((word) => ({ word: word } as TipWord));
+      .flatMap((word) =>
+        word.length > 2 ? [{ word: word, tipId: tip.id } as TipWord] : [],
+      );
+
     await this.prisma.tipWord.createMany({
       data: tipWordsWithStrippedPunctuation,
     });

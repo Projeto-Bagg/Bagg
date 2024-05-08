@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 export class SearchTipsDto {
   @ApiPropertyOptional()
@@ -7,8 +7,13 @@ export class SearchTipsDto {
   q?: string;
 
   @ApiPropertyOptional()
+  @Transform((tags) => tags.value.split(';'))
   @Type(() => Array<string>)
   tags?: string[];
+
+  @ApiPropertyOptional()
+  @Type(() => Number)
+  city?: number;
 
   @ApiPropertyOptional({ default: 10 })
   @Type(() => Number)

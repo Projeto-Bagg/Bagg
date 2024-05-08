@@ -29,7 +29,6 @@ import { PaginationDto } from 'src/commons/entities/pagination';
 import { PlaceWithDistance } from '../distance/distance.service';
 import { CreateTipReportDto } from './dtos/create-tip-report.dto';
 import { RelevantTipsDto } from '../tip-words/dtos/relevant-tips-dto';
-import { CreateTipReportDto } from 'src/modules/tips/dtos/create-tip-report.dto';
 import { SearchTipsDto } from './dtos/search-tips.dto';
 
 @Controller('tips')
@@ -50,6 +49,7 @@ export class TipsController {
       currentUser,
       query.q,
       query.tags,
+      query.city,
       query.page,
       query.count,
     );

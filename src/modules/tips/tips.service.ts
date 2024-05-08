@@ -626,6 +626,7 @@ export class TipsService {
     currentUser?: UserFromJwt,
     q?: string,
     tags?: string[],
+    city?: number,
     page = 1,
     count = 10,
   ) {
@@ -637,7 +638,15 @@ export class TipsService {
     //n sei se funciona
     const tips = await this.prisma.tip.findMany({
       where: {
-        AND: [{ message: { contains: q }, OR: [...tagsAsQueries] }],
+        AND: [
+          { message: { contains: q } },
+          {
+            OR: [...tagsAsQueries],
+          },
+          {
+            cityId: city,
+          },
+        ],
       },
       skip: count * (page - 1),
       take: count,

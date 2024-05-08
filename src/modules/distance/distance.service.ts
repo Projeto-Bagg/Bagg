@@ -20,7 +20,7 @@ interface Place {
   longitude: number;
 }
 
-interface PlaceWithDistance extends Place {
+export interface PlaceWithDistance extends Place {
   distance: number;
 }
 
@@ -120,10 +120,10 @@ export class DistanceService {
   }
 
   async getClosestRegions(id: number, page = 1, count = 10) {
-    return this.getClosestPlaces(id, this.prisma.region, page, count);
+    return await this.getClosestPlaces(id, this.prisma.region, page, count);
   }
 
   async getClosestCountries(id: number, page = 1, count = 10) {
-    return this.getClosestPlaces(id, this.prisma.country, page, count);
+    return await this.getClosestPlaces(id, this.prisma.country, page, count);
   }
 }

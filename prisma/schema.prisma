@@ -281,7 +281,8 @@ model UserSubscribesPlan {
 
 model TipWord {
   id        Int      @id @default(autoincrement())
-  tips      Tip[]
+  tip       Tip      @relation(fields: [tipId], references: [id])
+  tipId     Int
   word      String
   createdAt DateTime @default(now())
 }

@@ -498,4 +498,53 @@ export class TipsService {
     });
     return result;
   }
+  async searchTips(
+    currentUser?: UserFromJwt,
+    text?: string,
+    tags?: string[],
+    count = 10,
+    page = 1,
+  ) {
+    const tagsAsQueries =
+      tags?.map((tag) => ({
+        tags: { contains: tag },
+      })) ?? [];
+
+    //n sei se funciona
+    const tips = await this.prisma.tip.findMany({
+      where: {
+        AND: [{ message: { contains: text }, OR: [...tagsAsQueries] }],
+      },
+      skip: count * (page - 1),
+      take: count,
+      include: {
+        user: true,
+        tipMedias: true,
+        likedBy: true,
+        city: {
+          include: {
+            region: {
+              include: {
+                country: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return await Promise.all(
+      tips.map(async (tip) => {
+        const commentsAmount =
+          await this.tipCommentsService.getTipCommentsAmount(tip.id);
+
+        return {
+          ...tip,
+          isLiked: tip.likedBy.some((like) => like.userId === currentUser?.id),
+          likedBy: tip.likedBy.length,
+          commentsAmount,
+        };
+      }),
+    );
+  }
 }

@@ -29,11 +29,33 @@ import { PaginationDto } from 'src/commons/entities/pagination';
 import { PlaceWithDistance } from '../distance/distance.service';
 import { CreateTipReportDto } from './dtos/create-tip-report.dto';
 import { RelevantTipsDto } from '../tip-words/dtos/relevant-tips-dto';
+import { CreateTipReportDto } from 'src/modules/tips/dtos/create-tip-report.dto';
+import { SearchTipsDto } from './dtos/search-tips.dto';
 
 @Controller('tips')
 @ApiTags('tips')
 export class TipsController {
   constructor(private readonly tipsService: TipsService) {}
+
+  @Get('search')
+  @UseInterceptors(ClassSerializerInterceptor)
+  @ApiBearerAuth()
+  @IsPublic()
+  @ApiResponse({ type: TipEntity, isArray: true })
+  async searchTips(
+    @CurrentUser() currentUser: UserFromJwt,
+    @Query() query: SearchTipsDto,
+  ): Promise<TipEntity[]> {
+    const tips = await this.tipsService.searchTips(
+      currentUser,
+      query.text,
+      query.tags,
+      query.count,
+      query.page,
+    );
+
+    return tips.map((tip) => new TipEntity(tip));
+  }
 
   @Post()
   @UseInterceptors(ClassSerializerInterceptor)

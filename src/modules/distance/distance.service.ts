@@ -89,7 +89,34 @@ export class DistanceService {
   }
 
   async getClosestCities(id: number, page = 1, count = 10) {
-    return await this.getClosestPlaces(id, this.prisma.city, page, count);
+    const cities = await this.getClosestPlaces(
+      id,
+      this.prisma.city,
+      page,
+      count,
+    );
+
+    return await Promise.all(
+      cities.map(async (city) => {
+        const region = await this.prisma.region.findFirst({
+          where: {
+            cities: {
+              some: {
+                id: city.id,
+              },
+            },
+          },
+          include: {
+            country: true,
+          },
+        });
+
+        return {
+          ...city,
+          region,
+        };
+      }),
+    );
   }
 
   async getClosestRegions(id: number, page = 1, count = 10) {

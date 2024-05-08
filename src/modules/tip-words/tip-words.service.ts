@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { Prisma, Tip, TipWord } from '@prisma/client';
+import { Tip, TipWord } from '@prisma/client';
 import { TipWordByCountDto } from './dtos/tip-word-by-count.dto';
 
 @Injectable()

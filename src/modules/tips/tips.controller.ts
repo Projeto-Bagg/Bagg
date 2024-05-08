@@ -45,10 +45,10 @@ export class TipsController {
   ): Promise<TipEntity[]> {
     const tips = await this.tipsService.searchTips(
       currentUser,
-      query.text,
+      query.q,
       query.tags,
-      query.count,
       query.page,
+      query.count,
     );
 
     return tips.map((tip) => new TipEntity(tip));

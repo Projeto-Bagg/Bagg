@@ -500,10 +500,10 @@ export class TipsService {
   }
   async searchTips(
     currentUser?: UserFromJwt,
-    text?: string,
+    q?: string,
     tags?: string[],
-    count = 10,
     page = 1,
+    count = 10,
   ) {
     const tagsAsQueries =
       tags?.map((tag) => ({
@@ -513,7 +513,7 @@ export class TipsService {
     //n sei se funciona
     const tips = await this.prisma.tip.findMany({
       where: {
-        AND: [{ message: { contains: text }, OR: [...tagsAsQueries] }],
+        AND: [{ message: { contains: q }, OR: [...tagsAsQueries] }],
       },
       skip: count * (page - 1),
       take: count,

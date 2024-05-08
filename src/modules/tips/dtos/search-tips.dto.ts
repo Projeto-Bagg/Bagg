@@ -4,7 +4,7 @@ import { Type } from 'class-transformer';
 export class SearchTipsDto {
   @ApiPropertyOptional()
   @Type(() => String)
-  text?: string;
+  q?: string;
 
   @ApiPropertyOptional()
   @Type(() => Array<string>)

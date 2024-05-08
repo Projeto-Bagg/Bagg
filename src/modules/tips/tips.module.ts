@@ -6,8 +6,8 @@ import { MediaModule } from '../media/media.module';
 import { TipCommentsModule } from 'src/modules/tip-comments/tip-comments.module';
 import { FollowsModule } from 'src/modules/follows/follows.module';
 import { TipWordsModule } from '../tip-words/tip-words.module';
-import { DistanceModule } from '../distance/distance.module';
 import { CityInterestsModule } from 'src/modules/city-interests/city-interests.module';
+import { CitiesModule } from '../cities/cities.module';
 
 @Module({
   imports: [
@@ -16,7 +16,7 @@ import { CityInterestsModule } from 'src/modules/city-interests/city-interests.m
     FollowsModule,
     TipCommentsModule,
     TipWordsModule,
-    DistanceModule,
+    CitiesModule,
     CityInterestsModule,
   ],
   controllers: [TipsController],

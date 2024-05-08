@@ -170,7 +170,7 @@ export class UsersController {
     @Query() deleteUserDto: DeleteUserDto,
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<void> {
-    return this.usersService.delete(deleteUserDto, currentUser.username);
+    return this.usersService.delete(deleteUserDto, currentUser);
   }
 
   @Put('password')
@@ -179,10 +179,7 @@ export class UsersController {
     @Body() updatePasswordDto: UpdatePasswordDto,
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<void> {
-    return this.usersService.updatePassword(
-      updatePasswordDto,
-      currentUser.username,
-    );
+    return this.usersService.updatePassword(updatePasswordDto, currentUser);
   }
 
   @Get('me')
@@ -190,8 +187,8 @@ export class UsersController {
   @ApiBearerAuth()
   @ApiResponse({ type: UserFullInfoDto })
   async me(@CurrentUser() currentUser: UserFromJwt): Promise<UserFullInfoDto> {
-    const user = await this.usersService.findByUsername(
-      currentUser.username,
+    const user = await this.usersService.fullInfoUserById(
+      currentUser.id,
       currentUser,
     );
 

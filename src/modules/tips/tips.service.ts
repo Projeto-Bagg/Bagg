@@ -17,6 +17,8 @@ import { Tip, TipComment, TipLike } from '@prisma/client';
 import { TipMediaEntity } from '../tip-medias/entities/tip-media.entity';
 import { UserEntity } from '../users/entities/user.entity';
 import { CityRegionCountryDto } from '../cities/dtos/city-region-country.dto';
+import { CreateTipReportDto } from 'src/modules/tips/dtos/create-tip-report.dto';
+import { CityInterestsService } from 'src/modules/city-interests/city-interests.service';
 
 interface TipWithCommentsAndLikes extends Tip {
   likedBy: TipLike[];
@@ -44,6 +46,7 @@ export class TipsService {
     private readonly tipCommentsService: TipCommentsService,
     private readonly followsService: FollowsService,
     private readonly tipWordsService: TipWordsService,
+    private readonly cityInterestsService: CityInterestsService,
   ) {}
 
   async create(
@@ -99,7 +102,7 @@ export class TipsService {
 
   async findUnique(id: number, currentUser: UserFromJwt): Promise<TipEntity> {
     const tip = await this.prisma.tip.findUnique({
-      where: { id },
+      where: { id, softDelete: false, status: 'active' },
       include: {
         user: true,
         tipMedias: true,
@@ -143,6 +146,8 @@ export class TipsService {
         user: {
           username,
         },
+        softDelete: false,
+        status: 'active',
       },
       skip: count * (page - 1),
       take: count,
@@ -206,6 +211,8 @@ export class TipsService {
         ...(filter.cityInterest && {
           city: { cityInterests: { some: { userId: currentUser?.id } } },
         }),
+        softDelete: false,
+        status: 'active',
       },
       include,
       orderBy: {
@@ -244,6 +251,8 @@ export class TipsService {
             user: {
               followers: { some: { followerId: currentUser?.id } },
             },
+            softDelete: false,
+            status: 'active',
           },
           orderBy: {
             createdAt: 'desc',
@@ -295,7 +304,7 @@ export class TipsService {
         return {
           ...user,
           friendshipStatus: await this.followsService.friendshipStatus(
-            user.username,
+            user.id,
             currentUser,
           ),
         };
@@ -321,23 +330,102 @@ export class TipsService {
       throw new UnauthorizedException();
     }
 
-    if (tip.tipMedias && tip.tipMedias.length > 0) {
-      tip.tipMedias.forEach(async (media) => {
-        const fileName = media.url.split('/').pop();
+    // if (tip.tipMedias && tip.tipMedias.length > 0) {
+    //   tip.tipMedias.forEach(async (media) => {
+    //     const fileName = media.url.split('/').pop();
 
-        if (!fileName) {
-          return;
-        }
+    //     if (!fileName) {
+    //       return;
+    //     }
 
-        await this.mediaService.deleteFile(fileName, 'tips');
-      });
-    }
+    //     await this.mediaService.deleteFile(fileName, 'tips');
+    //   });
+    // }
 
-    await this.prisma.tip.delete({
+    await this.prisma.tip.update({
+      data: {
+        softDelete: true,
+      },
       where: {
         id,
       },
     });
+  }
+
+  async report(
+    id: number,
+    createTipReportDto: CreateTipReportDto,
+    currentUser: UserFromJwt,
+  ) {
+    await this.prisma.tipReport.create({
+      data: {
+        reason: createTipReportDto.reason,
+        tip: {
+          connect: {
+            id,
+          },
+        },
+        user: {
+          connect: {
+            id: currentUser.id,
+          },
+        },
+      },
+    });
+
+    const minReportsLength = 7;
+
+    const reportsLength = await this.prisma.tipReport.count({
+      where: { tipId: id },
+    });
+
+    if (reportsLength <= minReportsLength) {
+      return;
+    }
+
+    const tip = await this.prisma.tip.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        user: {
+          include: {
+            followers: true,
+          },
+        },
+        likedBy: true,
+      },
+    });
+
+    if (!tip) {
+      return;
+    }
+
+    const interestAmountInCity =
+      await this.cityInterestsService.getInterestsCountByCityId(tip.cityId);
+
+    const commentsAmount = await this.tipCommentsService.getTipCommentsAmount(
+      tip.id,
+    );
+
+    const interactions =
+      tip.likedBy.length +
+      tip.user.followers.length +
+      interestAmountInCity * 0.3 +
+      commentsAmount;
+
+    if (
+      Math.ceil(
+        (Math.log2(interactions) / 100) * 0.1 * interactions + minReportsLength,
+      ) >= reportsLength
+    ) {
+      await this.prisma.tip.update({
+        where: { id },
+        data: {
+          status: 'in-review',
+        },
+      });
+    }
   }
 
   async showRelevantTips(
@@ -377,7 +465,7 @@ export class TipsService {
 
   async calculateTipRelevancy(tipId: number, startDate: Date, endDate: Date) {
     const tip = await this.prisma.tip.findUnique({
-      where: { id: tipId },
+      where: { id: tipId, softDelete: false, status: 'active' },
       include: {
         tipComments: { where: { createdAt: { gte: startDate, lte: endDate } } },
         likedBy: { where: { createdAt: { gte: startDate, lte: endDate } } },

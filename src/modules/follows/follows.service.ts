@@ -8,44 +8,34 @@ import { FriendshipCountDto } from 'src/modules/follows/dtos/friendship-count.dt
 export class FollowsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async follow(
-    followingUsername: string,
-    currentUser: UserFromJwt,
-  ): Promise<void> {
+  async follow(followingId: number, currentUser: UserFromJwt): Promise<void> {
     await this.prisma.follow.create({
       data: {
         following: {
           connect: {
-            username: followingUsername,
+            id: followingId,
           },
         },
         follower: {
           connect: {
-            username: currentUser.username,
+            id: currentUser.id,
           },
         },
       },
     });
   }
 
-  async unfollow(
-    followingUsername: string,
-    currentUser: UserFromJwt,
-  ): Promise<void> {
+  async unfollow(followingId: number, currentUser: UserFromJwt): Promise<void> {
     await this.prisma.follow.deleteMany({
       where: {
-        following: {
-          username: followingUsername,
-        },
-        follower: {
-          username: currentUser.username,
-        },
+        followingId,
+        followerId: currentUser.id,
       },
     });
   }
 
   async friendshipStatus(
-    followingUsername: string,
+    followingId: number,
     currentUser?: UserFromJwt,
   ): Promise<FriendshipStatusDto> {
     if (!currentUser) {
@@ -58,18 +48,14 @@ export class FollowsService {
     const isFollowing = !!(await this.prisma.follow.count({
       where: {
         followerId: currentUser.id,
-        following: {
-          username: followingUsername,
-        },
+        followingId,
       },
     }));
 
     const followedBy = !!(await this.prisma.follow.count({
       where: {
         followingId: currentUser.id,
-        follower: {
-          username: followingUsername,
-        },
+        followerId: followingId,
       },
     }));
 
@@ -79,12 +65,12 @@ export class FollowsService {
     };
   }
 
-  async friendshipCount(username: string): Promise<FriendshipCountDto> {
+  async friendshipCount(id: number): Promise<FriendshipCountDto> {
     const followers = await this.prisma.follow.count({
-      where: { following: { username } },
+      where: { followingId: id },
     });
     const following = await this.prisma.follow.count({
-      where: { follower: { username } },
+      where: { followerId: id },
     });
 
     return {

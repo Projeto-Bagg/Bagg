@@ -25,6 +25,8 @@ import { FollowsModule } from 'src/modules/follows/follows.module';
 import { TipWordsModule } from 'src/modules/tip-words/tip-words.module';
 import { DistanceModule } from './modules/distance/distance.module';
 import { EmailsModule } from './modules/emails/emails.module';
+import { AdminModule } from 'src/modules/admin/admin.module';
+import { ContinentsModule } from 'src/modules/continents/continents.module';
 
 @Module({
   imports: [
@@ -50,6 +52,8 @@ import { EmailsModule } from './modules/emails/emails.module';
     DistanceModule,
     EmailsModule,
     ConfigModule.forRoot(),
+    AdminModule,
+    ContinentsModule,
   ],
   providers: [
     AuthService,

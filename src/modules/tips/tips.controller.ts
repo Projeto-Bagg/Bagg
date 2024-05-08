@@ -26,6 +26,7 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import { UserClientDto } from 'src/modules/users/dtos/user-client.dto';
 import { FeedFilterDto } from '../tip-words/dtos/feed-filter.dto';
 import { PaginationDto } from 'src/commons/entities/pagination';
+import { CreateTipReportDto } from 'src/modules/tips/dtos/create-tip-report.dto';
 import { SearchTipsDto } from './dtos/search-tips.dto';
 
 @Controller('tips')
@@ -151,5 +152,15 @@ export class TipsController {
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<void> {
     return this.tipsService.delete(+id, currentUser);
+  }
+
+  @Post('report/:id')
+  @ApiBearerAuth()
+  report(
+    @Param('id') id: number,
+    @Body() createTipReport: CreateTipReportDto,
+    @CurrentUser() currentUser: UserFromJwt,
+  ) {
+    return this.tipsService.report(id, createTipReport, currentUser);
   }
 }

@@ -119,6 +119,10 @@ export class DistanceService {
     );
   }
 
+  async getClosestCitiesTest(id: number, page = 1, count = 10) {
+    return await this.getClosestPlaces(id, this.prisma.city, page, count);
+  }
+
   async getClosestRegions(id: number, page = 1, count = 10) {
     return await this.getClosestPlaces(id, this.prisma.region, page, count);
   }

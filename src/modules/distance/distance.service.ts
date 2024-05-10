@@ -47,6 +47,7 @@ export class DistanceService {
       return [];
     }
     const chosenPlace = allPlaces.splice(correctIndex, 1);
+    const lowestCount = (page - 1) * count + count;
     const lowestDistances: {
       id: number;
       latitude: number;
@@ -61,11 +62,11 @@ export class DistanceService {
           chosenPlace[0]?.latitude,
           chosenPlace[0]?.longitude,
         );
-        if (lowestDistances.length <= (page - 1) * count + count) {
+        if (lowestDistances.length <= lowestCount) {
           lowestDistances.push({ ...city, distance });
         } else {
           const biggerBy: number[] = [];
-          for (let i = 0; i < count; i++) {
+          for (let i = 0; i < lowestCount; i++) {
             biggerBy.push(distance - lowestDistances[i].distance);
           }
           const lowestBiggerByValue = Math.min.apply(0, biggerBy);
@@ -77,7 +78,9 @@ export class DistanceService {
           }
         }
       });
-      return lowestDistances;
+      return lowestDistances
+        .sort((a, b) => a.distance - b.distance)
+        .slice((page - 1) * count, (page - 1) * count + count);
     }
     return [];
   }

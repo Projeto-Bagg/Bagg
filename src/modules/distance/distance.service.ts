@@ -35,46 +35,49 @@ export class DistanceService {
     count = 10,
   ) {
     const allPlaces: Place[] = await model.findMany();
-    const chosenPlace = allPlaces.splice(id - 1, 1);
+    //mudar pro index == id dps no seed mas por enquanto gambiarra
+    let correctIndex = -1;
+    for (let i = 0; i < 20; i++) {
+      if (id == allPlaces[id - i].id) {
+        correctIndex = id - i;
+        break;
+      }
+    }
+    if (!correctIndex) {
+      return [];
+    }
+    const chosenPlace = allPlaces.splice(correctIndex, 1);
+    const lowestDistances: {
+      id: number;
+      latitude: number;
+      longitude: number;
+      distance: number;
+    }[] = [];
     if (chosenPlace) {
-      const placesWithDistance = allPlaces.map((city) => {
-        debugger;
-        const lowestDistances: number[] = [];
+      allPlaces.forEach((city) => {
         const distance = this.calculateDistance(
           city.latitude,
           city.longitude,
           chosenPlace[0]?.latitude,
           chosenPlace[0]?.longitude,
         );
-        if (lowestDistances.length <= count) {
-          lowestDistances.push(distance);
+        if (lowestDistances.length <= (page - 1) * count + count) {
+          lowestDistances.push({ ...city, distance });
         } else {
           const biggerBy: number[] = [];
           for (let i = 0; i < count; i++) {
-            biggerBy.push(distance - lowestDistances[i]);
+            biggerBy.push(distance - lowestDistances[i].distance);
           }
-          const lowestBiggerByValue = Math.min.apply(biggerBy);
-          lowestDistances[biggerBy.indexOf(Math.min.apply(biggerBy))]; //TERMINANDO SAINDO DO TRABALHO
+          const lowestBiggerByValue = Math.min.apply(0, biggerBy);
+          if (lowestBiggerByValue < 0) {
+            lowestDistances[biggerBy.indexOf(lowestBiggerByValue)] = {
+              ...city,
+              distance,
+            };
+          }
         }
-        return {
-          ...city,
-          distance: this.calculateDistance(
-            city.latitude,
-            city.longitude,
-            chosenPlace[0]?.latitude,
-            chosenPlace[0]?.longitude,
-          ),
-        };
       });
-      const placesSortedByDistance = (
-        placesWithDistance as PlaceWithDistance[]
-      ).sort((a, b) => a.distance - b.distance); //MALFEITOR
-      return page && count
-        ? placesSortedByDistance.slice(
-            (page - 1) * count,
-            (page - 1) * count + count,
-          )
-        : placesSortedByDistance;
+      return lowestDistances;
     }
     return [];
   }

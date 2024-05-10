@@ -35,27 +35,52 @@ export class DistanceService {
     count = 10,
   ) {
     const allPlaces: Place[] = await model.findMany();
-    const chosenPlace = allPlaces.find((place) => place.id == id);
-    const nonChosenPlaces = allPlaces.filter((place) => place.id != id);
+    //mudar pro index == id dps no seed mas por enquanto gambiarra
+    let correctIndex = -1;
+    for (let i = 0; i < 20; i++) {
+      if (id == allPlaces[id - i].id) {
+        correctIndex = id - i;
+        break;
+      }
+    }
+    if (!correctIndex) {
+      return [];
+    }
+    const chosenPlace = allPlaces.splice(correctIndex, 1);
+    const lowestCount = (page - 1) * count + count;
+    const lowestDistances: {
+      id: number;
+      latitude: number;
+      longitude: number;
+      distance: number;
+    }[] = [];
     if (chosenPlace) {
-      const placesWithDistance = nonChosenPlaces.map((city) => ({
-        ...city,
-        distance: this.calculateDistance(
+      allPlaces.forEach((city) => {
+        const distance = this.calculateDistance(
           city.latitude,
           city.longitude,
-          chosenPlace?.latitude,
-          chosenPlace?.longitude,
-        ),
-      }));
-      const placesSortedByDistance = (
-        placesWithDistance as PlaceWithDistance[]
-      ).sort((a, b) => a.distance - b.distance);
-      return page && count
-        ? placesSortedByDistance.slice(
-            (page - 1) * count,
-            (page - 1) * count + count,
-          )
-        : placesSortedByDistance;
+          chosenPlace[0]?.latitude,
+          chosenPlace[0]?.longitude,
+        );
+        if (lowestDistances.length <= lowestCount) {
+          lowestDistances.push({ ...city, distance });
+        } else {
+          const biggerBy: number[] = [];
+          for (let i = 0; i < lowestCount; i++) {
+            biggerBy.push(distance - lowestDistances[i].distance);
+          }
+          const lowestBiggerByValue = Math.min.apply(0, biggerBy);
+          if (lowestBiggerByValue < 0) {
+            lowestDistances[biggerBy.indexOf(lowestBiggerByValue)] = {
+              ...city,
+              distance,
+            };
+          }
+        }
+      });
+      return lowestDistances
+        .sort((a, b) => a.distance - b.distance)
+        .slice((page - 1) * count, (page - 1) * count + count);
     }
     return [];
   }
@@ -117,10 +142,6 @@ export class DistanceService {
         };
       }),
     );
-  }
-
-  async getClosestCitiesTest(id: number, page = 1, count = 10) {
-    return await this.getClosestPlaces(id, this.prisma.city, page, count);
   }
 
   async getClosestRegions(id: number, page = 1, count = 10) {

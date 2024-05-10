@@ -26,20 +26,6 @@ export class DistanceController {
     )) as CityByDistanceDto[];
   }
 
-  @Get('closest-cities-test/:id')
-  @IsPublic()
-  @ApiResponse({ type: CityByDistanceDto, isArray: true })
-  async getClosestCitiesTest(
-    @Param('id') id: number,
-    @Query() query: PaginationDto,
-  ): Promise<CityByDistanceDto[]> {
-    return (await this.distanceService.getClosestCitiesTest(
-      +id,
-      query.page,
-      query.count,
-    )) as CityByDistanceDto[];
-  }
-
   @Get('closest-regions/:id')
   @IsPublic()
   @ApiResponse({ type: RegionByDistanceDto, isArray: true })

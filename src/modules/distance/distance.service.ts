@@ -35,21 +35,40 @@ export class DistanceService {
     count = 10,
   ) {
     const allPlaces: Place[] = await model.findMany();
-    const chosenPlace = allPlaces.find((place) => place.id == id);
-    const nonChosenPlaces = allPlaces.filter((place) => place.id != id);
+    const chosenPlace = allPlaces.splice(id - 1, 1);
     if (chosenPlace) {
-      const placesWithDistance = nonChosenPlaces.map((city) => ({
-        ...city,
-        distance: this.calculateDistance(
+      const placesWithDistance = allPlaces.map((city) => {
+        debugger;
+        const lowestDistances: number[] = [];
+        const distance = this.calculateDistance(
           city.latitude,
           city.longitude,
-          chosenPlace?.latitude,
-          chosenPlace?.longitude,
-        ),
-      }));
+          chosenPlace[0]?.latitude,
+          chosenPlace[0]?.longitude,
+        );
+        if (lowestDistances.length <= count) {
+          lowestDistances.push(distance);
+        } else {
+          const biggerBy: number[] = [];
+          for (let i = 0; i < count; i++) {
+            biggerBy.push(distance - lowestDistances[i]);
+          }
+          const lowestBiggerByValue = Math.min.apply(biggerBy);
+          lowestDistances[biggerBy.indexOf(Math.min.apply(biggerBy))]; //TERMINANDO SAINDO DO TRABALHO
+        }
+        return {
+          ...city,
+          distance: this.calculateDistance(
+            city.latitude,
+            city.longitude,
+            chosenPlace[0]?.latitude,
+            chosenPlace[0]?.longitude,
+          ),
+        };
+      });
       const placesSortedByDistance = (
         placesWithDistance as PlaceWithDistance[]
-      ).sort((a, b) => a.distance - b.distance);
+      ).sort((a, b) => a.distance - b.distance); //MALFEITOR
       return page && count
         ? placesSortedByDistance.slice(
             (page - 1) * count,
@@ -117,10 +136,6 @@ export class DistanceService {
         };
       }),
     );
-  }
-
-  async getClosestCitiesTest(id: number, page = 1, count = 10) {
-    return await this.getClosestPlaces(id, this.prisma.city, page, count);
   }
 
   async getClosestRegions(id: number, page = 1, count = 10) {

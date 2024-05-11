@@ -21,6 +21,7 @@ import { CityImageDto } from 'src/modules/cities/dtos/city-image.dto';
 import { UsersService } from 'src/modules/users/users.service';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
 import { PaginationDto } from 'src/commons/entities/pagination';
+import { PlaceWithDistance } from '../distance/distance.service';
 
 @Controller('cities')
 @ApiTags('cities')
@@ -107,5 +108,18 @@ export class CitiesController {
     @Query() cityRankingDto: CityRankingDto,
   ): Promise<CityRatingRankingDto[]> {
     return this.citiesService.ratingRanking(cityRankingDto);
+  }
+
+  @Get('recommend/cities')
+  @ApiBearerAuth()
+  async getRecommendedCities(
+    @Query() query: PaginationDto,
+    @CurrentUser() currentUser: UserFromJwt,
+  ): Promise<PlaceWithDistance[]> {
+    return await this.citiesService.recommendNearbyCitiesByUserCityInterests(
+      currentUser,
+      query.page,
+      query.count,
+    );
   }
 }

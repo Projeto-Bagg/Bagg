@@ -17,10 +17,10 @@ import { Tip, TipComment, TipLike } from '@prisma/client';
 import { TipMediaEntity } from '../tip-medias/entities/tip-media.entity';
 import { UserEntity } from '../users/entities/user.entity';
 import { CityRegionCountryDto } from '../cities/dtos/city-region-country.dto';
-import { DistanceService } from '../distance/distance.service';
 import { CreateTipReportDto } from 'src/modules/tips/dtos/create-tip-report.dto';
 import { CityInterestsService } from 'src/modules/city-interests/city-interests.service';
-import { ids } from 'googleapis/build/src/apis/ids';
+import { CitiesService } from '../cities/cities.service';
+import { DistanceService } from '../distance/distance.service';
 
 interface TipWithCommentsAndLikes extends Tip {
   likedBy: TipLike[];
@@ -48,8 +48,9 @@ export class TipsService {
     private readonly tipCommentsService: TipCommentsService,
     private readonly followsService: FollowsService,
     private readonly tipWordsService: TipWordsService,
-    private readonly distanceService: DistanceService,
+    private readonly citiesService: CitiesService,
     private readonly cityInterestsService: CityInterestsService,
+    private readonly distanceService: DistanceService,
   ) {}
 
   async create(
@@ -459,7 +460,12 @@ export class TipsService {
           },
         ],
       },
-      include: { tipWord: true },
+      orderBy: {
+        tipWord: { _count: 'desc' },
+      },
+      include: {
+        tipWord: { select: { word: true } },
+      },
       take: wordCount,
     });
 
@@ -561,7 +567,11 @@ export class TipsService {
     count = 10,
   ) {
     const ids = (
-      await this.recommendNearbyCitiesByUserCityInterests(currentUser, 1, 5)
+      await this.citiesService.recommendNearbyCitiesByUserCityInterests(
+        currentUser,
+        1,
+        5,
+      )
     ).map((nearbyCityFromInterest) => nearbyCityFromInterest.id);
     const tips = await this.prisma.tip.findMany({
       where: { id: { in: ids } },
@@ -595,6 +605,32 @@ export class TipsService {
           commentsAmount,
         };
       }),
+    );
+  }
+
+  async getRecommendationFeed(
+    currentUser: UserFromJwt,
+    wordCount?: number,
+    //serve pra ver a data das palavras curtidas/usadas
+    startDate?: Date,
+    endDate?: Date,
+    //serve pra puxar as tips relevantes
+    tipStartDate?: Date,
+    page = 1,
+    count = 10,
+  ) {
+    return (
+      await this.getRelevantTips(
+        currentUser,
+        wordCount,
+        startDate,
+        endDate,
+        tipStartDate,
+        page,
+        count / 2,
+      )
+    ).concat(
+      await this.getTipsFromRecommendedCities(currentUser, page, count / 2),
     );
   }
 

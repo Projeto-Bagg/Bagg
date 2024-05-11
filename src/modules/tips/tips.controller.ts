@@ -26,7 +26,6 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import { UserClientDto } from 'src/modules/users/dtos/user-client.dto';
 import { FeedFilterDto } from '../tip-words/dtos/feed-filter.dto';
 import { PaginationDto } from 'src/commons/entities/pagination';
-import { PlaceWithDistance } from '../distance/distance.service';
 import { CreateTipReportDto } from './dtos/create-tip-report.dto';
 import { RelevantTipsDto } from '../tip-words/dtos/relevant-tips-dto';
 import { SearchTipsDto } from './dtos/search-tips.dto';
@@ -157,19 +156,6 @@ export class TipsController {
     return this.tipsService.delete(+id, currentUser);
   }
 
-  @Get('recommend/cities')
-  @ApiBearerAuth()
-  async getRecommendedCities(
-    @Query() query: PaginationDto,
-    @CurrentUser() currentUser: UserFromJwt,
-  ): Promise<PlaceWithDistance[]> {
-    return await this.tipsService.recommendNearbyCitiesByUserCityInterests(
-      currentUser,
-      query.page,
-      query.count,
-    )[0];
-  }
-
   @Get('recommend/tips-from-nearby-cities')
   @ApiBearerAuth()
   async getTipsFromRecommendedCities(
@@ -202,6 +188,26 @@ export class TipsController {
     );
     return tips.map((tip) => new TipEntity(tip));
   }
+
+  @Get('recommend/feed')
+  @ApiBearerAuth()
+  async getRecommendationFeed(
+    @Query() query: PaginationDto,
+    @CurrentUser() currentUser: UserFromJwt,
+    @Query() relevantTipsQuery: RelevantTipsDto,
+  ): Promise<TipEntity[]> {
+    const tips = await this.tipsService.getRecommendationFeed(
+      currentUser,
+      relevantTipsQuery.wordCount,
+      relevantTipsQuery.startDate,
+      relevantTipsQuery.endDate,
+      relevantTipsQuery.tipStartDate,
+      query.page,
+      query.count,
+    );
+    return tips.map((tip) => new TipEntity(tip));
+  }
+
   @Post('report/:id')
   @ApiBearerAuth()
   report(

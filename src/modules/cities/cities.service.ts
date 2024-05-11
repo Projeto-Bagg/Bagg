@@ -13,6 +13,7 @@ import { CityPageDto } from 'src/modules/cities/dtos/city-page.dto';
 import { UsersService } from 'src/modules/users/users.service';
 import { CityImageDto } from 'src/modules/cities/dtos/city-image.dto';
 import { CityRankingDto } from 'src/modules/cities/dtos/city-ranking.dto';
+import { DistanceService } from '../distance/distance.service';
 
 @Injectable()
 export class CitiesService {
@@ -21,6 +22,7 @@ export class CitiesService {
     private readonly cityInterestsService: CityInterestsService,
     private readonly cityVisitsService: CityVisitsService,
     private readonly usersService: UsersService,
+    private readonly distanceService: DistanceService,
   ) {}
 
   findByCountry(countryIso2: string): Promise<CityEntity[]> {
@@ -212,6 +214,37 @@ export class CitiesService {
       OFFSET @count * (@page - 1) ROWS
       FETCH NEXT @count ROWS ONLY
     `;
+  }
+
+  async recommendNearbyCitiesByUserCityInterests(
+    currentUser: UserFromJwt,
+    page = 1,
+    count = 10,
+  ) {
+    const cities = (
+      await this.prisma.user.findUnique({
+        where: { id: currentUser.id },
+        include: { cityInterests: { include: { city: true } } },
+      })
+    )?.cityInterests.map((cityInterest) => cityInterest.city);
+
+    const closestCitiesToInterestedCities = (
+      await Promise.all(
+        Array.from(
+          new Set(
+            await this.distanceService.getClosestCities(
+              cities ? cities?.map((city) => city.id) : [],
+              1,
+              5,
+            ),
+          ),
+        ),
+      )
+    ).flat();
+
+    return closestCitiesToInterestedCities
+      .slice((page - 1) * count, (page - 1) * count + count)
+      .sort(() => Math.random() - 0.5);
   }
 
   async trending() {

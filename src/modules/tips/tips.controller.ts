@@ -167,7 +167,7 @@ export class TipsController {
       currentUser,
       query.page,
       query.count,
-    );
+    )[0];
   }
 
   @Get('recommend/tips-from-nearby-cities')

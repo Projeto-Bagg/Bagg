@@ -523,13 +523,27 @@ export class TipsService {
       })
     )?.cityInterests.map((cityInterest) => cityInterest.city);
 
+    // const closestCitiesToInterestedCities = (
+    //   await Promise.all(
+    //     Array.from(
+    //       new Set(
+    //         cities?.map(
+    //           async (city) =>
+    //             await this.distanceService.getClosestCities([city.id], 1, 5),
+    //         ),
+    //       ),
+    //     ),
+    //   )
+    // ).flat();
+
     const closestCitiesToInterestedCities = (
       await Promise.all(
         Array.from(
           new Set(
-            cities?.map(
-              async (city) =>
-                await this.distanceService.getClosestCities(city.id, 1, 5),
+            await this.distanceService.getClosestCities(
+              cities ? cities?.map((city) => city.id) : [],
+              1,
+              5,
             ),
           ),
         ),
@@ -568,6 +582,7 @@ export class TipsService {
       take: count,
       skip: count * (page - 1),
     });
+
     return await Promise.all(
       tips.map(async (tip) => {
         const commentsAmount =

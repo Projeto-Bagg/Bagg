@@ -517,50 +517,6 @@ export class TipsService {
     );
   }
 
-  async recommendNearbyCitiesByUserCityInterests(
-    currentUser: UserFromJwt,
-    page = 1,
-    count = 10,
-  ) {
-    const cities = (
-      await this.prisma.user.findUnique({
-        where: { id: currentUser.id },
-        include: { cityInterests: { include: { city: true } } },
-      })
-    )?.cityInterests.map((cityInterest) => cityInterest.city);
-
-    // const closestCitiesToInterestedCities = (
-    //   await Promise.all(
-    //     Array.from(
-    //       new Set(
-    //         cities?.map(
-    //           async (city) =>
-    //             await this.distanceService.getClosestCities([city.id], 1, 5),
-    //         ),
-    //       ),
-    //     ),
-    //   )
-    // ).flat();
-
-    const closestCitiesToInterestedCities = (
-      await Promise.all(
-        Array.from(
-          new Set(
-            await this.distanceService.getClosestCities(
-              cities ? cities?.map((city) => city.id) : [],
-              1,
-              5,
-            ),
-          ),
-        ),
-      )
-    ).flat();
-
-    return closestCitiesToInterestedCities
-      .slice((page - 1) * count, (page - 1) * count + count)
-      .sort(() => Math.random() - 0.5);
-  }
-
   async getTipsFromRecommendedCities(
     currentUser: UserFromJwt,
     page = 1,

@@ -46,7 +46,6 @@ export class DistanceService {
     count = 10,
     caching = false,
   ) {
-    const allPlaces: Place[] = await model.findMany();
     //tratar muitos ids dps de algum jeito
     if (ids.length > 50) {
       ids = ids.slice(0, 50);
@@ -69,6 +68,10 @@ export class DistanceService {
         !cachedValues.map((cachedValue) => cachedValue?.id ?? -1).includes(id),
     );
 
+    if (ids.length == 0) {
+      return cachedValues as PlacesDistanceComparedToId[];
+    }
+    const allPlaces: Place[] = await model.findMany();
     //mudar pro index == id dps no seed mas por enquanto gambiarra
     const chosenPlaces: Place[] = [];
     for (let i = 0; i < ids.length; i++) {

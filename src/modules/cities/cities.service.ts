@@ -232,11 +232,13 @@ export class CitiesService {
       await Promise.all(
         Array.from(
           new Set(
-            await this.distanceService.getClosestCities(
-              cities ? cities?.map((city) => city.id) : [],
-              1,
-              5,
-            ),
+            (
+              await this.distanceService.getClosestCities(
+                cities ? cities?.map((city) => city.id) : [],
+                1,
+                5,
+              )
+            ).map((closestCities) => closestCities.places),
           ),
         ),
       )

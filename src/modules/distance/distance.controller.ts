@@ -19,39 +19,39 @@ export class DistanceController {
   async getClosestCities(
     @Body() body: DistanceBodyDto,
     @Query() query: PaginationDto,
-  ): Promise<CityByDistanceDto[][]> {
-    return (await this.distanceService.getClosestCitiesWithRegions(
+  ) {
+    return await this.distanceService.getClosestCitiesWithRegions(
       body.ids,
       query.page,
       query.count,
-    )) as CityByDistanceDto[][];
+    );
   }
 
-  @Get('closest-regions/:id')
+  @Post('closest-regions')
   @IsPublic()
   @ApiResponse({ type: RegionByDistanceDto, isArray: true })
   async getClosestRegions(
     @Body() body: DistanceBodyDto,
     @Query() query: PaginationDto,
-  ): Promise<RegionByDistanceDto[][]> {
-    return (await this.distanceService.getClosestRegions(
+  ) {
+    return await this.distanceService.getClosestRegions(
       body.ids,
       query.page,
       query.count,
-    )) as RegionByDistanceDto[][];
+    );
   }
 
-  @Get('closest-countries/:id')
+  @Post('closest-countries')
   @IsPublic()
   @ApiResponse({ type: CountryByDistanceDto, isArray: true })
   async getClosestCountries(
     @Body() body: DistanceBodyDto,
     @Query() query: PaginationDto,
-  ): Promise<CountryByDistanceDto[][]> {
-    return (await this.distanceService.getClosestCountries(
+  ) {
+    return await this.distanceService.getClosestCountries(
       body.ids,
       query.page,
       query.count,
-    )) as CountryByDistanceDto[][];
+    );
   }
 }

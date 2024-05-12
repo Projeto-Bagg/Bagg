@@ -1,9 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { City, Country, Region } from '@prisma/client';
-import { _CacheModule } from '../cache/cache.module';
 import { CacheService } from '../cache/cache.service';
-import { places } from 'googleapis/build/src/apis/places';
 
 interface CityDelegate {
   findMany(): Promise<City[]>;

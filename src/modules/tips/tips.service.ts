@@ -20,7 +20,6 @@ import { CityRegionCountryDto } from '../cities/dtos/city-region-country.dto';
 import { CreateTipReportDto } from 'src/modules/tips/dtos/create-tip-report.dto';
 import { CityInterestsService } from 'src/modules/city-interests/city-interests.service';
 import { CitiesService } from '../cities/cities.service';
-import { DistanceService } from '../distance/distance.service';
 
 interface TipWithCommentsAndLikes extends Tip {
   likedBy: TipLike[];
@@ -50,7 +49,6 @@ export class TipsService {
     private readonly tipWordsService: TipWordsService,
     private readonly citiesService: CitiesService,
     private readonly cityInterestsService: CityInterestsService,
-    private readonly distanceService: DistanceService,
   ) {}
 
   async create(
@@ -458,6 +456,10 @@ export class TipsService {
               { createdAt: { lte: endDate } },
             ],
           },
+          {
+            softDelete: false,
+          },
+          { status: 'active' },
         ],
       },
       orderBy: {
@@ -482,6 +484,8 @@ export class TipsService {
           { tipWord: { some: { word: { in: relevantWords } } } },
           { id: { notIn: idsToIgnore } },
           { createdAt: { lte: new Date(), gte: tipStartDate } },
+          { softDelete: false },
+          { status: 'active' },
         ],
       },
       include: {
@@ -530,7 +534,9 @@ export class TipsService {
       )
     ).map((nearbyCityFromInterest) => nearbyCityFromInterest.id);
     const tips = await this.prisma.tip.findMany({
-      where: { id: { in: ids } },
+      where: {
+        AND: [{ id: { in: ids } }, { status: 'active' }, { softDelete: false }],
+      },
       include: {
         user: true,
         tipMedias: true,
@@ -652,6 +658,12 @@ export class TipsService {
           },
           {
             cityId: city,
+          },
+          {
+            status: 'active',
+          },
+          {
+            softDelete: false,
           },
         ],
       },

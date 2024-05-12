@@ -12,6 +12,7 @@ export const RedisOptions: CacheModuleAsyncOptions = {
       },
       password: process.env.REDIS_PASSWORD,
       ttl: 600,
+      pingInterval: 1000,
     });
     return {
       store: () => store,

@@ -8,7 +8,6 @@ import { FollowsModule } from 'src/modules/follows/follows.module';
 import { TipWordsModule } from '../tip-words/tip-words.module';
 import { CityInterestsModule } from 'src/modules/city-interests/city-interests.module';
 import { CitiesModule } from '../cities/cities.module';
-import { DistanceModule } from '../distance/distance.module';
 
 @Module({
   imports: [
@@ -19,7 +18,6 @@ import { DistanceModule } from '../distance/distance.module';
     TipWordsModule,
     CitiesModule,
     CityInterestsModule,
-    DistanceModule,
   ],
   controllers: [TipsController],
   providers: [TipsService],

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Post, Query } from '@nestjs/common';
 import { ApiTags, ApiResponse } from '@nestjs/swagger';
 import { IsPublic } from '../auth/decorators/is-public.decorator';
 import { DistanceService } from './distance.service';

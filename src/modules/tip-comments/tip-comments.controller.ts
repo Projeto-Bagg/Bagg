@@ -48,6 +48,7 @@ export class TipCommentsController {
   }
 
   @Post('report/:id')
+  @ApiResponse({ status: 201, description: 'Reported successfully' })
   @ApiBearerAuth()
   report(
     @Param('id') id: number,
@@ -63,6 +64,9 @@ export class TipCommentsController {
 
   @Delete(':id')
   @ApiBearerAuth()
+  @ApiResponse({ status: 200, description: 'Deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Comment does not exist' })
+  @ApiResponse({ status: 401, description: 'Comment was not created by you' })
   async delete(
     @Param('id') id: number,
     @CurrentUser() CurrentUser: UserFromJwt,

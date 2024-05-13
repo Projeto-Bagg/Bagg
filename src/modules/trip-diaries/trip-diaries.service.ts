@@ -7,7 +7,6 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateTripDiaryDto } from './dtos/create-trip-diary.dto';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { DiaryPostEntity } from 'src/modules/diary-posts/entities/diary-post.entity';
-import { TripDiaryEntity } from 'src/modules/trip-diaries/entities/trip-diary.entity';
 import { TripDiaryClientDto } from 'src/modules/trip-diaries/dtos/trip-diary-client.dto';
 
 @Injectable()

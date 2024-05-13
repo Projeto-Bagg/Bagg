@@ -1,5 +1,5 @@
 import { Controller, Post, Param, Delete } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from 'src/modules/auth/decorators/current-user.decorator';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { DiaryPostLikesService } from 'src/modules/diary-post-likes/diary-post-likes.service';
@@ -11,6 +11,7 @@ export class DiaryPostLikesController {
 
   @Post(':id')
   @ApiBearerAuth()
+  @ApiResponse({ status: 201, description: 'Like created successfully' })
   like(
     @Param('id') id: number,
     @CurrentUser() currentUser: UserFromJwt,
@@ -20,6 +21,7 @@ export class DiaryPostLikesController {
 
   @Delete(':id')
   @ApiBearerAuth()
+  @ApiResponse({ status: 200, description: 'Like deleted successfully' })
   unlike(
     @Param('id') id: number,
     @CurrentUser() currentUser: UserFromJwt,

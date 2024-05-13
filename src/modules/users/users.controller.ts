@@ -50,6 +50,11 @@ export class UsersController {
   ) {}
   @Post()
   @IsPublic()
+  @ApiResponse({ status: 200, description: 'User created successfully' })
+  @ApiResponse({
+    status: 409,
+    description: 'Username or email already registered',
+  })
   create(@Body() createUserDto: CreateUserDto): Promise<void> {
     return this.usersService.create(createUserDto);
   }
@@ -164,10 +169,22 @@ export class UsersController {
     return new UserClientDto(user);
   }
 
-  @Delete()
+  @Post('/delete')
   @ApiBearerAuth()
+  @ApiResponse({
+    status: 404,
+    description: 'Account does not exist',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Incorrect password',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Deleted account',
+  })
   delete(
-    @Query() deleteUserDto: DeleteUserDto,
+    @Body() deleteUserDto: DeleteUserDto,
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<void> {
     return this.usersService.delete(deleteUserDto, currentUser);
@@ -175,6 +192,18 @@ export class UsersController {
 
   @Put('password')
   @ApiBearerAuth()
+  @ApiResponse({
+    status: 404,
+    description: 'Account does not exist',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Incorrect password',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Changed password successfully!',
+  })
   password(
     @Body() updatePasswordDto: UpdatePasswordDto,
     @CurrentUser() currentUser: UserFromJwt,
@@ -207,15 +236,21 @@ export class UsersController {
 
   @Put(':username')
   @ApiBearerAuth()
+  @ApiResponse({
+    status: 409,
+    description: 'Username already registered',
+  })
+  @ApiResponse({ status: 200 })
   async changeUsername(
     @Param() params: UsernameDto,
     @CurrentUser() currentUser: UserFromJwt,
-  ) {
+  ): Promise<void> {
     await this.usersService.updateUsername(params.username, currentUser);
   }
 
   @Get(':username')
-  @ApiResponse({ type: UserFullInfoDto })
+  @ApiResponse({ type: UserFullInfoDto, status: 200 })
+  @ApiResponse({ status: 404, description: 'User does not exist' })
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiBearerAuth()
   @IsPublic()
@@ -310,6 +345,9 @@ export class UsersController {
   }
 
   @Delete('profile-pic')
+  @ApiResponse({
+    description: 'Profile picture deleted successfully',
+  })
   @ApiBearerAuth()
   async deleteProfilePic(
     @CurrentUser() currentUser: UserFromJwt,

@@ -45,7 +45,7 @@ export class TipCommentsService {
     id: number,
     createTipCommentReportDto: CreateTipCommentReportDto,
     currentUser: UserFromJwt,
-  ) {
+  ): Promise<void> {
     await this.prisma.tipCommentReport.create({
       data: {
         reason: createTipCommentReportDto.reason,

@@ -195,6 +195,8 @@ export class DiaryPostsService {
     const diaryPost = await this.prisma.diaryPost.findUnique({
       where: {
         id,
+        status: 'active',
+        softDelete: false,
       },
       include: {
         user: {

@@ -12,6 +12,7 @@ export class FollowsController {
 
   @Post(':userId')
   @ApiBearerAuth()
+  @ApiResponse({ status: 201, description: 'Followed user successfully' })
   follow(
     @Param('userId') userId: number,
     @CurrentUser() currentUser: UserFromJwt,
@@ -21,6 +22,7 @@ export class FollowsController {
 
   @Delete(':userId')
   @ApiBearerAuth()
+  @ApiResponse({ status: 200, description: 'Unfollowed user successfully' })
   unfollow(
     @Param('userId') userId: number,
     @CurrentUser() currentUser: UserFromJwt,

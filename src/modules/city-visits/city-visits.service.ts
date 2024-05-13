@@ -285,14 +285,14 @@ export class CityVisitsService {
     });
   }
 
-  async remove(cityId: number, currentUser: UserFromJwt): Promise<boolean> {
-    return !!(await this.prisma.cityVisit.delete({
+  async remove(cityId: number, currentUser: UserFromJwt): Promise<void> {
+    await this.prisma.cityVisit.delete({
       where: {
         userId_cityId: {
           cityId,
           userId: currentUser.id,
         },
       },
-    }));
+    });
   }
 }

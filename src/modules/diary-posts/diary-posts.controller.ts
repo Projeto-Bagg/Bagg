@@ -76,7 +76,8 @@ export class DiaryPostsController {
   @IsPublic()
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiBearerAuth()
-  @ApiResponse({ type: DiaryPostEntity })
+  @ApiResponse({ type: DiaryPostEntity, status: 200 })
+  @ApiResponse({ status: 404, description: 'Diary post does not exist' })
   async getById(
     @Param('id') id: number,
     @CurrentUser() currentUser: UserFromJwt,
@@ -116,6 +117,9 @@ export class DiaryPostsController {
 
   @Delete(':id')
   @ApiBearerAuth()
+  @ApiResponse({ status: 200, description: 'Diary post deleted successfully' })
+  @ApiResponse({ status: 401, description: 'Diary post not created by you' })
+  @ApiResponse({ status: 404, description: 'Diary post does not exist' })
   delete(
     @Param('id') id: number,
     @CurrentUser() currentUser: UserFromJwt,

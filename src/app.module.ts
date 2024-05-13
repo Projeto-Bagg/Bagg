@@ -27,7 +27,6 @@ import { DistanceModule } from './modules/distance/distance.module';
 import { EmailsModule } from './modules/emails/emails.module';
 import { AdminModule } from 'src/modules/admin/admin.module';
 import { ContinentsModule } from 'src/modules/continents/continents.module';
-import { CacheModule } from '@nestjs/cache-manager';
 import { _CacheModule } from './modules/cache/cache.module';
 
 @Module({

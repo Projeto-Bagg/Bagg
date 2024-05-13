@@ -84,7 +84,7 @@ export class CityVisitsController {
   remove(
     @Param() param: DeleteCityVisitDto,
     @CurrentUser() currentUser: UserFromJwt,
-  ): Promise<boolean> {
+  ): Promise<void> {
     return this.cityVisitService.remove(param.cityId, currentUser);
   }
 }

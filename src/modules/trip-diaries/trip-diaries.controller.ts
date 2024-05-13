@@ -70,7 +70,8 @@ export class TripDiariesController {
   @Get(':id')
   @IsPublic()
   @UseInterceptors(ClassSerializerInterceptor)
-  @ApiResponse({ type: TripDiaryClientDto })
+  @ApiResponse({ type: TripDiaryClientDto, status: 200 })
+  @ApiResponse({ status: 404, description: 'Trip diary does not exist' })
   async findOne(@Param('id') id: number): Promise<TripDiaryClientDto> {
     const tripDiary = await this.tripDiariesService.findOne(id);
 
@@ -80,6 +81,9 @@ export class TripDiariesController {
   @Delete(':id')
   @ApiResponse({ type: TripDiaryEntity })
   @ApiBearerAuth()
+  @ApiResponse({ status: 200, description: 'Trip diary deleted successfully' })
+  @ApiResponse({ status: 401, description: 'Trip diary not created by you' })
+  @ApiResponse({ status: 404, description: 'Trip diary does not exist' })
   remove(
     @Param('id') id: number,
     @CurrentUser() currentUser: UserFromJwt,

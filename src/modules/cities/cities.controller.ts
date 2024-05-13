@@ -21,7 +21,7 @@ import { CityImageDto } from 'src/modules/cities/dtos/city-image.dto';
 import { UsersService } from 'src/modules/users/users.service';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
 import { PaginationDto } from 'src/commons/entities/pagination';
-import { PlaceWithDistance } from '../distance/distance.service';
+import { TrendingCities } from 'src/modules/cities/dtos/trending.dto';
 
 @Controller('cities')
 @ApiTags('cities')
@@ -42,6 +42,7 @@ export class CitiesController {
   }
 
   @Get('trending')
+  @ApiResponse({ type: TrendingCities })
   @IsPublic()
   trending() {
     return this.citiesService.trending();
@@ -50,7 +51,8 @@ export class CitiesController {
   @Get(':id')
   @IsPublic()
   @UseInterceptors(ClassSerializerInterceptor)
-  @ApiResponse({ type: CityPageDto })
+  @ApiResponse({ type: CityPageDto, status: 200 })
+  @ApiResponse({ status: 404, description: 'City does not exist' })
   async findById(
     @Param('id') id: number,
     @CurrentUser() currentUser: UserFromJwt,

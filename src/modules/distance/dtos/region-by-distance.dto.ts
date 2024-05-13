@@ -10,3 +10,11 @@ export class RegionByDistanceDto extends RegionEntity {
     Object.assign(this, partial);
   }
 }
+
+export class RegionDistanceComparedToId {
+  @ApiProperty()
+  id: number;
+
+  @ApiProperty({ type: RegionByDistanceDto, isArray: true })
+  places: RegionByDistanceDto[];
+}

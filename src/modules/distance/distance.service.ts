@@ -43,7 +43,7 @@ export class DistanceService {
     page = 1,
     count = 10,
     caching = false,
-  ) {
+  ): Promise<PlacesDistanceComparedToId[]> {
     //tratar muitos ids dps de algum jeito
     if (ids.length > 50) {
       ids = ids.slice(0, 50);
@@ -188,45 +188,54 @@ export class DistanceService {
     );
   }
 
-  async getClosestRegions(ids: number[], page = 1, count = 10) {
+  async getClosestRegions(
+    ids: number[],
+    page = 1,
+    count = 10,
+  ): Promise<PlacesDistanceComparedToId[]> {
     return await this.getClosestPlaces(ids, this.prisma.region, page, count);
   }
 
-  async getClosestCountries(ids: number[], page = 1, count = 10) {
+  async getClosestCountries(
+    ids: number[],
+    page = 1,
+    count = 10,
+  ): Promise<PlacesDistanceComparedToId[]> {
     return await this.getClosestPlaces(ids, this.prisma.country, page, count);
   }
 
-  async getClosestCitiesWithRegions(ids: number[], page = 1, count = 10) {
+  async getClosestCitiesWithRegions(
+    ids: number[],
+    page = 1,
+    count = 10,
+  ): Promise<PlacesDistanceComparedToId[]> {
     const citiesById = await this.getClosestCities(ids, page, count);
 
     return await Promise.all(
-      citiesById.map(
-        async (cities) =>
-          ({
-            id: cities.id,
-            places: await Promise.all(
-              cities.places.map(async (city) => {
-                const region = await this.prisma.region.findFirst({
-                  where: {
-                    cities: {
-                      some: {
-                        id: city.id,
-                      },
-                    },
+      citiesById.map(async (cities) => ({
+        id: cities.id,
+        places: await Promise.all(
+          cities.places.map(async (city) => {
+            const region = await this.prisma.region.findFirst({
+              where: {
+                cities: {
+                  some: {
+                    id: city.id,
                   },
-                  include: {
-                    country: true,
-                  },
-                });
+                },
+              },
+              include: {
+                country: true,
+              },
+            });
 
-                return {
-                  ...city,
-                  region,
-                };
-              }),
-            ),
-          } as PlacesDistanceComparedToId),
-      ),
+            return {
+              ...city,
+              region,
+            };
+          }),
+        ),
+      })),
     );
   }
 }

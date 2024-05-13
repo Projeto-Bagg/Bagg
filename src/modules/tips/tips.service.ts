@@ -358,7 +358,7 @@ export class TipsService {
     id: number,
     createTipReportDto: CreateTipReportDto,
     currentUser: UserFromJwt,
-  ) {
+  ): Promise<void> {
     await this.prisma.tipReport.create({
       data: {
         reason: createTipReportDto.reason,
@@ -440,7 +440,7 @@ export class TipsService {
     tipStartDate?: Date,
     page = 1,
     count = 10,
-  ) {
+  ): Promise<TipEntity[]> {
     const tips = await this.prisma.tip.findMany({
       where: {
         AND: [
@@ -502,6 +502,9 @@ export class TipsService {
           },
         },
       },
+      orderBy: {
+        createdAt: 'desc',
+      },
       take: count,
       skip: count * (page - 1),
     });
@@ -525,7 +528,7 @@ export class TipsService {
     currentUser: UserFromJwt,
     page = 1,
     count = 10,
-  ) {
+  ): Promise<TipEntity[]> {
     const ids = (
       await this.citiesService.recommendNearbyCitiesByUserCityInterests(
         currentUser,
@@ -533,6 +536,7 @@ export class TipsService {
         5,
       )
     ).map((nearbyCityFromInterest) => nearbyCityFromInterest.id);
+
     const tips = await this.prisma.tip.findMany({
       where: {
         AND: [{ id: { in: ids } }, { status: 'active' }, { softDelete: false }],
@@ -554,6 +558,8 @@ export class TipsService {
       take: count,
       skip: count * (page - 1),
     });
+
+    console.log(tips);
 
     return await Promise.all(
       tips.map(async (tip) => {
@@ -580,7 +586,7 @@ export class TipsService {
     tipStartDate?: Date,
     page = 1,
     count = 10,
-  ) {
+  ): Promise<TipEntity[]> {
     return (
       await this.getRelevantTips(
         currentUser,
@@ -635,6 +641,7 @@ export class TipsService {
     });
     return result;
   }
+
   async searchTips(
     currentUser?: UserFromJwt,
     q?: string,
@@ -642,7 +649,7 @@ export class TipsService {
     city?: number,
     page = 1,
     count = 10,
-  ) {
+  ): Promise<TipEntity[]> {
     const tagsAsQueries =
       tags?.map((tag) => ({
         tags: { contains: tag },

@@ -135,7 +135,8 @@ export class TipsController {
   @Get(':id')
   @IsPublic()
   @UseInterceptors(ClassSerializerInterceptor)
-  @ApiResponse({ type: TipEntity, isArray: false })
+  @ApiResponse({ type: TipEntity, status: 200 })
+  @ApiResponse({ status: 404, description: 'Tip not found' })
   @ApiBearerAuth()
   @IsPublic()
   async findOne(
@@ -149,6 +150,9 @@ export class TipsController {
 
   @Delete(':id')
   @ApiBearerAuth()
+  @ApiResponse({ status: 200, description: 'Tip deleted successfully' })
+  @ApiResponse({ status: 401, description: 'Tip not created by you' })
+  @ApiResponse({ status: 404, description: 'Tip does not exist' })
   remove(
     @Param('id') id: number,
     @CurrentUser() currentUser: UserFromJwt,
@@ -157,6 +161,7 @@ export class TipsController {
   }
 
   @Get('recommend/tips-from-nearby-cities')
+  @ApiResponse({ type: TipEntity, isArray: true })
   @ApiBearerAuth()
   async getTipsFromRecommendedCities(
     @Query() query: PaginationDto,
@@ -171,6 +176,7 @@ export class TipsController {
   }
 
   @Get('recommend/tips-from-relevant-words')
+  @ApiResponse({ type: TipEntity, isArray: true })
   @ApiBearerAuth()
   async getRelevantTips(
     @Query() query: PaginationDto,
@@ -190,6 +196,7 @@ export class TipsController {
   }
 
   @Get('recommend/feed')
+  @ApiResponse({ type: TipEntity, isArray: true })
   @ApiBearerAuth()
   async getRecommendationFeed(
     @Query() query: PaginationDto,
@@ -209,6 +216,7 @@ export class TipsController {
   }
 
   @Post('report/:id')
+  @ApiResponse({ status: 200, description: 'Reported successfully' })
   @ApiBearerAuth()
   report(
     @Param('id') id: number,

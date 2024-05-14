@@ -6,7 +6,7 @@ import { UsersService } from '../users/users.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UsersModule } from '../users/users.module';
 import { JwtModule } from '@nestjs/jwt';
-import { FollowsModule } from '../follows/follows.module';
+import { FollowsModule } from 'src/modules/follows/follows.module';
 import { EmailsModule } from 'src/modules/emails/emails.module';
 
 describe('UserService', () => {

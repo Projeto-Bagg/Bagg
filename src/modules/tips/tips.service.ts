@@ -462,26 +462,37 @@ export class TipsService {
           { status: 'active' },
         ],
       },
-      orderBy: {
-        tipWord: { _count: 'desc' },
-      },
       include: {
         tipWord: { select: { word: true } },
       },
       take: wordCount,
     });
 
-    const idsToIgnore = tips.map((tip) => tip.id);
-    const relevantWords = Array.from(
-      new Set(
-        tips.flatMap((tip) => tip.tipWord.map((tipWord) => tipWord.word)),
-      ),
+    const wordFrequency = new Map<string, number>();
+
+    const words = tips.flatMap((tip) =>
+      tip.tipWord.map((word) => word.word.toLowerCase()),
     );
+
+    words.forEach((word) => {
+      const currentFrequency = wordFrequency.get(word) || 0;
+      wordFrequency.set(word, currentFrequency + 1);
+    });
+
+    const uniqueWords = Array.from(new Set(words))
+      .sort((a, b) => {
+        const freqA = wordFrequency.get(a) || 0;
+        const freqB = wordFrequency.get(b) || 0;
+        return freqB - freqA;
+      })
+      .slice(0, 10);
+
+    const idsToIgnore = tips.map((tip) => tip.id);
 
     const relevantTips = await this.prisma.tip.findMany({
       where: {
         AND: [
-          { tipWord: { some: { word: { in: relevantWords } } } },
+          { tipWord: { some: { word: { in: uniqueWords } } } },
           { id: { notIn: idsToIgnore } },
           { createdAt: { lte: new Date(), gte: tipStartDate } },
           { softDelete: false },
@@ -558,8 +569,6 @@ export class TipsService {
       take: count,
       skip: count * (page - 1),
     });
-
-    console.log(tips);
 
     return await Promise.all(
       tips.map(async (tip) => {

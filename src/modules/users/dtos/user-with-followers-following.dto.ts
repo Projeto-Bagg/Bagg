@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { UserClientDto } from 'src/modules/users/dtos/user-client.dto';
+import { UserClientDto } from './user-client.dto';
 
 export class UserWithFollowersFollowingDto extends UserClientDto {
   @ApiProperty()

@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { CityEntity } from 'src/modules/cities/entities/city.entity';
-import { CityVisitEntity } from 'src/modules/city-visits/entities/city-visit.entity';
+import { CityEntity } from '../entities/city.entity';
+import { CityVisitEntity } from '../../city-visits/entities/city-visit.entity';
 
 export class CityPageDto extends CityEntity {
   @ApiProperty({ type: Number })

@@ -1,9 +1,9 @@
 import { Controller, Delete, Get, Param, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { CurrentUser } from 'src/modules/auth/decorators/current-user.decorator';
-import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
-import { FriendshipStatusDto } from 'src/modules/follows/dtos/friendship-status.dto';
-import { FollowsService } from 'src/modules/follows/follows.service';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { UserFromJwt } from '../auth/models/UserFromJwt';
+import { FriendshipStatusDto } from './dtos/friendship-status.dto';
+import { FollowsService } from './follows.service';
 
 @Controller('follows')
 @ApiTags('follows')

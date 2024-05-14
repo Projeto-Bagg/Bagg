@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import { UserFromJwt } from '../auth/models/UserFromJwt';
-import { FriendshipStatusDto } from 'src/modules/follows/dtos/friendship-status.dto';
-import { FriendshipCountDto } from 'src/modules/follows/dtos/friendship-count.dto';
+import { FriendshipStatusDto } from './dtos/friendship-status.dto';
+import { FriendshipCountDto } from './dtos/friendship-count.dto';
 
 @Injectable()
 export class FollowsService {

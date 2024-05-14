@@ -15,12 +15,12 @@ import { UpdatePasswordDto } from './dtos/update-password.dto';
 import { DeleteUserDto } from './dtos/delete-user.dto';
 import { JwtService } from '@nestjs/jwt';
 import { UserClientDto } from './dtos/user-client.dto';
-import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
-import { UserSearchDto } from 'src/modules/users/dtos/user-search.dto';
-import { UserFullInfoDto } from 'src/modules/users/dtos/user-full-info.dto';
-import { FollowsService } from 'src/modules/follows/follows.service';
-import { FindUserByCityDto } from 'src/modules/users/dtos/find-user-by-city.dto';
-import { FindUserByCountryDto } from 'src/modules/users/dtos/find-user-by-country.dto';
+import { UserFromJwt } from '../auth/models/UserFromJwt';
+import { UserSearchDto } from './dtos/user-search.dto';
+import { UserFullInfoDto } from './dtos/user-full-info.dto';
+import { FollowsService } from '../follows/follows.service';
+import { FindUserByCityDto } from './dtos/find-user-by-city.dto';
+import { FindUserByCountryDto } from './dtos/find-user-by-country.dto';
 import { EmailsService } from '../emails/emails-service';
 
 @Injectable()

@@ -2,11 +2,12 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateAdminDto } from 'src/modules/admin/dto/create-admin.dto';
 import * as bcrypt from 'bcrypt';
-import { TipCommentEntity } from 'src/modules/tip-comments/entities/tip-comment.entity';
 import { DiaryPost, Tip, TipComment } from '@prisma/client';
-import { DiaryPostClientDto } from 'src/modules/diary-posts/dtos/diary-post-client.dto';
-import { TipClientDto } from 'src/modules/tips/dtos/tip-client.dto';
 import { AdminEntity } from 'src/modules/admin/entities/admin.entity';
+import { AdminDashboardDto } from 'src/modules/admin/dto/admin-dashboard';
+import { TipReportDto } from 'src/modules/admin/dto/tip-report.dto';
+import { DiaryPostReportDto } from 'src/modules/admin/dto/diary-post-report.dto';
+import { TipCommentReportDto } from 'src/modules/admin/dto/tip-comment-report.dto';
 
 interface TipDelegate {
   update({ where: { id }, data: { status } }): Promise<Tip>;
@@ -58,11 +59,41 @@ export class AdminService {
     return admin;
   }
 
-  async overview() {
-    return 'overview';
+  async dashboard(): Promise<AdminDashboardDto> {
+    const totalUsers = await this.prismaService.user.count();
+
+    const totalPosts =
+      (await this.prismaService.tip.count({
+        where: { status: 'active' },
+      })) +
+      (await this.prismaService.diaryPost.count({
+        where: { status: 'active' },
+      })) +
+      (await this.prismaService.tipComment.count({
+        where: { status: 'active' },
+      }));
+
+    const totalReports =
+      (await this.prismaService.tipReport.count({
+        where: { reviewed: false },
+      })) +
+      (await this.prismaService.diaryPostReport.count({
+        where: { reviewed: false },
+      })) +
+      (await this.prismaService.tipCommentReport.count({
+        where: {
+          reviewed: false,
+        },
+      }));
+
+    return {
+      totalUsers,
+      totalPosts,
+      totalReports,
+    };
   }
 
-  async tipReports(page = 1, count = 10): Promise<TipClientDto[]> {
+  async tipReports(page = 1, count = 10): Promise<TipReportDto[]> {
     const posts = await this.prismaService.tip.findMany({
       skip: count * (page - 1),
       take: count,
@@ -123,7 +154,10 @@ export class AdminService {
     );
   }
 
-  async tipCommentReports(page = 1, count = 10): Promise<TipCommentEntity[]> {
+  async tipCommentReports(
+    page = 1,
+    count = 10,
+  ): Promise<TipCommentReportDto[]> {
     const tipComments = await this.prismaService.tipComment.findMany({
       skip: count * (page - 1),
       take: count,
@@ -170,7 +204,7 @@ export class AdminService {
     );
   }
 
-  async diaryPostReports(page = 1, count = 10): Promise<DiaryPostClientDto[]> {
+  async diaryPostReports(page = 1, count = 10): Promise<DiaryPostReportDto[]> {
     const posts = await this.prismaService.diaryPost.findMany({
       skip: count * (page - 1),
       take: count,
@@ -222,7 +256,7 @@ export class AdminService {
     );
   }
 
-  async rejectReport(
+  private async rejectReport(
     id: number,
     model: TipDelegate | TipCommentDelegate | DiaryPostDelegate,
   ) {
@@ -261,7 +295,7 @@ export class AdminService {
     });
   }
 
-  async acceptReport(
+  private async acceptReport(
     id: number,
     model: TipDelegate | TipCommentDelegate | DiaryPostDelegate,
   ) {

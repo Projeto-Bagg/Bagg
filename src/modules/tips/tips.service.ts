@@ -59,6 +59,7 @@ export class TipsService {
     const tip = await this.prisma.tip.create({
       data: {
         ...createTipDto,
+        tags: createTipDto.tags.toLowerCase(),
         userId: currentUser.id,
       },
       include: {

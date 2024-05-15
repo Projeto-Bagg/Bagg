@@ -361,6 +361,30 @@ export class UsersService {
       throw new ForbiddenException('Wrong password');
     }
 
+    await this.prisma.tip.deleteMany({ where: { userId: currentUser.id } });
+
+    await this.prisma.diaryPost.deleteMany({
+      where: { userId: currentUser.id },
+    });
+
+    await this.prisma.cityInterest.deleteMany({
+      where: { userId: currentUser.id },
+    });
+
+    await this.prisma.tipLike.deleteMany({ where: { userId: currentUser.id } });
+
+    await this.prisma.cityVisit.deleteMany({
+      where: {
+        userId: currentUser.id,
+      },
+    });
+
+    await this.prisma.follow.deleteMany({
+      where: {
+        OR: [{ followingId: currentUser.id }, { followerId: currentUser.id }],
+      },
+    });
+
     await this.prisma.account.delete({ where: { id: currentUser.id } });
   }
 

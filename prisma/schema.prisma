@@ -27,9 +27,9 @@ model User {
   emailVerified      Boolean              @default(false)
   bio                String?
   cityId             Int?
-  account            Account              @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  account            Account              @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   accountId          Int                  @unique
-  city               City?                @relation(fields: [cityId], references: [id])
+  city               City?                @relation(fields: [cityId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   diaryPosts         DiaryPost[]
   followers          Follow[]             @relation("following")
   following          Follow[]             @relation("follower")
@@ -143,9 +143,9 @@ model Tip {
 model TipReport {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
-  tip       Tip      @relation(fields: [tipId], references: [id], onUpdate: NoAction)
+  tip       Tip      @relation(fields: [tipId], references: [id], onDelete: Cascade)
   tipId     Int
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onUpdate: NoAction)
   userId    Int
   reason    String
   reviewed  Boolean  @default(false)
@@ -188,7 +188,7 @@ model TipComment {
 model TipCommentReport {
   id           Int        @id @default(autoincrement())
   createdAt    DateTime   @default(now())
-  tipComment   TipComment @relation(fields: [tipCommentId], references: [id], onUpdate: NoAction)
+  tipComment   TipComment @relation(fields: [tipCommentId], references: [id], onDelete: Cascade)
   tipCommentId Int
   user         User       @relation(fields: [userId], references: [id], onUpdate: NoAction)
   userId       Int
@@ -212,14 +212,14 @@ model Country {
   latitude    Float
   longitude   Float
   regions     Region[]
-  continent   Continent? @relation(fields: [continentId], references: [id])
+  continent   Continent? @relation(fields: [continentId], references: [id], onDelete: Cascade)
   continentId Int?
 }
 
 model Region {
   id        Int     @id @default(autoincrement())
   name      String
-  country   Country @relation(fields: [countryId], references: [id])
+  country   Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
   countryId Int
   latitude  Float
   longitude Float

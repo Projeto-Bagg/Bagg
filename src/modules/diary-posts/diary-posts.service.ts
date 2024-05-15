@@ -166,7 +166,7 @@ export class DiaryPostsService {
     id: number,
     createDiaryPostReportDto: CreateDiaryPostReportDto,
     currentUser: UserFromJwt,
-  ) {
+  ): Promise<void> {
     await this.prisma.diaryPostReport.create({
       data: {
         reason: createDiaryPostReportDto.reason,
@@ -186,7 +186,7 @@ export class DiaryPostsService {
     const minReportsLength = 7;
 
     const reportsLength = await this.prisma.diaryPostReport.count({
-      where: { diaryPostId: id },
+      where: { AND: [{ diaryPostId: id }, { reviewed: false }] },
     });
 
     if (reportsLength <= minReportsLength) {

@@ -382,7 +382,7 @@ export class TipsService {
     const minReportsLength = 7;
 
     const reportsLength = await this.prisma.tipReport.count({
-      where: { tipId: id },
+      where: { AND: [{ tipId: id }, { reviewed: false }] },
     });
 
     if (reportsLength <= minReportsLength) {

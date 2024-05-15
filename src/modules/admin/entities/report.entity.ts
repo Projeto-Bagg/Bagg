@@ -24,4 +24,7 @@ export class ReportEntity {
 
   @ApiProperty()
   createdAt: Date;
+
+  @ApiProperty()
+  reviewed: boolean;
 }

@@ -27,10 +27,10 @@ export class TipEntity implements Tip {
   @ApiProperty({ type: TipMediaEntity, isArray: true })
   tipMedias: TipMediaEntity[];
 
-  @ApiProperty()
+  @Exclude()
   likedBy: TipLike[];
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String })
   tags: string | null;
 
   @ApiProperty()

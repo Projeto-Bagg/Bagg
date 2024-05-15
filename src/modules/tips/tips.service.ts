@@ -5,7 +5,6 @@ import {
 } from '@nestjs/common';
 import { CreateTipDto } from './dtos/create-tip.dto';
 import { PrismaService } from '../../prisma/prisma.service';
-import { TipEntity } from 'src/modules/tips/entities/tip.entity';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { MediaService } from '../media/media.service';
 import { UserClientDto } from 'src/modules/users/dtos/user-client.dto';
@@ -20,6 +19,7 @@ import { CityRegionCountryDto } from '../cities/dtos/city-region-country.dto';
 import { CreateTipReportDto } from 'src/modules/tips/dtos/create-tip-report.dto';
 import { CityInterestsService } from 'src/modules/city-interests/city-interests.service';
 import { CitiesService } from '../cities/cities.service';
+import { TipClientDto } from 'src/modules/tips/dtos/tip-client.dto';
 
 interface TipWithCommentsAndLikes extends Tip {
   likedBy: TipLike[];
@@ -55,7 +55,7 @@ export class TipsService {
     createTipDto: CreateTipDto,
     medias: Express.Multer.File[],
     currentUser: UserFromJwt,
-  ): Promise<TipEntity> {
+  ): Promise<TipClientDto> {
     const tip = await this.prisma.tip.create({
       data: {
         ...createTipDto,
@@ -96,13 +96,17 @@ export class TipsService {
     return {
       ...tip,
       isLiked: false,
-      likedBy: 0,
+      likedBy: [],
+      likesAmount: 0,
       commentsAmount: 0,
       tipMedias,
     };
   }
 
-  async findUnique(id: number, currentUser: UserFromJwt): Promise<TipEntity> {
+  async findUnique(
+    id: number,
+    currentUser: UserFromJwt,
+  ): Promise<TipClientDto> {
     const tip = await this.prisma.tip.findUnique({
       where: { id, softDelete: false, status: 'active' },
       include: {
@@ -132,7 +136,7 @@ export class TipsService {
     return {
       ...tip,
       isLiked: tip.likedBy.some((like) => like.userId === currentUser?.id),
-      likedBy: tip.likedBy.length,
+      likesAmount: tip.likedBy.length,
       commentsAmount,
     };
   }
@@ -142,7 +146,7 @@ export class TipsService {
     page = 1,
     count = 10,
     currentUser?: UserFromJwt,
-  ): Promise<TipEntity[]> {
+  ): Promise<TipClientDto[]> {
     const posts = await this.prisma.tip.findMany({
       where: {
         user: {
@@ -180,7 +184,7 @@ export class TipsService {
         return {
           ...post,
           isLiked: post.likedBy.some((like) => like.userId === currentUser?.id),
-          likedBy: post.likedBy.length,
+          likesAmount: post.likedBy.length,
           commentsAmount,
         };
       }),
@@ -192,7 +196,7 @@ export class TipsService {
     count = 10,
     filter: FeedFilterDto,
     currentUser?: UserFromJwt,
-  ): Promise<TipEntity[]> {
+  ): Promise<TipClientDto[]> {
     const include = {
       user: true,
       tipMedias: true,
@@ -280,7 +284,7 @@ export class TipsService {
         return {
           ...tip,
           isLiked: tip.likedBy.some((like) => like.userId === currentUser?.id),
-          likedBy: tip.likedBy.length,
+          likesAmount: tip.likedBy.length,
           commentsAmount,
         };
       }),
@@ -440,7 +444,7 @@ export class TipsService {
     tipStartDate?: Date,
     page = 1,
     count = 10,
-  ): Promise<TipEntity[]> {
+  ): Promise<TipClientDto[]> {
     const tips = await this.prisma.tip.findMany({
       where: {
         AND: [
@@ -528,7 +532,7 @@ export class TipsService {
         return {
           ...tip,
           isLiked: tip.likedBy.some((like) => like.userId === currentUser?.id),
-          likedBy: tip.likedBy.length,
+          likesAmount: tip.likedBy.length,
           commentsAmount,
         };
       }),
@@ -539,7 +543,7 @@ export class TipsService {
     currentUser: UserFromJwt,
     page = 1,
     count = 10,
-  ): Promise<TipEntity[]> {
+  ): Promise<TipClientDto[]> {
     const ids = (
       await this.citiesService.recommendNearbyCitiesByUserCityInterests(
         currentUser,
@@ -578,7 +582,7 @@ export class TipsService {
         return {
           ...tip,
           isLiked: tip.likedBy.some((like) => like.userId === currentUser?.id),
-          likedBy: tip.likedBy.length,
+          likesAmount: tip.likedBy.length,
           commentsAmount,
         };
       }),
@@ -595,7 +599,7 @@ export class TipsService {
     tipStartDate?: Date,
     page = 1,
     count = 10,
-  ): Promise<TipEntity[]> {
+  ): Promise<TipClientDto[]> {
     return (
       await this.getRelevantTips(
         currentUser,
@@ -658,7 +662,7 @@ export class TipsService {
     city?: number,
     page = 1,
     count = 10,
-  ): Promise<TipEntity[]> {
+  ): Promise<TipClientDto[]> {
     const tagsAsQueries =
       tags?.map((tag) => ({
         tags: { contains: tag },
@@ -709,7 +713,7 @@ export class TipsService {
         return {
           ...tip,
           isLiked: tip.likedBy.some((like) => like.userId === currentUser?.id),
-          likedBy: tip.likedBy.length,
+          likesAmount: tip.likedBy.length,
           commentsAmount,
         };
       }),

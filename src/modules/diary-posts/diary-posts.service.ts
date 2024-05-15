@@ -7,10 +7,10 @@ import { CreateDiaryPostDto } from './dtos/create-diary-post.dto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { MediaService } from 'src/modules/media/media.service';
-import { DiaryPostEntity } from 'src/modules/diary-posts/entities/diary-post.entity';
 import { UserClientDto } from 'src/modules/users/dtos/user-client.dto';
 import { FollowsService } from 'src/modules/follows/follows.service';
 import { CreateDiaryPostReportDto } from 'src/modules/diary-posts/dtos/create-diary-post-report.dto';
+import { DiaryPostClientDto } from 'src/modules/diary-posts/dtos/diary-post-client.dto';
 
 @Injectable()
 export class DiaryPostsService {
@@ -24,7 +24,7 @@ export class DiaryPostsService {
     createDiaryPostDto: CreateDiaryPostDto,
     medias: Express.Multer.File[],
     currentUser: UserFromJwt,
-  ): Promise<DiaryPostEntity> {
+  ): Promise<DiaryPostClientDto> {
     const diaryPost = await this.prisma.diaryPost.create({
       data: {
         message: createDiaryPostDto.message,
@@ -63,16 +63,17 @@ export class DiaryPostsService {
 
     return {
       ...diaryPost,
+      likedBy: [],
       diaryPostMedias,
       isLiked: false,
-      likedBy: 0,
+      likesAmount: 0,
     };
   }
 
   async findById(
     id: number,
     currentUser?: UserFromJwt,
-  ): Promise<DiaryPostEntity> {
+  ): Promise<DiaryPostClientDto> {
     const post = await this.prisma.diaryPost.findUnique({
       where: {
         id,
@@ -94,7 +95,7 @@ export class DiaryPostsService {
     return {
       ...post,
       isLiked: post.likedBy.some((like) => like.userId === currentUser?.id),
-      likedBy: post.likedBy.length,
+      likesAmount: post.likedBy.length,
     };
   }
 
@@ -130,7 +131,7 @@ export class DiaryPostsService {
     page = 1,
     count = 10,
     currentUser?: UserFromJwt,
-  ): Promise<DiaryPostEntity[]> {
+  ): Promise<DiaryPostClientDto[]> {
     const posts = await this.prisma.diaryPost.findMany({
       where: {
         user: {
@@ -156,7 +157,7 @@ export class DiaryPostsService {
       return {
         ...post,
         isLiked: post.likedBy.some((like) => like.userId === currentUser?.id),
-        likedBy: post.likedBy.length,
+        likesAmount: post.likedBy.length,
       };
     });
   }

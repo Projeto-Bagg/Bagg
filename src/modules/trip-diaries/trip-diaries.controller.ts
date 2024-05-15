@@ -19,6 +19,7 @@ import { TripDiaryEntity } from 'src/modules/trip-diaries/entities/trip-diary.en
 import { DiaryPostEntity } from 'src/modules/diary-posts/entities/diary-post.entity';
 import { TripDiaryClientDto } from 'src/modules/trip-diaries/dtos/trip-diary-client.dto';
 import { DiaryPostFeedDto } from 'src/modules/diary-posts/dtos/diary-post.feed.dto';
+import { DiaryPostClientDto } from 'src/modules/diary-posts/dtos/diary-post-client.dto';
 
 @Controller('trip-diaries')
 @ApiTags('trip diaries')
@@ -56,15 +57,15 @@ export class TripDiariesController {
     @Param('id') id: number,
     @Query() query: DiaryPostFeedDto,
     @CurrentUser() currentUser: UserFromJwt,
-  ): Promise<DiaryPostEntity[]> {
+  ): Promise<DiaryPostClientDto[]> {
     const posts = await this.tripDiariesService.findPostsById(
       id,
+      currentUser,
       query.page,
       query.count,
-      currentUser,
     );
 
-    return posts.map((post) => new DiaryPostEntity(post));
+    return posts.map((post) => new DiaryPostClientDto(post));
   }
 
   @Get(':id')

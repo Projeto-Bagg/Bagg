@@ -33,11 +33,11 @@ export class UsersService {
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<void> {
-    const emailAlreadyExist = await this.prisma.account.findUnique({
+    const emailAlreadyExist = await this.prisma.account.count({
       where: { email: createUserDto.email },
     });
 
-    const usernameAlreadyExist = await this.prisma.user.findUnique({
+    const usernameAlreadyExist = await this.prisma.user.count({
       where: { username: createUserDto.username },
     });
 

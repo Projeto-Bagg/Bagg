@@ -18,7 +18,6 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { TipEntity } from './entities/tip.entity';
 import { CurrentUser } from 'src/modules/auth/decorators/current-user.decorator';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { IsPublic } from 'src/modules/auth/decorators/is-public.decorator';
@@ -29,6 +28,7 @@ import { PaginationDto } from 'src/commons/entities/pagination';
 import { CreateTipReportDto } from './dtos/create-tip-report.dto';
 import { RelevantTipsDto } from '../tip-words/dtos/relevant-tips-dto';
 import { SearchTipsDto } from './dtos/search-tips.dto';
+import { TipClientDto } from 'src/modules/tips/dtos/tip-client.dto';
 
 @Controller('tips')
 @ApiTags('tips')
@@ -39,11 +39,11 @@ export class TipsController {
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiBearerAuth()
   @IsPublic()
-  @ApiResponse({ type: TipEntity, isArray: true })
+  @ApiResponse({ type: TipClientDto, isArray: true })
   async searchTips(
     @CurrentUser() currentUser: UserFromJwt,
     @Query() query: SearchTipsDto,
-  ): Promise<TipEntity[]> {
+  ): Promise<TipClientDto[]> {
     const tips = await this.tipsService.searchTips(
       currentUser,
       query.q,
@@ -53,7 +53,7 @@ export class TipsController {
       query.count,
     );
 
-    return tips.map((tip) => new TipEntity(tip));
+    return tips.map((tip) => new TipClientDto(tip));
   }
 
   @Post()
@@ -61,31 +61,31 @@ export class TipsController {
   @UseInterceptors(FilesInterceptor('medias'))
   @ApiConsumes('multipart/form-data')
   @ApiBearerAuth()
-  @ApiResponse({ type: TipEntity })
+  @ApiResponse({ type: TipClientDto })
   async create(
     @Body() createTipDto: CreateTipDto,
     @CurrentUser() currentUser: UserFromJwt,
     @UploadedFiles() medias: Express.Multer.File[],
-  ): Promise<TipEntity> {
+  ): Promise<TipClientDto> {
     const tip = await this.tipsService.create(
       createTipDto,
       medias,
       currentUser,
     );
 
-    return new TipEntity(tip);
+    return new TipClientDto(tip);
   }
 
   @Get('feed')
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiBearerAuth()
   @IsPublic()
-  @ApiResponse({ type: TipEntity, isArray: true })
+  @ApiResponse({ type: TipClientDto, isArray: true })
   async getTipsFeed(
     @Query() query: PaginationDto,
     @Query() filter: FeedFilterDto,
     @CurrentUser() currentUser: UserFromJwt,
-  ): Promise<TipEntity[]> {
+  ): Promise<TipClientDto[]> {
     const tips = await this.tipsService.getTipsFeed(
       query.page,
       query.count,
@@ -93,7 +93,7 @@ export class TipsController {
       currentUser,
     );
 
-    return tips.map((tip) => new TipEntity(tip));
+    return tips.map((tip) => new TipClientDto(tip));
   }
 
   @Get(':id/like')
@@ -112,14 +112,14 @@ export class TipsController {
 
   @Get('/user/:username')
   @IsPublic()
-  @ApiResponse({ type: TipEntity, isArray: true })
+  @ApiResponse({ type: TipClientDto, isArray: true })
   @ApiBearerAuth()
   @UseInterceptors(ClassSerializerInterceptor)
   async getByUser(
     @Query() query: PaginationDto,
     @Param('username') username: string,
     @CurrentUser() currentUser: UserFromJwt,
-  ): Promise<TipEntity[]> {
+  ): Promise<TipClientDto[]> {
     const posts = await this.tipsService.findByUsername(
       username,
       query.page,
@@ -128,24 +128,24 @@ export class TipsController {
     );
 
     return posts.map((post) => {
-      return new TipEntity(post);
+      return new TipClientDto(post);
     });
   }
 
   @Get(':id')
   @IsPublic()
   @UseInterceptors(ClassSerializerInterceptor)
-  @ApiResponse({ type: TipEntity, status: 200 })
+  @ApiResponse({ type: TipClientDto, status: 200 })
   @ApiResponse({ status: 404, description: 'Tip not found' })
   @ApiBearerAuth()
   @IsPublic()
   async findOne(
     @Param('id') id: string,
     @CurrentUser() currentUser: UserFromJwt,
-  ): Promise<TipEntity> {
+  ): Promise<TipClientDto> {
     const tip = await this.tipsService.findUnique(+id, currentUser);
 
-    return new TipEntity(tip);
+    return new TipClientDto(tip);
   }
 
   @Delete(':id')
@@ -161,28 +161,28 @@ export class TipsController {
   }
 
   @Get('recommend/tips-from-nearby-cities')
-  @ApiResponse({ type: TipEntity, isArray: true })
+  @ApiResponse({ type: TipClientDto, isArray: true })
   @ApiBearerAuth()
   async getTipsFromRecommendedCities(
     @Query() query: PaginationDto,
     @CurrentUser() currentUser: UserFromJwt,
-  ): Promise<TipEntity[]> {
+  ): Promise<TipClientDto[]> {
     const tips = await this.tipsService.getTipsFromRecommendedCities(
       currentUser,
       query.page,
       query.count,
     );
-    return tips.map((tip) => new TipEntity(tip));
+    return tips.map((tip) => new TipClientDto(tip));
   }
 
   @Get('recommend/tips-from-relevant-words')
-  @ApiResponse({ type: TipEntity, isArray: true })
+  @ApiResponse({ type: TipClientDto, isArray: true })
   @ApiBearerAuth()
   async getRelevantTips(
     @Query() query: PaginationDto,
     @CurrentUser() currentUser: UserFromJwt,
     @Query() relevantTipsQuery: RelevantTipsDto,
-  ): Promise<TipEntity[]> {
+  ): Promise<TipClientDto[]> {
     const tips = await this.tipsService.getRelevantTips(
       currentUser,
       relevantTipsQuery.wordCount,
@@ -192,17 +192,17 @@ export class TipsController {
       query.page,
       query.count,
     );
-    return tips.map((tip) => new TipEntity(tip));
+    return tips.map((tip) => new TipClientDto(tip));
   }
 
   @Get('recommend/feed')
-  @ApiResponse({ type: TipEntity, isArray: true })
+  @ApiResponse({ type: TipClientDto, isArray: true })
   @ApiBearerAuth()
   async getRecommendationFeed(
     @Query() query: PaginationDto,
     @CurrentUser() currentUser: UserFromJwt,
     @Query() relevantTipsQuery: RelevantTipsDto,
-  ): Promise<TipEntity[]> {
+  ): Promise<TipClientDto[]> {
     const tips = await this.tipsService.getRecommendationFeed(
       currentUser,
       relevantTipsQuery.wordCount,
@@ -212,7 +212,7 @@ export class TipsController {
       query.page,
       query.count,
     );
-    return tips.map((tip) => new TipEntity(tip));
+    return tips.map((tip) => new TipClientDto(tip));
   }
 
   @Post('report/:id')

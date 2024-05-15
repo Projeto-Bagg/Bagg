@@ -668,11 +668,21 @@ export class TipsService {
         tags: { contains: tag },
       })) ?? [];
 
-    //n sei se funciona
+    const wordsInQuery = q
+      ?.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '')
+      .replace(/\s{2,}/g, ' ')
+      .split(' ');
+
     const tips = await this.prisma.tip.findMany({
       where: {
         AND: [
-          { message: { contains: q } },
+          {
+            AND: wordsInQuery?.map((word) => {
+              return {
+                message: { contains: word },
+              };
+            }),
+          },
           {
             OR: [...tagsAsQueries],
           },

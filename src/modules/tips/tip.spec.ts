@@ -148,4 +148,39 @@ describe('tips service', () => {
       expect(service.delete(2, currentUser)).resolves.not.toThrowError();
     });
   });
+
+  describe('denunciar', () => {
+    // it('tip tem menos que 7 denúncias', () => {
+    //   prisma.tipReport.count.mockResolvedValueOnce(2);
+    //   prisma.tip.findUnique.mockResolvedValueOnce(tip);
+
+    //   expect(service.report(2, { reason: 'spam' }, currentUser));
+    //   expect(prisma.tip.findUnique).not.toBeCalled();
+    // });
+
+    it('porcentagem insuficiente para mandar para admin', () => {
+      const tipMock = {
+        ...tip,
+        user: { ...tip.user, followers: 10, following: 10 },
+      };
+
+      prisma.tipReport.create.mockResolvedValue({
+        createdAt: new Date(),
+        id: 2,
+        userId: 2,
+        reviewed: false,
+        tipId: 2,
+        reason: 'spam',
+      });
+      prisma.tipReport.count.mockResolvedValueOnce(666);
+      prisma.tip.findUnique.mockResolvedValueOnce(tipMock);
+      prisma.cityInterest.count.mockResolvedValueOnce(30);
+      prisma.tipComment.count.mockResolvedValueOnce(10);
+      prisma.tip.update.mockResolvedValueOnce(tipMock);
+
+      expect(service.report(2, { reason: 'spam' }, currentUser));
+      expect(prisma.tipReport.create).toHaveBeenCalled();
+      expect(prisma.tipReport.count).toHaveReturnedWith(666);
+    });
+  });
 });

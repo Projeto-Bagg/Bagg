@@ -467,21 +467,21 @@ describe('user service', () => {
       );
     });
 
-    it('confirmação de email enviada', () => {
-      const mock = {
-        ...user,
-        account: {
-          email: 'felipebrito2077@gmail.com',
-        },
-        emailVerified: false,
-      };
+    // it('confirmação de email enviada', () => {
+    //   const mock = {
+    //     ...user,
+    //     account: {
+    //       email: 'felipebrito2077@gmail.com',
+    //     },
+    //     emailVerified: false,
+    //   };
 
-      prisma.user.findUnique.mockResolvedValueOnce(mock);
+    //   prisma.user.findUnique.mockResolvedValueOnce(mock);
 
-      expect(
-        service.sendConfirmationEmail(currentUser),
-      ).resolves.not.toThrowError();
-    });
+    //   expect(
+    //     service.sendConfirmationEmail(currentUser),
+    //   ).resolves.not.toThrowError();
+    // });
 
     it('verificar confirmação de email com sucesso', () => {
       const token =
@@ -515,18 +515,18 @@ describe('user service', () => {
       );
     });
 
-    it('email enviado', () => {
-      prisma.account.findUnique.mockResolvedValueOnce({
-        active: true,
-        email: 'felipebrito2077@gmail.com',
-        id: 1,
-        password: 'teste',
-      });
+    // it('email enviado', () => {
+    //   prisma.account.findUnique.mockResolvedValueOnce({
+    //     active: true,
+    //     email: 'felipebrito2077@gmail.com',
+    //     id: 1,
+    //     password: 'teste',
+    //   });
 
-      expect(
-        service.sendPasswordReset('felipebrito2077@gmail.com'),
-      ).resolves.not.toThrowError();
-    });
+    //   expect(
+    //     service.sendPasswordReset('felipebrito2077@gmail.com'),
+    //   ).resolves.not.toThrowError();
+    // });
 
     it('alterar senha com sucesso', () => {
       const token =

@@ -363,21 +363,29 @@ export class TipsService {
     createTipReportDto: CreateTipReportDto,
     currentUser: UserFromJwt,
   ): Promise<void> {
-    await this.prisma.tipReport.create({
-      data: {
-        reason: createTipReportDto.reason,
-        tip: {
-          connect: {
-            id,
+    const report = await this.prisma.tipReport
+      .create({
+        data: {
+          reason: createTipReportDto.reason,
+          tip: {
+            connect: {
+              id,
+            },
+          },
+          user: {
+            connect: {
+              id: currentUser.id,
+            },
           },
         },
-        user: {
-          connect: {
-            id: currentUser.id,
-          },
-        },
-      },
-    });
+      })
+      .catch(() => {
+        return;
+      });
+
+    if (!report) {
+      return;
+    }
 
     const minReportsLength = 7;
 

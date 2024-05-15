@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { CityVisitEntity } from 'src/modules/city-visits/entities/city-visit.entity';
-import { UserEntity } from 'src/modules/users/entities/user.entity';
+import { CityVisitEntity } from '../entities/city-visit.entity';
+import { UserEntity } from '../../users/entities/user.entity';
 
 export class CityVisitClientDto extends CityVisitEntity {
   @ApiProperty({ type: UserEntity })

@@ -21,11 +21,11 @@ import {
 import { CurrentUser } from 'src/modules/auth/decorators/current-user.decorator';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { DiaryPostEntity } from 'src/modules/diary-posts/entities/diary-post.entity';
 import { IsPublic } from 'src/modules/auth/decorators/is-public.decorator';
 import { UserClientDto } from 'src/modules/users/dtos/user-client.dto';
 import { PaginationDto } from 'src/commons/entities/pagination';
 import { CreateDiaryPostReportDto } from 'src/modules/diary-posts/dtos/create-diary-post-report.dto';
+import { DiaryPostClientDto } from 'src/modules/diary-posts/dtos/diary-post-client.dto';
 
 @Controller('diary-posts')
 @ApiTags('diary posts')
@@ -35,31 +35,31 @@ export class DiaryPostsController {
   @Post()
   @UseInterceptors(FilesInterceptor('medias'), ClassSerializerInterceptor)
   @ApiConsumes('multipart/form-data')
-  @ApiResponse({ type: DiaryPostEntity })
+  @ApiResponse({ type: DiaryPostClientDto })
   async create(
     @Body() createDiaryPostDto: CreateDiaryPostDto,
     @UploadedFiles() medias: Express.Multer.File[],
     @CurrentUser() currentUser: UserFromJwt,
-  ): Promise<DiaryPostEntity> {
+  ): Promise<DiaryPostClientDto> {
     const post = await this.diaryPostsService.create(
       createDiaryPostDto,
       medias,
       currentUser,
     );
 
-    return new DiaryPostEntity(post);
+    return new DiaryPostClientDto(post);
   }
 
   @Get('/user/:username')
   @IsPublic()
-  @ApiResponse({ type: DiaryPostEntity, isArray: true })
+  @ApiResponse({ type: DiaryPostClientDto, isArray: true })
   @ApiBearerAuth()
   @UseInterceptors(ClassSerializerInterceptor)
   async getByUser(
     @Param('username') username: string,
     @Query() query: PaginationDto,
     @CurrentUser() currentUser: UserFromJwt,
-  ): Promise<DiaryPostEntity[]> {
+  ): Promise<DiaryPostClientDto[]> {
     const posts = await this.diaryPostsService.findByUsername(
       username,
       query.page,
@@ -68,7 +68,7 @@ export class DiaryPostsController {
     );
 
     return posts.map((post) => {
-      return new DiaryPostEntity(post);
+      return new DiaryPostClientDto(post);
     });
   }
 
@@ -76,15 +76,15 @@ export class DiaryPostsController {
   @IsPublic()
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiBearerAuth()
-  @ApiResponse({ type: DiaryPostEntity, status: 200 })
+  @ApiResponse({ type: DiaryPostClientDto, status: 200 })
   @ApiResponse({ status: 404, description: 'Diary post does not exist' })
   async getById(
     @Param('id') id: number,
     @CurrentUser() currentUser: UserFromJwt,
-  ): Promise<DiaryPostEntity> {
+  ): Promise<DiaryPostClientDto> {
     const post = await this.diaryPostsService.findById(id, currentUser);
 
-    return new DiaryPostEntity(post);
+    return new DiaryPostClientDto(post);
   }
 
   @Get(':id/like')

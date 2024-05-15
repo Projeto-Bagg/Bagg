@@ -1,9 +1,9 @@
 import { Controller, Post, Param, Delete } from '@nestjs/common';
 import { CityInterestsService } from './city-interests.service';
 import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { CurrentUser } from 'src/modules/auth/decorators/current-user.decorator';
-import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
-import { CityInterestEntity } from 'src/modules/city-interests/entities/city-interest.entity';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { UserFromJwt } from '../auth/models/UserFromJwt';
+import { CityInterestEntity } from './entities/city-interest.entity';
 
 @Controller('city-interests')
 @ApiTags('city interests')

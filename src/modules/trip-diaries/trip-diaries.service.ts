@@ -6,8 +6,8 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateTripDiaryDto } from './dtos/create-trip-diary.dto';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
-import { DiaryPostEntity } from 'src/modules/diary-posts/entities/diary-post.entity';
 import { TripDiaryClientDto } from 'src/modules/trip-diaries/dtos/trip-diary-client.dto';
+import { DiaryPostClientDto } from 'src/modules/diary-posts/dtos/diary-post-client.dto';
 
 @Injectable()
 export class TripDiariesService {
@@ -92,10 +92,10 @@ export class TripDiariesService {
 
   async findPostsById(
     id: number,
+    currentUser: UserFromJwt,
     page = 1,
     count = 10,
-    currentUser: UserFromJwt,
-  ): Promise<DiaryPostEntity[]> {
+  ): Promise<DiaryPostClientDto[]> {
     const posts = await this.prisma.diaryPost.findMany({
       where: {
         tripDiaryId: id,
@@ -118,7 +118,7 @@ export class TripDiariesService {
         return {
           ...post,
           isLiked: post.likedBy.some((like) => like.userId === currentUser?.id),
-          likedBy: post.likedBy.length,
+          likesAmount: post.likedBy.length,
         };
       }),
     );

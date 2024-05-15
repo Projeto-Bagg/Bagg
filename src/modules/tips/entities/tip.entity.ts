@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Tip } from '@prisma/client';
+import { Tip, TipLike } from '@prisma/client';
 import { Exclude } from 'class-transformer';
 import { CityRegionCountryDto } from 'src/modules/cities/dtos/city-region-country.dto';
 import { TipMediaEntity } from 'src/modules/tip-medias/entities/tip-media.entity';
@@ -28,13 +28,10 @@ export class TipEntity implements Tip {
   tipMedias: TipMediaEntity[];
 
   @ApiProperty()
-  likedBy: number;
+  likedBy: TipLike[];
 
   @ApiPropertyOptional()
   tags: string | null;
-
-  @ApiProperty()
-  isLiked: boolean;
 
   @ApiProperty()
   commentsAmount: number;

@@ -2,10 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateAdminDto } from 'src/modules/admin/dto/create-admin.dto';
 import * as bcrypt from 'bcrypt';
-import { DiaryPostEntity } from 'src/modules/diary-posts/entities/diary-post.entity';
 import { TipCommentEntity } from 'src/modules/tip-comments/entities/tip-comment.entity';
-import { TipEntity } from 'src/modules/tips/entities/tip.entity';
 import { DiaryPost, Tip, TipComment } from '@prisma/client';
+import { DiaryPostClientDto } from 'src/modules/diary-posts/dtos/diary-post-client.dto';
+import { TipClientDto } from 'src/modules/tips/dtos/tip-client.dto';
 
 interface TipDelegate {
   update({ where: { id }, data: { status } }): Promise<Tip>;
@@ -55,7 +55,7 @@ export class AdminService {
     return 'overview';
   }
 
-  async tipReports(page = 1, count = 10): Promise<TipEntity[]> {
+  async tipReports(page = 1, count = 10): Promise<TipClientDto[]> {
     const posts = await this.prismaService.tip.findMany({
       skip: count * (page - 1),
       take: count,
@@ -109,7 +109,7 @@ export class AdminService {
           ...post,
           reasons,
           isLiked: false,
-          likedBy: post.likedBy.length,
+          likesAmount: post.likedBy.length,
           commentsAmount: 0,
         };
       }),
@@ -163,7 +163,7 @@ export class AdminService {
     );
   }
 
-  async diaryPostReports(page = 1, count = 10): Promise<DiaryPostEntity[]> {
+  async diaryPostReports(page = 1, count = 10): Promise<DiaryPostClientDto[]> {
     const posts = await this.prismaService.diaryPost.findMany({
       skip: count * (page - 1),
       take: count,
@@ -208,7 +208,7 @@ export class AdminService {
         return {
           ...post,
           reasons,
-          likedBy: 2,
+          likesAmount: post.likedBy.length,
           isLiked: false,
         };
       }),

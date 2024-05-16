@@ -305,11 +305,13 @@ export class UsersService {
     const data: Prisma.UserUpdateInput = {
       bio: updateUserDto.bio,
       birthdate: updateUserDto.birthdate,
-      city: {
-        connect: {
-          id: updateUserDto.cityId,
-        },
-      },
+      city: updateUserDto.cityId
+        ? {
+            connect: {
+              id: updateUserDto.cityId,
+            },
+          }
+        : { disconnect: true },
       fullName: updateUserDto.fullName,
       image: updateUserDto.image,
     };

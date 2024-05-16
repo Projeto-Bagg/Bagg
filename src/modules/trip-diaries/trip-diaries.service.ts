@@ -99,6 +99,8 @@ export class TripDiariesService {
     const posts = await this.prisma.diaryPost.findMany({
       where: {
         tripDiaryId: id,
+        status: 'active',
+        softDelete: false,
       },
       skip: count * (page - 1),
       take: count,

@@ -303,7 +303,7 @@ export class UsersService {
     currentUser: UserFromJwt,
   ): Promise<UserFullInfoDto> {
     const data: Prisma.UserUpdateInput = {
-      bio: updateUserDto.bio,
+      bio: updateUserDto.bio ? updateUserDto.bio : null,
       birthdate: updateUserDto.birthdate,
       city: updateUserDto.cityId
         ? {

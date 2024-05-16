@@ -29,16 +29,16 @@ import { UserFromJwt } from '../auth/models/UserFromJwt';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { MediaService } from '../media/media.service';
-import { IsPublic } from 'src/modules/auth/decorators/is-public.decorator';
-import { UserEntity } from 'src/modules/users/entities/user.entity';
-import { UserFullInfoDto } from 'src/modules/users/dtos/user-full-info.dto';
-import { CityVisitsService } from 'src/modules/city-visits/city-visits.service';
-import { UserCityVisitDto } from 'src/modules/city-visits/dtos/user-city-visit.dto';
-import { UserSearchDto } from 'src/modules/users/dtos/user-search.dto';
-import { UsernameDto } from 'src/modules/users/dtos/username.dto';
-import { EmailDto } from 'src/modules/users/dtos/email.dto';
+import { IsPublic } from '../auth/decorators/is-public.decorator';
+import { UserEntity } from './entities/user.entity';
+import { UserFullInfoDto } from './dtos/user-full-info.dto';
+import { CityVisitsService } from '../city-visits/city-visits.service';
+import { UserCityVisitDto } from '../city-visits/dtos/user-city-visit.dto';
+import { UserSearchDto } from './dtos/user-search.dto';
+import { UsernameDto } from './dtos/username.dto';
+import { EmailDto } from './dtos/email.dto';
 import { PasswordDto } from './dtos/password.dto';
-import { IsEmailVerificationUnneeded } from 'src/modules/auth/decorators/is-email-verification-unneeded.decorator';
+import { IsEmailVerificationUnneeded } from '../auth/decorators/is-email-verification-unneeded.decorator';
 
 @Controller('users')
 @ApiTags('users')

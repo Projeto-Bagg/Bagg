@@ -11,15 +11,15 @@ import {
 import { CityVisitsService } from './city-visits.service';
 import { CreateCityVisitDto } from './dtos/create-city-visit.dto';
 import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { CurrentUser } from 'src/modules/auth/decorators/current-user.decorator';
-import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
-import { DeleteCityVisitDto } from 'src/modules/city-visits/dtos/delete-city-visit.dto';
-import { CityVisitEntity } from 'src/modules/city-visits/entities/city-visit.entity';
-import { UpdateCityVisitDto } from 'src/modules/city-visits/dtos/update-city-visit.dto';
-import { CityVisitPaginationDto } from 'src/modules/city-visits/dtos/city-visit-pagination.dto';
-import { CityVisitClientDto } from 'src/modules/city-visits/dtos/city-visit-client.dto';
-import { IsPublic } from 'src/modules/auth/decorators/is-public.decorator';
-import { CountryCityVisitDto } from 'src/modules/city-visits/dtos/country-city-visit.dto';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { UserFromJwt } from '../auth/models/UserFromJwt';
+import { DeleteCityVisitDto } from './dtos/delete-city-visit.dto';
+import { CityVisitEntity } from './entities/city-visit.entity';
+import { UpdateCityVisitDto } from './dtos/update-city-visit.dto';
+import { CityVisitPaginationDto } from './dtos/city-visit-pagination.dto';
+import { CityVisitClientDto } from './dtos/city-visit-client.dto';
+import { IsPublic } from '../auth/decorators/is-public.decorator';
+import { CountryCityVisitDto } from './dtos/country-city-visit.dto';
 
 @Controller('city-visits')
 @ApiTags('city visits')

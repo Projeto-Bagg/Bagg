@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import { CreateCityVisitDto } from './dtos/create-city-visit.dto';
-import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
-import { CityInterestsService } from 'src/modules/city-interests/city-interests.service';
-import { CityVisitEntity } from 'src/modules/city-visits/entities/city-visit.entity';
-import { CityVisitClientDto } from 'src/modules/city-visits/dtos/city-visit-client.dto';
-import { UpdateCityVisitDto } from 'src/modules/city-visits/dtos/update-city-visit.dto';
-import { UserCityVisitDto } from 'src/modules/city-visits/dtos/user-city-visit.dto';
-import { CountryCityVisitDto } from 'src/modules/city-visits/dtos/country-city-visit.dto';
+import { UserFromJwt } from '../auth/models/UserFromJwt';
+import { CityInterestsService } from '../city-interests/city-interests.service';
+import { CityVisitEntity } from './entities/city-visit.entity';
+import { CityVisitClientDto } from './dtos/city-visit-client.dto';
+import { UpdateCityVisitDto } from './dtos/update-city-visit.dto';
+import { UserCityVisitDto } from './dtos/user-city-visit.dto';
+import { CountryCityVisitDto } from './dtos/country-city-visit.dto';
 
 @Injectable()
 export class CityVisitsService {

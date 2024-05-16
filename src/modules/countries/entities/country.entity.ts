@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Country } from '@prisma/client';
-import { Type } from 'class-transformer';
 
 export class CountryEntity implements Country {
   @ApiProperty()
@@ -21,7 +20,6 @@ export class CountryEntity implements Country {
   @ApiProperty()
   longitude: number;
 
-  @ApiProperty()
-  @Type(() => Number)
+  @ApiProperty({ type: Number })
   continentId: number | null;
 }

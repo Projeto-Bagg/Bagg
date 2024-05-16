@@ -11,4 +11,7 @@ export class CreateTipDto {
   @ApiProperty()
   @Type(() => Number)
   cityId: number;
+
+  @ApiProperty()
+  tags: string;
 }

@@ -15,12 +15,12 @@ import { UpdatePasswordDto } from './dtos/update-password.dto';
 import { DeleteUserDto } from './dtos/delete-user.dto';
 import { JwtService } from '@nestjs/jwt';
 import { UserClientDto } from './dtos/user-client.dto';
-import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
-import { UserSearchDto } from 'src/modules/users/dtos/user-search.dto';
-import { UserFullInfoDto } from 'src/modules/users/dtos/user-full-info.dto';
-import { FollowsService } from 'src/modules/follows/follows.service';
-import { FindUserByCityDto } from 'src/modules/users/dtos/find-user-by-city.dto';
-import { FindUserByCountryDto } from 'src/modules/users/dtos/find-user-by-country.dto';
+import { UserFromJwt } from '../auth/models/UserFromJwt';
+import { UserSearchDto } from './dtos/user-search.dto';
+import { UserFullInfoDto } from './dtos/user-full-info.dto';
+import { FollowsService } from '../follows/follows.service';
+import { FindUserByCityDto } from './dtos/find-user-by-city.dto';
+import { FindUserByCountryDto } from './dtos/find-user-by-country.dto';
 import { EmailsService } from '../emails/emails-service';
 
 @Injectable()
@@ -33,11 +33,11 @@ export class UsersService {
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<void> {
-    const emailAlreadyExist = await this.prisma.account.findUnique({
+    const emailAlreadyExist = await this.prisma.account.count({
       where: { email: createUserDto.email },
     });
 
-    const usernameAlreadyExist = await this.prisma.user.findUnique({
+    const usernameAlreadyExist = await this.prisma.user.count({
       where: { username: createUserDto.username },
     });
 
@@ -303,13 +303,15 @@ export class UsersService {
     currentUser: UserFromJwt,
   ): Promise<UserFullInfoDto> {
     const data: Prisma.UserUpdateInput = {
-      bio: updateUserDto.bio,
+      bio: updateUserDto.bio ? updateUserDto.bio : null,
       birthdate: updateUserDto.birthdate,
-      city: {
-        connect: {
-          id: updateUserDto.cityId,
-        },
-      },
+      city: updateUserDto.cityId
+        ? {
+            connect: {
+              id: updateUserDto.cityId,
+            },
+          }
+        : { disconnect: true },
       fullName: updateUserDto.fullName,
       image: updateUserDto.image,
     };
@@ -360,6 +362,30 @@ export class UsersService {
     if (!validPassword) {
       throw new ForbiddenException('Wrong password');
     }
+
+    await this.prisma.tip.deleteMany({ where: { userId: currentUser.id } });
+
+    await this.prisma.diaryPost.deleteMany({
+      where: { userId: currentUser.id },
+    });
+
+    await this.prisma.cityInterest.deleteMany({
+      where: { userId: currentUser.id },
+    });
+
+    await this.prisma.tipLike.deleteMany({ where: { userId: currentUser.id } });
+
+    await this.prisma.cityVisit.deleteMany({
+      where: {
+        userId: currentUser.id,
+      },
+    });
+
+    await this.prisma.follow.deleteMany({
+      where: {
+        OR: [{ followingId: currentUser.id }, { followerId: currentUser.id }],
+      },
+    });
 
     await this.prisma.account.delete({ where: { id: currentUser.id } });
   }

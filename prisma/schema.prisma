@@ -18,32 +18,31 @@ model Account {
 }
 
 model User {
-  id                 Int                  @id
-  createdAt          DateTime             @default(now())
-  username           String               @unique
-  fullName           String
-  birthdate          DateTime
-  image              String?
-  emailVerified      Boolean              @default(false)
-  bio                String?
-  cityId             Int?
-  account            Account              @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  accountId          Int                  @unique
-  city               City?                @relation(fields: [cityId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  diaryPosts         DiaryPost[]
-  followers          Follow[]             @relation("following")
-  following          Follow[]             @relation("follower")
-  tipLikes           TipLike[]
-  tips               Tip[]
-  tipComments        TipComment[]
-  diaryPostLikes     DiaryPostLike[]
-  tripDiaries        TripDiary[]
-  cityVisits         CityVisit[]
-  cityInterests      CityInterest[]
-  userSubscribesPlan UserSubscribesPlan[]
-  diaryPostReport    DiaryPostReport[]
-  tipReport          TipReport[]
-  tipCommentReport   TipCommentReport[]
+  id               Int                @id
+  createdAt        DateTime           @default(now())
+  username         String             @unique
+  fullName         String
+  birthdate        DateTime
+  image            String?
+  emailVerified    Boolean            @default(false)
+  bio              String?
+  cityId           Int?
+  account          Account            @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  accountId        Int                @unique
+  city             City?              @relation(fields: [cityId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  diaryPosts       DiaryPost[]
+  followers        Follow[]           @relation("following")
+  following        Follow[]           @relation("follower")
+  tipLikes         TipLike[]
+  tips             Tip[]
+  tipComments      TipComment[]
+  diaryPostLikes   DiaryPostLike[]
+  tripDiaries      TripDiary[]
+  cityVisits       CityVisit[]
+  cityInterests    CityInterest[]
+  diaryPostReport  DiaryPostReport[]
+  tipReport        TipReport[]
+  tipCommentReport TipCommentReport[]
 }
 
 model Admin {
@@ -262,24 +261,6 @@ model CityInterest {
   createdAt DateTime @default(now())
 
   @@unique([userId, cityId])
-}
-
-model SubscriptionPlan {
-  id                 Int                  @id @default(autoincrement())
-  planName           String               @unique
-  price              Float
-  description        String
-  createdAt          DateTime             @default(now())
-  userSubscribesPlan UserSubscribesPlan[]
-}
-
-model UserSubscribesPlan {
-  id                 Int              @id @default(autoincrement())
-  subscriptionDate   DateTime         @default(now())
-  subscriptionPlan   SubscriptionPlan @relation(fields: [subscriptionPlanId], references: [id], onDelete: Cascade)
-  subscriptionPlanId Int
-  user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId             Int
 }
 
 model TipWord {

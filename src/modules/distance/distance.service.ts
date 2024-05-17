@@ -37,9 +37,40 @@ export class DistanceService {
     private readonly cache: CacheService,
   ) {}
 
-  private async getClosestPlaces(
-    ids: number[],
+  private async getPlaces(
     model: CityDelegate | RegionDelegate | CountryDelegate,
+  ) {
+    return model.findMany();
+  }
+
+  private async getCities(citiesId: number[]) {
+    const ids = (
+      await this.prisma.region.findMany({
+        where: { cities: { some: { id: { in: citiesId } } } },
+        include: { cities: true },
+      })
+    ).map((region) => region.id);
+
+    const closestRegions = await this.getClosestRegions(ids, 1, 100);
+    const cities = (
+      await Promise.all(
+        closestRegions.map(
+          async (region) =>
+            await this.prisma.region.findUnique({
+              where: { id: region.id },
+              include: { cities: true },
+            }),
+        ),
+      )
+    )
+      .flatMap((regionWithCities) => regionWithCities?.cities)
+      .filter((city) => city != undefined) as City[];
+    return cities;
+  }
+
+  private async getClosestPlaces(
+    allPlaces: Place[],
+    ids: number[],
     page = 1,
     count = 10,
     caching = false,
@@ -69,17 +100,10 @@ export class DistanceService {
     if (ids.length == 0) {
       return cachedValues as PlacesDistanceComparedToId[];
     }
-    const allPlaces: Place[] = await model.findMany();
     //mudar pro index == id dps no seed mas por enquanto gambiarra
-    const chosenPlaces: Place[] = [];
-    for (let i = 0; i < ids.length; i++) {
-      for (let j = 0; j < 5; j++) {
-        if (ids[i] == allPlaces[ids[i] - j].id) {
-          chosenPlaces.push(allPlaces[ids[i] - j]);
-          break;
-        }
-      }
-    }
+    const chosenPlaces: Place[] = ids
+      .map((id) => allPlaces.find((place) => place.id == id))
+      .filter((place) => place != undefined) as Place[];
 
     const lowestCount = (page - 1) * count + count;
     const lowestDistances: PlacesDistanceComparedToId[] = chosenPlaces.map(
@@ -179,13 +203,8 @@ export class DistanceService {
   }
 
   async getClosestCities(ids: number[], page = 1, count = 10) {
-    return await this.getClosestPlaces(
-      ids,
-      this.prisma.city,
-      page,
-      count,
-      true,
-    );
+    const cities = await this.getCities(ids);
+    return await this.getClosestPlaces(cities, ids, page, count, true);
   }
 
   async getClosestRegions(
@@ -193,7 +212,8 @@ export class DistanceService {
     page = 1,
     count = 10,
   ): Promise<PlacesDistanceComparedToId[]> {
-    return await this.getClosestPlaces(ids, this.prisma.region, page, count);
+    const regions = await this.prisma.region.findMany();
+    return await this.getClosestPlaces(regions, ids, page, count);
   }
 
   async getClosestCountries(
@@ -201,7 +221,8 @@ export class DistanceService {
     page = 1,
     count = 10,
   ): Promise<PlacesDistanceComparedToId[]> {
-    return await this.getClosestPlaces(ids, this.prisma.country, page, count);
+    const countries = await this.prisma.country.findMany();
+    return await this.getClosestPlaces(countries, ids, page, count);
   }
 
   async getClosestCitiesWithRegions(

@@ -1,19 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { City, Country, Region } from '@prisma/client';
 import { CacheService } from '../cache/cache.service';
-
-interface CityDelegate {
-  findMany(): Promise<City[]>;
-}
-
-interface RegionDelegate {
-  findMany(): Promise<Region[]>;
-}
-
-interface CountryDelegate {
-  findMany(): Promise<Country[]>;
-}
+import { CityEntity } from 'src/modules/cities/entities/city.entity';
 
 interface Place {
   id: number;
@@ -38,162 +26,76 @@ export class DistanceService {
   ) {}
 
   private async getClosestPlaces(
+    allPlaces: Place[],
     ids: number[],
-    model: CityDelegate | RegionDelegate | CountryDelegate,
     page = 1,
     count = 10,
-    caching = false,
+    cacheKey?: string,
   ): Promise<PlacesDistanceComparedToId[]> {
-    //tratar muitos ids dps de algum jeito
-    if (ids.length > 50) {
-      ids = ids.slice(0, 50);
-    }
-
-    let cachedValues: (PlacesDistanceComparedToId | undefined)[] =
-      await Promise.all(
-        ids.map(
-          async (id) =>
-            await this.cache.get<PlacesDistanceComparedToId>(id.toString()),
-        ),
-      );
-
-    cachedValues = cachedValues.filter(
-      (cachedValue) => cachedValue != undefined,
-    ) as PlacesDistanceComparedToId[];
-
-    ids = ids.filter(
-      (id) =>
-        !cachedValues.map((cachedValue) => cachedValue?.id ?? -1).includes(id),
-    );
-
-    if (ids.length == 0) {
-      return cachedValues as PlacesDistanceComparedToId[];
-    }
-    const allPlaces: Place[] = await model.findMany();
-    //mudar pro index == id dps no seed mas por enquanto gambiarra
-    const chosenPlaces: Place[] = [];
-    for (let i = 0; i < ids.length; i++) {
-      for (let j = 0; j < 5; j++) {
-        if (ids[i] == allPlaces[ids[i] - j].id) {
-          chosenPlaces.push(allPlaces[ids[i] - j]);
-          break;
-        }
-      }
-    }
+    const chosenPlaces: Place[] = ids
+      .map((id) => allPlaces.find((place) => place.id == id))
+      .filter((place) => place !== undefined) as Place[];
 
     const lowestCount = (page - 1) * count + count;
     const lowestDistances: PlacesDistanceComparedToId[] = chosenPlaces.map(
       (chosenPlace) => ({ places: [], id: chosenPlace.id }),
     );
-    if (chosenPlaces.length > 0) {
-      allPlaces.forEach((city) => {
-        chosenPlaces.forEach((chosenPlace: Place) => {
-          //n faz sentido comparar com os outros ids pq a funcao so vai ser usada com mais de um id na hora de recomendar
-          if (chosenPlaces.map((place) => place.id).includes(city.id))
-            return false;
-          const distance = this.calculateDistance(
-            city.latitude,
-            city.longitude,
-            chosenPlace?.latitude,
-            chosenPlace?.longitude,
-          );
-          const places = lowestDistances?.find(
-            (lowestDistance) => lowestDistance.id == chosenPlace.id,
-          )?.places;
-          if (!places) {
-            return false;
-          }
-          if (places.length < lowestCount) {
-            places.push({
-              ...city,
-              distance,
-            });
-          } else {
-            const biggerBy: number[] = [];
-            for (let i = 0; i < lowestCount; i++) {
-              biggerBy.push(distance - places[i].distance);
-            }
-            const lowestBiggerByValue = Math.min.apply(0, biggerBy);
-            if (lowestBiggerByValue < 0) {
-              places[biggerBy.indexOf(lowestBiggerByValue)] = {
-                ...city,
-                distance,
-              };
-            }
-          }
-        });
-      });
-      const placesDistanceComparisonForEachId: PlacesDistanceComparedToId[] =
-        await Promise.all(
-          lowestDistances.map(async (placesDistanceComparison) => {
-            const placeWithDistancesSorted = {
-              ...placesDistanceComparison,
-              places: placesDistanceComparison.places
-                .sort((a, b) => a.distance - b.distance)
-                .slice((page - 1) * count, (page - 1) * count + count),
-            };
-            if (caching) {
-              await this.cache.set(
-                placesDistanceComparison.id.toString(),
-                JSON.stringify(placeWithDistancesSorted),
-              );
-            }
-            return placeWithDistancesSorted;
-          }),
+
+    allPlaces.forEach((place) => {
+      chosenPlaces.forEach((chosenPlace: Place) => {
+        const distance = this.calculateDistance(
+          place.latitude,
+          place.longitude,
+          chosenPlace.latitude,
+          chosenPlace.longitude,
         );
+        const places = lowestDistances.find(
+          (lowestDistance) => lowestDistance.id == chosenPlace.id,
+        )?.places;
+        if (!places) {
+          return false;
+        }
+        if (places.length < lowestCount) {
+          places.push({
+            ...place,
+            distance,
+          });
+        } else {
+          const biggerBy: number[] = [];
+          for (let i = 0; i < lowestCount; i++) {
+            biggerBy.push(distance - places[i].distance);
+          }
+          const lowestBiggerByValue = Math.min.apply(0, biggerBy);
+          if (lowestBiggerByValue < 0) {
+            places[biggerBy.indexOf(lowestBiggerByValue)] = {
+              ...place,
+              distance,
+            };
+          }
+        }
+      });
+    });
 
-      return [
-        ...placesDistanceComparisonForEachId,
-        ...(cachedValues as PlacesDistanceComparedToId[]),
-      ];
-    }
-    return cachedValues as PlacesDistanceComparedToId[];
-  }
+    const placesDistanceComparisonForEachId: PlacesDistanceComparedToId[] =
+      await Promise.all(
+        lowestDistances.map(async (placesDistanceComparison) => {
+          const placeWithDistancesSorted = {
+            ...placesDistanceComparison,
+            places: placesDistanceComparison.places
+              .sort((a, b) => a.distance - b.distance)
+              .slice((page - 1) * count, (page - 1) * count + count),
+          };
+          if (cacheKey) {
+            await this.cache.set(
+              `${cacheKey}-${placesDistanceComparison.id}-${page}-${count}`,
+              JSON.stringify(placeWithDistancesSorted),
+            );
+          }
+          return placeWithDistancesSorted;
+        }),
+      );
 
-  private calculateDistance(
-    lat1: number,
-    lon1: number,
-    lat2: number,
-    lon2: number,
-  ): number {
-    const earthRadiusKm = 6371;
-
-    const degToRad = (degrees: number) => {
-      return (degrees * Math.PI) / 180;
-    };
-
-    const dLat = degToRad(lat2 - lat1);
-    const dLon = degToRad(lon2 - lon1);
-
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(degToRad(lat1)) *
-        Math.cos(degToRad(lat2)) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-    const distance = earthRadiusKm * c;
-    return distance;
-  }
-
-  async getClosestCities(ids: number[], page = 1, count = 10) {
-    return await this.getClosestPlaces(
-      ids,
-      this.prisma.city,
-      page,
-      count,
-      true,
-    );
-  }
-
-  async getClosestRegions(
-    ids: number[],
-    page = 1,
-    count = 10,
-  ): Promise<PlacesDistanceComparedToId[]> {
-    return await this.getClosestPlaces(ids, this.prisma.region, page, count);
+    return placesDistanceComparisonForEachId;
   }
 
   async getClosestCountries(
@@ -201,7 +103,90 @@ export class DistanceService {
     page = 1,
     count = 10,
   ): Promise<PlacesDistanceComparedToId[]> {
-    return await this.getClosestPlaces(ids, this.prisma.country, page, count);
+    const countries = await this.prisma.country.findMany();
+    return await this.getClosestPlaces(countries, ids, page, count);
+  }
+
+  async getClosestRegions(
+    ids: number[],
+    page = 1,
+    count = 10,
+  ): Promise<PlacesDistanceComparedToId[]> {
+    const cachedValues = await this.getCachedValues(
+      ids,
+      page,
+      count,
+      'regions',
+    );
+
+    ids = ids.filter(
+      (id) =>
+        !cachedValues.map((cachedValue) => cachedValue?.id ?? -1).includes(id),
+    );
+
+    if (ids.length === 0) {
+      return cachedValues;
+    }
+
+    const regions = await this.prisma.region.findMany({
+      where: {
+        cities: { some: {} },
+      },
+    });
+
+    return await this.getClosestPlaces(regions, ids, page, count, 'regions');
+  }
+
+  private async getCities(citiesId: number[]): Promise<CityEntity[]> {
+    const ids = (
+      await this.prisma.region.findMany({
+        where: { cities: { some: { id: { in: citiesId } } } },
+        include: { cities: true },
+      })
+    ).map((region) => region.id);
+
+    const closestRegionsIds = (
+      await this.getClosestRegions(ids, 1, 10)
+    ).flatMap((region) => region.places.map((place) => place.id));
+
+    return await this.prisma.city.findMany({
+      where: { regionId: { in: closestRegionsIds } },
+    });
+  }
+
+  async getClosestCities(
+    ids: number[],
+    page = 1,
+    count = 10,
+  ): Promise<PlacesDistanceComparedToId[]> {
+    const cachedValues = await this.getCachedValues(
+      ids,
+      page,
+      count + 1,
+      'cities',
+    );
+
+    ids = ids.filter(
+      (id) =>
+        !cachedValues.map((cachedValue) => cachedValue?.id ?? -1).includes(id),
+    );
+
+    if (ids.length === 0) {
+      cachedValues.forEach((place) => place.places.shift()); // retirando primeiro elemento pois é a própria cidade
+      return cachedValues;
+    }
+
+    const cities = await this.getCities(ids);
+    const closesPlaces = await this.getClosestPlaces(
+      cities,
+      ids,
+      page,
+      count + 1,
+      'cities',
+    );
+    closesPlaces.forEach((place) => place.places.shift()); // retirando primeiro elemento pois é a própria cidade
+
+    return closesPlaces;
   }
 
   async getClosestCitiesWithRegions(
@@ -237,5 +222,56 @@ export class DistanceService {
         ),
       })),
     );
+  }
+
+  private async getCachedValues(
+    ids: number[],
+    page: number,
+    count: number,
+    cacheKey: string,
+  ): Promise<PlacesDistanceComparedToId[]> {
+    let cachedValues: (PlacesDistanceComparedToId | undefined)[] =
+      await Promise.all(
+        ids.map(
+          async (id) =>
+            await this.cache.get<PlacesDistanceComparedToId>(
+              `${cacheKey}-${id}-${page}-${count}`,
+            ),
+        ),
+      );
+
+    cachedValues = cachedValues.filter(
+      (cachedValue) => cachedValue !== undefined,
+    );
+
+    return cachedValues as PlacesDistanceComparedToId[];
+  }
+
+  private calculateDistance(
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number,
+  ): number {
+    const earthRadiusKm = 6371;
+
+    const degToRad = (degrees: number) => {
+      return (degrees * Math.PI) / 180;
+    };
+
+    const dLat = degToRad(lat2 - lat1);
+    const dLon = degToRad(lon2 - lon1);
+
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(degToRad(lat1)) *
+        Math.cos(degToRad(lat2)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    const distance = earthRadiusKm * c;
+    return distance;
   }
 }

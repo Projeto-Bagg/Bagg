@@ -161,12 +161,10 @@ export class UsersController {
       imageUrl = await this.mediaService.uploadFile(file, 'profile-pics');
     }
 
-    const user = await this.usersService.update(
+    return await this.usersService.update(
       { ...updateUserDto, image: imageUrl },
       currentUser,
     );
-
-    return new UserClientDto(user);
   }
 
   @Post('/delete')
@@ -216,12 +214,9 @@ export class UsersController {
   @ApiBearerAuth()
   @ApiResponse({ type: UserFullInfoDto })
   async me(@CurrentUser() currentUser: UserFromJwt): Promise<UserFullInfoDto> {
-    const user = await this.usersService.fullInfoUserById(
-      currentUser.id,
-      currentUser,
-    );
+    const user = await this.usersService.findById(currentUser.id);
 
-    return new UserFullInfoDto(user);
+    return await this.usersService.getUserFullInfo(user, currentUser);
   }
 
   @Get('search')
@@ -229,9 +224,7 @@ export class UsersController {
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiResponse({ type: UserEntity, isArray: true })
   async search(@Query() query: UserSearchDto): Promise<UserEntity[]> {
-    const users = await this.usersService.search(query);
-
-    return users.map((user) => new UserEntity(user));
+    return await this.usersService.search(query);
   }
 
   @Put(':username')
@@ -258,13 +251,13 @@ export class UsersController {
     @Param('username') username: string,
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<UserFullInfoDto> {
-    const user = await this.usersService.findByUsername(username, currentUser);
+    const user = await this.usersService.findByUsername(username);
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    return new UserFullInfoDto(user);
+    return await this.usersService.getUserFullInfo(user, currentUser);
   }
 
   @Get(':username/followers')
@@ -276,9 +269,7 @@ export class UsersController {
     @Param('username') username: string,
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<UserClientDto[]> {
-    const followers = await this.usersService.followers(username, currentUser);
-
-    return followers.map((follower) => new UserClientDto(follower));
+    return await this.usersService.followers(username, currentUser);
   }
 
   @Get(':username/following')
@@ -290,9 +281,7 @@ export class UsersController {
     @Param('username') username: string,
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<UserClientDto[]> {
-    const followings = await this.usersService.following(username, currentUser);
-
-    return followings.map((following) => new UserClientDto(following));
+    return await this.usersService.following(username, currentUser);
   }
 
   @Get(':username/visits')

@@ -15,7 +15,6 @@ import { CountrySearchDto } from 'src/modules/countries/dtos/country-search.dto'
 import { CountryVisitRankingDto } from 'src/modules/countries/dtos/country-visit-ranking.dto';
 import { CountryRatingRankingDto } from 'src/modules/countries/dtos/country-rating-ranking.dto';
 import { CountryImageDto } from 'src/modules/countries/dtos/country-image.dto';
-import { CountryImagesPaginationDto } from 'src/modules/countries/dtos/country-images-pagination.dto';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
 import { PaginationDto } from 'src/commons/entities/pagination';
 import { UsersService } from 'src/modules/users/users.service';
@@ -74,7 +73,7 @@ export class CountriesController {
   @ApiResponse({ type: CountryImageDto, isArray: true })
   images(
     @Param('iso2') iso2: string,
-    @Query() query: CountryImagesPaginationDto,
+    @Query() query: PaginationDto,
   ): Promise<CountryImageDto[]> {
     return this.countriesService.getCountryImages(
       iso2,
@@ -93,7 +92,7 @@ export class CountriesController {
     @Query() query: PaginationDto,
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<UserEntity[]> {
-    const users = await this.usersService.findByCountry(
+    return await this.usersService.findByCountry(
       {
         countryIso2: iso2,
         page: query.page,
@@ -101,7 +100,5 @@ export class CountriesController {
       },
       currentUser,
     );
-
-    return users.map((user) => new UserEntity(user));
   }
 }

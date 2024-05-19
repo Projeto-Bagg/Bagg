@@ -105,9 +105,7 @@ export class TipsController {
     @Param('id') id: number,
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<UserClientDto[]> {
-    const users = await this.tipsService.likedBy(id, currentUser);
-
-    return users.map((user) => new UserClientDto(user));
+    return await this.tipsService.likedBy(id, currentUser);
   }
 
   @Get('/user/:username')

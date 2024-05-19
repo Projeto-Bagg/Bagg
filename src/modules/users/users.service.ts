@@ -14,7 +14,6 @@ import { UpdateUserDto } from './dtos/update-user.dto';
 import { UpdatePasswordDto } from './dtos/update-password.dto';
 import { DeleteUserDto } from './dtos/delete-user.dto';
 import { JwtService } from '@nestjs/jwt';
-import { UserClientDto } from './dtos/user-client.dto';
 import { UserFromJwt } from '../auth/models/UserFromJwt';
 import { UserSearchDto } from './dtos/user-search.dto';
 import { UserFullInfoDto } from './dtos/user-full-info.dto';
@@ -22,6 +21,7 @@ import { FollowsService } from '../follows/follows.service';
 import { FindUserByCityDto } from './dtos/find-user-by-city.dto';
 import { FindUserByCountryDto } from './dtos/find-user-by-country.dto';
 import { EmailsService } from '../emails/emails-service';
+import { UserClientDto } from 'src/modules/users/dtos/user-client.dto';
 
 @Injectable()
 export class UsersService {
@@ -100,76 +100,22 @@ export class UsersService {
     return user;
   }
 
-  async fullInfoUserById(
-    id: number,
-    currentUser?: UserFromJwt,
-  ): Promise<UserFullInfoDto> {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
-      include: {
-        city: {
-          include: {
-            region: {
-              include: {
-                country: true,
-              },
-            },
-          },
-        },
-      },
-    });
-
-    if (!user) {
-      throw new NotFoundException();
-    }
-
-    return {
-      ...user,
-      ...(await this.followsService.friendshipCount(user.id)),
-      friendshipStatus: await this.followsService.friendshipStatus(
-        user.id,
-        currentUser,
-      ),
-    };
-  }
-
-  async findByUsername(
-    username: string,
-    currentUser?: UserFromJwt,
-  ): Promise<UserFullInfoDto> {
+  async findByUsername(username: string): Promise<UserEntity> {
     const user = await this.prisma.user.findUnique({
       where: { username },
-      include: {
-        city: {
-          include: {
-            region: {
-              include: {
-                country: true,
-              },
-            },
-          },
-        },
-      },
     });
 
     if (!user) {
       throw new NotFoundException();
     }
 
-    return {
-      ...user,
-      ...(await this.followsService.friendshipCount(user.id)),
-      friendshipStatus: await this.followsService.friendshipStatus(
-        user.id,
-        currentUser,
-      ),
-    };
+    return user;
   }
 
   async findByCity(
     { cityId, count = 10, page = 1 }: FindUserByCityDto,
     currentUser?: UserFromJwt,
-  ): Promise<UserClientDto[]> {
+  ): Promise<UserFullInfoDto[]> {
     const users = await this.prisma.user.findMany({
       where: {
         cityId,
@@ -179,17 +125,7 @@ export class UsersService {
     });
 
     return await Promise.all(
-      users.map(async (user) => {
-        const friendshipStatus = await this.followsService.friendshipStatus(
-          user.id,
-          currentUser,
-        );
-
-        return {
-          ...user,
-          friendshipStatus,
-        };
-      }),
+      users.map(async (user) => this.getUserFullInfo(user, currentUser)),
     );
   }
 
@@ -204,7 +140,7 @@ export class UsersService {
   async findByCountry(
     { countryIso2, count = 10, page = 1 }: FindUserByCountryDto,
     currentUser?: UserFromJwt,
-  ): Promise<UserEntity[]> {
+  ): Promise<UserFullInfoDto[]> {
     const users = await this.prisma.user.findMany({
       where: {
         city: {
@@ -220,17 +156,7 @@ export class UsersService {
     });
 
     return await Promise.all(
-      users.map(async (user) => {
-        const friendshipStatus = await this.followsService.friendshipStatus(
-          user.id,
-          currentUser,
-        );
-
-        return {
-          ...user,
-          friendshipStatus,
-        };
-      }),
+      users.map(async (user) => this.getUserFullInfo(user, currentUser)),
     );
   }
 
@@ -319,27 +245,9 @@ export class UsersService {
     const user = await this.prisma.user.update({
       data,
       where: { id: currentUser.id },
-      include: {
-        city: {
-          include: {
-            region: {
-              include: {
-                country: true,
-              },
-            },
-          },
-        },
-      },
     });
 
-    return {
-      ...user,
-      ...(await this.followsService.friendshipCount(currentUser.id)),
-      friendshipStatus: {
-        isFollowing: false,
-        followedBy: false,
-      },
-    };
+    return this.getUserFullInfo(user, currentUser);
   }
 
   async delete(
@@ -535,6 +443,7 @@ export class UsersService {
       throw new BadRequestException('Invalid token');
     }
   }
+
   async following(
     username: string,
     currentUser?: UserFromJwt,
@@ -552,15 +461,7 @@ export class UsersService {
     });
 
     return await Promise.all(
-      users.map(async (user) => {
-        return {
-          ...user,
-          friendshipStatus: await this.followsService.friendshipStatus(
-            user.id,
-            currentUser,
-          ),
-        };
-      }),
+      users.map(async (user) => this.getUserClient(user, currentUser)),
     );
   }
 
@@ -581,15 +482,43 @@ export class UsersService {
     });
 
     return await Promise.all(
-      users.map(async (user) => {
-        return {
-          ...user,
-          friendshipStatus: await this.followsService.friendshipStatus(
-            user.id,
-            currentUser,
-          ),
-        };
-      }),
+      users.map(async (user) => this.getUserClient(user, currentUser)),
     );
+  }
+
+  async getUserClient(
+    user: UserEntity,
+    currentUser?: UserFromJwt,
+  ): Promise<UserClientDto> {
+    return {
+      ...user,
+      friendshipStatus: await this.followsService.friendshipStatus(
+        user.id,
+        currentUser,
+      ),
+    };
+  }
+
+  async getUserFullInfo(
+    user: UserEntity,
+    currentUser?: UserFromJwt,
+  ): Promise<UserFullInfoDto> {
+    const city = await this.prisma.city.findFirst({
+      where: { users: { some: { id: user.id } } },
+      include: {
+        region: {
+          include: {
+            country: true,
+          },
+        },
+      },
+    });
+
+    return {
+      ...user,
+      city,
+      ...(await this.followsService.friendshipCount(user.id)),
+      ...(await this.getUserClient(user, currentUser)),
+    };
   }
 }

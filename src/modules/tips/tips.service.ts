@@ -59,6 +59,7 @@ export class TipsService {
     const tip = await this.prisma.tip.create({
       data: {
         ...createTipDto,
+        tags: createTipDto.tags?.toLowerCase(),
         userId: currentUser.id,
       },
       include: {
@@ -521,14 +522,20 @@ export class TipsService {
     count = 10,
   ) {
     const ids = (
-      await this.citiesService.recommendNearbyCitiesByUserCityInterests(
-        currentUser,
-        1,
-        5,
-      )
-    ).map((nearbyCityFromInterest) => nearbyCityFromInterest.id);
+      await this.citiesService.recommendCities(currentUser, 1, 20)
+    ).map((cityRecommendation) => cityRecommendation.id);
+
     const tips = await this.prisma.tip.findMany({
-      where: { id: { in: ids } },
+      where: {
+        AND: [
+          { cityId: { in: ids } },
+          { status: 'active' },
+          { softDelete: false },
+        ],
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
       include: {
         user: true,
         tipMedias: true,

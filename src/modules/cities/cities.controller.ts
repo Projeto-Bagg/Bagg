@@ -115,8 +115,8 @@ export class CitiesController {
   async getRecommendedCities(
     @Query() query: PaginationDto,
     @CurrentUser() currentUser: UserFromJwt,
-  ): Promise<PlaceWithDistance[]> {
-    return await this.citiesService.recommendNearbyCitiesByUserCityInterests(
+  ) {
+    return await this.citiesService.recommendCities(
       currentUser,
       query.page,
       query.count,

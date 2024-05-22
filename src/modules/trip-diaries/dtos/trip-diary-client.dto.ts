@@ -12,9 +12,4 @@ export class TripDiaryClientDto extends TripDiaryEntity {
 
   @ApiProperty()
   postsAmount: number;
-
-  constructor(partial: TripDiaryClientDto) {
-    super();
-    Object.assign(this, { ...partial, user: new UserEntity(partial.user) });
-  }
 }

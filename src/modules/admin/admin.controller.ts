@@ -21,7 +21,7 @@ export class AdminController {
   @ApiBearerAuth()
   @ApiResponse({ status: 201, description: 'Admin criado com sucesso' })
   @isAdmin()
-  async create(@Body() createAdminDto: CreateAdminDto) {
+  async create(@Body() createAdminDto: CreateAdminDto): Promise<void> {
     return this.adminService.create(createAdminDto);
   }
 
@@ -29,7 +29,7 @@ export class AdminController {
   @ApiBearerAuth()
   @ApiResponse({ status: 200, type: AdminEntity })
   @isAdmin()
-  async me(@CurrentUser() currentUser: UserFromJwt) {
+  async me(@CurrentUser() currentUser: UserFromJwt): Promise<AdminEntity> {
     return this.adminService.findById(currentUser.id);
   }
 
@@ -37,7 +37,7 @@ export class AdminController {
   @ApiResponse({ status: 200, type: AdminDashboardDto })
   @ApiBearerAuth()
   @isAdmin()
-  dashboard() {
+  dashboard(): Promise<AdminDashboardDto> {
     return this.adminService.dashboard();
   }
 
@@ -45,21 +45,21 @@ export class AdminController {
   @isAdmin()
   @ApiResponse({ type: TipReportDto, isArray: true })
   @ApiBearerAuth()
-  async tipReports(@Query() query: PaginationDto) {
+  async tipReports(@Query() query: PaginationDto): Promise<TipReportDto[]> {
     return this.adminService.tipReports(query.page, query.count);
   }
 
   @Post('tip-reports/:id/reject')
   @isAdmin()
   @ApiBearerAuth()
-  async rejectTipReport(@Param('id') id: number) {
+  async rejectTipReport(@Param('id') id: number): Promise<void> {
     return this.adminService.rejectTipReport(id);
   }
 
   @Post('tip-reports/:id/accept')
   @isAdmin()
   @ApiBearerAuth()
-  async acceptTipReport(@Param('id') id: number) {
+  async acceptTipReport(@Param('id') id: number): Promise<void> {
     return this.adminService.acceptTipReport(id);
   }
 
@@ -67,21 +67,23 @@ export class AdminController {
   @isAdmin()
   @ApiResponse({ type: TipCommentReportDto, isArray: true })
   @ApiBearerAuth()
-  async tipCommentReports(@Query() query: PaginationDto) {
+  async tipCommentReports(
+    @Query() query: PaginationDto,
+  ): Promise<TipCommentReportDto[]> {
     return this.adminService.tipCommentReports(query.page, query.count);
   }
 
   @Post('tip-comment-reports/:id/reject')
   @isAdmin()
   @ApiBearerAuth()
-  async rejectTipCommentsReport(@Param('id') id: number) {
+  async rejectTipCommentsReport(@Param('id') id: number): Promise<void> {
     return this.adminService.rejectTipCommentReport(id);
   }
 
   @Post('tip-comment-reports/:id/accept')
   @isAdmin()
   @ApiBearerAuth()
-  async acceptTipCommentReport(@Param('id') id: number) {
+  async acceptTipCommentReport(@Param('id') id: number): Promise<void> {
     return this.adminService.acceptTipCommentReport(id);
   }
 
@@ -89,21 +91,23 @@ export class AdminController {
   @isAdmin()
   @ApiResponse({ type: DiaryPostReportDto, isArray: true })
   @ApiBearerAuth()
-  async diaryPostsReports(@Query() query: PaginationDto) {
+  async diaryPostsReports(
+    @Query() query: PaginationDto,
+  ): Promise<DiaryPostReportDto[]> {
     return this.adminService.diaryPostReports(query.page, query.count);
   }
 
   @Post('diary-post-reports/:id/reject')
   @isAdmin()
   @ApiBearerAuth()
-  async rejectDiaryPostReport(@Param('id') id: number) {
+  async rejectDiaryPostReport(@Param('id') id: number): Promise<void> {
     return this.adminService.rejectDiaryPostReport(id);
   }
 
   @Post('diary-post-reports/:id/accept')
   @isAdmin()
   @ApiBearerAuth()
-  async acceptDiaryPostReport(@Param('id') id: number) {
+  async acceptDiaryPostReport(@Param('id') id: number): Promise<void> {
     return this.adminService.acceptDiaryPostReport(id);
   }
 }

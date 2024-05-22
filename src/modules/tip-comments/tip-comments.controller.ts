@@ -27,9 +27,7 @@ export class TipCommentsController {
   @IsPublic()
   @ApiResponse({ type: TipCommentEntity, isArray: true })
   async findByTip(@Param('tipId') tipId: number): Promise<TipCommentEntity[]> {
-    const comments = await this.tipCommentsService.findByTip(tipId);
-
-    return comments.map((comment) => new TipCommentEntity(comment));
+    return await this.tipCommentsService.findByTip(tipId);
   }
 
   @Post()
@@ -39,12 +37,10 @@ export class TipCommentsController {
     @Body() createTipCommentDto: CreateTipCommentDto,
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<TipCommentEntity> {
-    const comment = await this.tipCommentsService.create(
+    return await this.tipCommentsService.create(
       createTipCommentDto,
       currentUser,
     );
-
-    return new TipCommentEntity(comment);
   }
 
   @Post('report/:id')

@@ -82,7 +82,7 @@ export class CitiesController {
     @Query() query: PaginationDto,
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<UserEntity[]> {
-    const users = await this.usersService.findByCity(
+    return await this.usersService.findByCity(
       {
         cityId: id,
         page: query.page,
@@ -90,8 +90,6 @@ export class CitiesController {
       },
       currentUser,
     );
-
-    return users.map((user) => new UserEntity(user));
   }
 
   @Get('ranking/visit')
@@ -118,7 +116,7 @@ export class CitiesController {
     @Query() query: PaginationDto,
     @CurrentUser() currentUser: UserFromJwt,
   ) {
-    return await this.citiesService.recommendNearbyCitiesByUserCityInterests(
+    return await this.citiesService.recommendCities(
       currentUser,
       query.page,
       query.count,

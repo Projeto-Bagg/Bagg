@@ -1,15 +1,7 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { ApiProperty } from '@nestjs/swagger';
+import { PaginationDto } from 'src/commons/entities/pagination';
 
-export class FindUserByCountryDto {
+export class FindUserByCountryDto extends PaginationDto {
   @ApiProperty()
   countryIso2: string;
-
-  @ApiPropertyOptional()
-  @Type(() => Number)
-  page?: number;
-
-  @ApiPropertyOptional()
-  @Type(() => Number)
-  count?: number;
 }

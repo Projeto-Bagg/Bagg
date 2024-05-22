@@ -11,16 +11,15 @@ import {
 import { CityVisitsService } from './city-visits.service';
 import { CreateCityVisitDto } from './dtos/create-city-visit.dto';
 import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { CurrentUser } from 'src/modules/auth/decorators/current-user.decorator';
-import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
-import { DeleteCityVisitDto } from 'src/modules/city-visits/dtos/delete-city-visit.dto';
-import { CityVisitEntity } from 'src/modules/city-visits/entities/city-visit.entity';
-import { UpdateCityVisitDto } from 'src/modules/city-visits/dtos/update-city-visit.dto';
-import { CityVisitPaginationDto } from 'src/modules/city-visits/dtos/city-visit-pagination.dto';
-import { CityVisitClientDto } from 'src/modules/city-visits/dtos/city-visit-client.dto';
-import { IsPublic } from 'src/modules/auth/decorators/is-public.decorator';
-import { CountryCityVisitDto } from 'src/modules/city-visits/dtos/country-city-visit.dto';
-
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { UserFromJwt } from '../auth/models/UserFromJwt';
+import { DeleteCityVisitDto } from './dtos/delete-city-visit.dto';
+import { CityVisitEntity } from './entities/city-visit.entity';
+import { UpdateCityVisitDto } from './dtos/update-city-visit.dto';
+import { CityVisitClientDto } from './dtos/city-visit-client.dto';
+import { IsPublic } from '../auth/decorators/is-public.decorator';
+import { CountryCityVisitDto } from './dtos/country-city-visit.dto';
+import { PaginationDto } from 'src/commons/entities/pagination';
 @Controller('city-visits')
 @ApiTags('city visits')
 export class CityVisitsController {
@@ -51,15 +50,13 @@ export class CityVisitsController {
   @IsPublic()
   async get(
     @Param('cityId') cityId: number,
-    @Query() query: CityVisitPaginationDto,
+    @Query() query: PaginationDto,
   ): Promise<CityVisitClientDto[]> {
-    const visits = await this.cityVisitService.getVisitsByCityId(
+    return await this.cityVisitService.getVisitsByCityId(
       +cityId,
       query.page,
       query.count,
     );
-
-    return visits.map((visit) => new CityVisitClientDto(visit));
   }
 
   @Get('/country/:countryIso2')
@@ -67,7 +64,7 @@ export class CityVisitsController {
   @IsPublic()
   async getByCountry(
     @Param('countryIso2') countryIso2: string,
-    @Query() query: CityVisitPaginationDto,
+    @Query() query: PaginationDto,
   ): Promise<CountryCityVisitDto[]> {
     const visits = await this.cityVisitService.getVisitsByCountryIso2(
       countryIso2,
@@ -84,7 +81,7 @@ export class CityVisitsController {
   remove(
     @Param() param: DeleteCityVisitDto,
     @CurrentUser() currentUser: UserFromJwt,
-  ): Promise<boolean> {
+  ): Promise<void> {
     return this.cityVisitService.remove(param.cityId, currentUser);
   }
 }

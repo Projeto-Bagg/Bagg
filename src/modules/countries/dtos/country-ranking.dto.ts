@@ -1,12 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { PaginationDto } from 'src/commons/entities/pagination';
 
-export class CountryRankingDto {
-  @ApiPropertyOptional()
-  page?: number;
-
-  @ApiPropertyOptional()
-  count?: number;
-
+export class CountryRankingDto extends PaginationDto {
   @ApiPropertyOptional()
   date?: number;
 

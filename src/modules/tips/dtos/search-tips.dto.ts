@@ -1,20 +1,18 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
+import { PaginationDto } from 'src/commons/entities/pagination';
 
-export class SearchTipsDto {
+export class SearchTipsDto extends PaginationDto {
   @ApiPropertyOptional()
   @Type(() => String)
-  text?: string;
+  q?: string;
 
   @ApiPropertyOptional()
+  @Transform((tags) => tags.value.split(';'))
   @Type(() => Array<string>)
   tags?: string[];
 
-  @ApiPropertyOptional({ default: 10 })
+  @ApiPropertyOptional()
   @Type(() => Number)
-  count?: number;
-
-  @ApiPropertyOptional({ default: 1 })
-  @Type(() => Number)
-  page?: number;
+  city?: number;
 }

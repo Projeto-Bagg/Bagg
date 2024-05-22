@@ -15,7 +15,7 @@ export class UserEntity implements User {
   @ApiPropertyOptional({ type: String })
   bio: string | null;
 
-  @Exclude()
+  @ApiProperty()
   emailVerified: boolean;
 
   @ApiProperty()
@@ -32,8 +32,4 @@ export class UserEntity implements User {
 
   @ApiProperty()
   createdAt: Date;
-
-  constructor(partial: UserEntity) {
-    Object.assign(this, partial);
-  }
 }

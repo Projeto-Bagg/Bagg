@@ -27,8 +27,4 @@ export class TipCommentEntity implements TipComment {
 
   @ApiProperty()
   user: UserEntity;
-
-  constructor(partial: TipCommentEntity) {
-    Object.assign(this, { ...partial, user: new UserEntity(partial.user) });
-  }
 }

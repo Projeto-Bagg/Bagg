@@ -27,9 +27,7 @@ export class TipCommentsController {
   @IsPublic()
   @ApiResponse({ type: TipCommentEntity, isArray: true })
   async findByTip(@Param('tipId') tipId: number): Promise<TipCommentEntity[]> {
-    const comments = await this.tipCommentsService.findByTip(tipId);
-
-    return comments.map((comment) => new TipCommentEntity(comment));
+    return await this.tipCommentsService.findByTip(tipId);
   }
 
   @Post()
@@ -39,15 +37,14 @@ export class TipCommentsController {
     @Body() createTipCommentDto: CreateTipCommentDto,
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<TipCommentEntity> {
-    const comment = await this.tipCommentsService.create(
+    return await this.tipCommentsService.create(
       createTipCommentDto,
       currentUser,
     );
-
-    return new TipCommentEntity(comment);
   }
 
   @Post('report/:id')
+  @ApiResponse({ status: 201, description: 'Reported successfully' })
   @ApiBearerAuth()
   report(
     @Param('id') id: number,
@@ -63,6 +60,9 @@ export class TipCommentsController {
 
   @Delete(':id')
   @ApiBearerAuth()
+  @ApiResponse({ status: 200, description: 'Deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Comment does not exist' })
+  @ApiResponse({ status: 401, description: 'Comment was not created by you' })
   async delete(
     @Param('id') id: number,
     @CurrentUser() CurrentUser: UserFromJwt,

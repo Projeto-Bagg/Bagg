@@ -18,7 +18,8 @@ import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { TripDiaryEntity } from 'src/modules/trip-diaries/entities/trip-diary.entity';
 import { DiaryPostEntity } from 'src/modules/diary-posts/entities/diary-post.entity';
 import { TripDiaryClientDto } from 'src/modules/trip-diaries/dtos/trip-diary-client.dto';
-import { DiaryPostFeedDto } from 'src/modules/diary-posts/dtos/diary-post.feed.dto';
+import { DiaryPostClientDto } from 'src/modules/diary-posts/dtos/diary-post-client.dto';
+import { PaginationDto } from 'src/commons/entities/pagination';
 
 @Controller('trip-diaries')
 @ApiTags('trip diaries')
@@ -42,9 +43,7 @@ export class TripDiariesController {
   async findByUsername(
     @Param('username') username: string,
   ): Promise<TripDiaryClientDto[]> {
-    const tripDiaries = await this.tripDiariesService.findByUsername(username);
-
-    return tripDiaries.map((tripDiary) => new TripDiaryClientDto(tripDiary));
+    return await this.tripDiariesService.findByUsername(username);
   }
 
   @Get(':id/posts')
@@ -54,32 +53,34 @@ export class TripDiariesController {
   @ApiResponse({ type: DiaryPostEntity, isArray: true })
   async findPostsById(
     @Param('id') id: number,
-    @Query() query: DiaryPostFeedDto,
+    @Query() query: PaginationDto,
     @CurrentUser() currentUser: UserFromJwt,
-  ): Promise<DiaryPostEntity[]> {
+  ): Promise<DiaryPostClientDto[]> {
     const posts = await this.tripDiariesService.findPostsById(
       id,
+      currentUser,
       query.page,
       query.count,
-      currentUser,
     );
 
-    return posts.map((post) => new DiaryPostEntity(post));
+    return posts.map((post) => new DiaryPostClientDto(post));
   }
 
   @Get(':id')
   @IsPublic()
   @UseInterceptors(ClassSerializerInterceptor)
-  @ApiResponse({ type: TripDiaryClientDto })
+  @ApiResponse({ type: TripDiaryClientDto, status: 200 })
+  @ApiResponse({ status: 404, description: 'Trip diary does not exist' })
   async findOne(@Param('id') id: number): Promise<TripDiaryClientDto> {
-    const tripDiary = await this.tripDiariesService.findOne(id);
-
-    return new TripDiaryClientDto(tripDiary);
+    return await this.tripDiariesService.findOne(id);
   }
 
   @Delete(':id')
   @ApiResponse({ type: TripDiaryEntity })
   @ApiBearerAuth()
+  @ApiResponse({ status: 200, description: 'Trip diary deleted successfully' })
+  @ApiResponse({ status: 401, description: 'Trip diary not created by you' })
+  @ApiResponse({ status: 404, description: 'Trip diary does not exist' })
   remove(
     @Param('id') id: number,
     @CurrentUser() currentUser: UserFromJwt,

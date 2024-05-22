@@ -2,7 +2,6 @@ import { Controller, Post, Delete, Param } from '@nestjs/common';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { IsPublic } from 'src/modules/auth/decorators/is-public.decorator';
 import { TipLikesService } from './tip-likes.service';
-import { TipLikeEntity } from './entities/tip-like.entity';
 import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
 import { CurrentUser } from 'src/modules/auth/decorators/current-user.decorator';
 
@@ -13,6 +12,7 @@ export class TipLikesController {
 
   @Post(':id')
   @IsPublic()
+  @ApiResponse({ status: 201, description: 'Like created successfully' })
   async create(
     @Param('id') id: number,
     @CurrentUser() currentUser: UserFromJwt,
@@ -22,7 +22,7 @@ export class TipLikesController {
 
   @Delete(':id')
   @IsPublic()
-  @ApiResponse({ type: TipLikeEntity })
+  @ApiResponse({ status: 200, description: 'Like deleted successfully' })
   async remove(
     @Param('id') id: number,
     @CurrentUser() currentUser: UserFromJwt,

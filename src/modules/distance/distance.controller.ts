@@ -1,56 +1,57 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Body, Controller, Post, Query } from '@nestjs/common';
 import { ApiTags, ApiResponse } from '@nestjs/swagger';
 import { IsPublic } from '../auth/decorators/is-public.decorator';
 import { DistanceService } from './distance.service';
-import { CityByDistanceDto } from './dtos/city-by-distance.dto';
-import { RegionByDistanceDto } from './dtos/region-by-distance.dto';
-import { CountryByDistanceDto } from './dtos/country-by-distance.dto';
 import { PaginationDto } from 'src/commons/entities/pagination';
+import { DistanceBodyDto } from './dtos/distance-body.dto';
+import { CityDistanceComparedToId } from 'src/modules/distance/dtos/city-by-distance.dto';
+import { RegionDistanceComparedToId } from 'src/modules/distance/dtos/region-by-distance.dto';
+import { CountryDistanceComparedToId } from 'src/modules/distance/dtos/country-by-distance.dto';
 
 @Controller('distance')
 @ApiTags('distance')
 export class DistanceController {
   constructor(private readonly distanceService: DistanceService) {}
 
-  @Get('closest-cities/:id')
+  @Post('closest-cities')
   @IsPublic()
-  @ApiResponse({ type: CityByDistanceDto, isArray: true })
+  @ApiResponse({ type: CityDistanceComparedToId, isArray: true })
   async getClosestCities(
-    @Param('id') id: number,
+    @Body() body: DistanceBodyDto,
     @Query() query: PaginationDto,
-  ): Promise<CityByDistanceDto[]> {
-    return (await this.distanceService.getClosestCities(
-      +id,
+  ) {
+    return await this.distanceService.getClosestCitiesWithRegions(
+      body.ids,
       query.page,
       query.count,
-    )) as CityByDistanceDto[];
+    );
   }
 
-  @Get('closest-regions/:id')
+  @Post('closest-regions')
   @IsPublic()
-  @ApiResponse({ type: RegionByDistanceDto, isArray: true })
+  @ApiResponse({ type: RegionDistanceComparedToId, isArray: true })
   async getClosestRegions(
-    @Param('id') id: number,
+    @Body() body: DistanceBodyDto,
     @Query() query: PaginationDto,
-  ): Promise<RegionByDistanceDto[]> {
-    return (await this.distanceService.getClosestRegions(
-      +id,
+  ) {
+    return await this.distanceService.getClosestRegions(
+      body.ids,
       query.page,
       query.count,
-    )) as RegionByDistanceDto[];
+    );
   }
 
-  @Get('closest-countries/:id')
+  @Post('closest-countries')
   @IsPublic()
-  @ApiResponse({ type: CountryByDistanceDto, isArray: true })
+  @ApiResponse({ type: CountryDistanceComparedToId, isArray: true })
   async getClosestCountries(
-    @Param('id') id: number,
+    @Body() body: DistanceBodyDto,
     @Query() query: PaginationDto,
-  ): Promise<CountryByDistanceDto[]> {
-    return (await this.distanceService.getClosestCountries(
-      +id,
+  ) {
+    return await this.distanceService.getClosestCountries(
+      body.ids,
       query.page,
       query.count,
-    )) as CountryByDistanceDto[];
+    );
   }
 }

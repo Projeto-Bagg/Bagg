@@ -10,3 +10,11 @@ export class CountryByDistanceDto extends CountryEntity {
     Object.assign(this, partial);
   }
 }
+
+export class CountryDistanceComparedToId {
+  @ApiProperty()
+  id: number;
+
+  @ApiProperty({ type: CountryByDistanceDto, isArray: true })
+  places: CountryByDistanceDto[];
+}

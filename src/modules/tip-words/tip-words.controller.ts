@@ -24,12 +24,10 @@ export class TipWordsController {
   async findMany(
     @Query() query: TipWordsTrendingDto,
   ): Promise<TipWordByCountDto[]> {
-    const tipWords = await this.tipWordsService.findMany(
+    return await this.tipWordsService.findMany(
       query.sortByCount,
       query.startDate,
       query.endDate,
     );
-
-    return tipWords;
   }
 }

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { UserFromJwt } from 'src/modules/auth/models/UserFromJwt';
-import { CityInterestEntity } from 'src/modules/city-interests/entities/city-interest.entity';
+import { PrismaService } from '../../prisma/prisma.service';
+import { UserFromJwt } from '../auth/models/UserFromJwt';
+import { CityInterestEntity } from './entities/city-interest.entity';
 
 @Injectable()
 export class CityInterestsService {

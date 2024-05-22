@@ -35,7 +35,7 @@ export class TipWordsService {
       .replace(/\s{2,}/g, ' ')
       .split(' ')
       .flatMap((word) =>
-        word.length > 2 ? [{ word: word, tipId: tip.id } as TipWord] : [],
+        word.length > 3 ? [{ word: word, tipId: tip.id } as TipWord] : [],
       );
 
     await this.prisma.tipWord.createMany({

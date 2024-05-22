@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { DiaryPost } from '@prisma/client';
+import { DiaryPost, DiaryPostLike } from '@prisma/client';
 import { Exclude } from 'class-transformer';
 import { DiaryPostMediaEntity } from 'src/modules/diary-post-medias/entities/diary-post-media.entity';
 import { TripDiaryEntity } from 'src/modules/trip-diaries/entities/trip-diary.entity';
@@ -27,22 +27,19 @@ export class DiaryPostEntity implements DiaryPost {
   @ApiProperty()
   tripDiary: TripDiaryEntity;
 
-  @ApiProperty()
-  likedBy: number;
-
-  @ApiProperty()
-  isLiked: boolean;
-
   @Exclude()
   softDelete: boolean;
 
   @Exclude()
   status: string;
 
+  @Exclude()
+  likedBy: DiaryPostLike[];
+
   @ApiProperty({ type: DiaryPostMediaEntity, isArray: true })
   diaryPostMedias: DiaryPostMediaEntity[];
 
   constructor(partial: DiaryPostEntity) {
-    Object.assign(this, { ...partial, user: new UserEntity(partial.user) });
+    Object.assign(this, partial);
   }
 }

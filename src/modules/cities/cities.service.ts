@@ -14,6 +14,7 @@ import { UsersService } from 'src/modules/users/users.service';
 import { CityImageDto } from 'src/modules/cities/dtos/city-image.dto';
 import { CityRankingDto } from 'src/modules/cities/dtos/city-ranking.dto';
 import { DistanceService } from '../distance/distance.service';
+import { TrendingCities } from 'src/modules/cities/dtos/trending.dto';
 
 @Injectable()
 export class CitiesService {
@@ -245,10 +246,13 @@ export class CitiesService {
       await Promise.all(
         Array.from(
           new Set(
-            cities?.map(
-              async (city) =>
-                await this.distanceService.getClosestCities(city.id, 1, 5),
-            ),
+            (
+              await this.distanceService.getClosestCities(
+                cities ? cities?.map((city) => city.id) : [],
+                1,
+                5,
+              )
+            ).map((closestCities) => closestCities.places),
           ),
         ),
       )
@@ -382,13 +386,15 @@ export class CitiesService {
         return {
           ...city,
           interestsCount: cityInterests[index]._count.cityId,
-          percentFromTotal: +(
-            (cityInterests[index]._count.cityId / interestsCount) *
-            100
-          ).toFixed(1),
+          percentFromTotal: Number(
+            (
+              (cityInterests[index]._count.cityId / interestsCount) *
+              100
+            ).toFixed(1),
+          ),
           variation: variation,
           variationPercentage: interestCount2MonthsAgo
-            ? ((variation / interestCount2MonthsAgo) * 100).toFixed(1)
+            ? Number(((variation / interestCount2MonthsAgo) * 100).toFixed(1))
             : null,
         };
       }),

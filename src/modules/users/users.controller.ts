@@ -29,16 +29,16 @@ import { UserFromJwt } from '../auth/models/UserFromJwt';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { MediaService } from '../media/media.service';
-import { IsPublic } from 'src/modules/auth/decorators/is-public.decorator';
-import { UserEntity } from 'src/modules/users/entities/user.entity';
-import { UserFullInfoDto } from 'src/modules/users/dtos/user-full-info.dto';
-import { CityVisitsService } from 'src/modules/city-visits/city-visits.service';
-import { UserCityVisitDto } from 'src/modules/city-visits/dtos/user-city-visit.dto';
-import { UserSearchDto } from 'src/modules/users/dtos/user-search.dto';
-import { UsernameDto } from 'src/modules/users/dtos/username.dto';
-import { EmailDto } from 'src/modules/users/dtos/email.dto';
+import { IsPublic } from '../auth/decorators/is-public.decorator';
+import { UserEntity } from './entities/user.entity';
+import { UserFullInfoDto } from './dtos/user-full-info.dto';
+import { CityVisitsService } from '../city-visits/city-visits.service';
+import { UserCityVisitDto } from '../city-visits/dtos/user-city-visit.dto';
+import { UserSearchDto } from './dtos/user-search.dto';
+import { UsernameDto } from './dtos/username.dto';
+import { EmailDto } from './dtos/email.dto';
 import { PasswordDto } from './dtos/password.dto';
-import { IsEmailVerificationUnneeded } from 'src/modules/auth/decorators/is-email-verification-unneeded.decorator';
+import { IsEmailVerificationUnneeded } from '../auth/decorators/is-email-verification-unneeded.decorator';
 
 @Controller('users')
 @ApiTags('users')
@@ -50,6 +50,11 @@ export class UsersController {
   ) {}
   @Post()
   @IsPublic()
+  @ApiResponse({ status: 200, description: 'User created successfully' })
+  @ApiResponse({
+    status: 409,
+    description: 'Username or email already registered',
+  })
   create(@Body() createUserDto: CreateUserDto): Promise<void> {
     return this.usersService.create(createUserDto);
   }
@@ -156,18 +161,28 @@ export class UsersController {
       imageUrl = await this.mediaService.uploadFile(file, 'profile-pics');
     }
 
-    const user = await this.usersService.update(
+    return await this.usersService.update(
       { ...updateUserDto, image: imageUrl },
       currentUser,
     );
-
-    return new UserClientDto(user);
   }
 
-  @Delete()
+  @Post('/delete')
   @ApiBearerAuth()
+  @ApiResponse({
+    status: 404,
+    description: 'Account does not exist',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Incorrect password',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Deleted account',
+  })
   delete(
-    @Query() deleteUserDto: DeleteUserDto,
+    @Body() deleteUserDto: DeleteUserDto,
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<void> {
     return this.usersService.delete(deleteUserDto, currentUser);
@@ -175,6 +190,18 @@ export class UsersController {
 
   @Put('password')
   @ApiBearerAuth()
+  @ApiResponse({
+    status: 404,
+    description: 'Account does not exist',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Incorrect password',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Changed password successfully!',
+  })
   password(
     @Body() updatePasswordDto: UpdatePasswordDto,
     @CurrentUser() currentUser: UserFromJwt,
@@ -187,12 +214,9 @@ export class UsersController {
   @ApiBearerAuth()
   @ApiResponse({ type: UserFullInfoDto })
   async me(@CurrentUser() currentUser: UserFromJwt): Promise<UserFullInfoDto> {
-    const user = await this.usersService.fullInfoUserById(
-      currentUser.id,
-      currentUser,
-    );
+    const user = await this.usersService.findById(currentUser.id);
 
-    return new UserFullInfoDto(user);
+    return await this.usersService.getUserFullInfo(user, currentUser);
   }
 
   @Get('search')
@@ -200,22 +224,26 @@ export class UsersController {
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiResponse({ type: UserEntity, isArray: true })
   async search(@Query() query: UserSearchDto): Promise<UserEntity[]> {
-    const users = await this.usersService.search(query);
-
-    return users.map((user) => new UserEntity(user));
+    return await this.usersService.search(query);
   }
 
   @Put(':username')
   @ApiBearerAuth()
+  @ApiResponse({
+    status: 409,
+    description: 'Username already registered',
+  })
+  @ApiResponse({ status: 200 })
   async changeUsername(
     @Param() params: UsernameDto,
     @CurrentUser() currentUser: UserFromJwt,
-  ) {
+  ): Promise<void> {
     await this.usersService.updateUsername(params.username, currentUser);
   }
 
   @Get(':username')
-  @ApiResponse({ type: UserFullInfoDto })
+  @ApiResponse({ type: UserFullInfoDto, status: 200 })
+  @ApiResponse({ status: 404, description: 'User does not exist' })
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiBearerAuth()
   @IsPublic()
@@ -223,13 +251,13 @@ export class UsersController {
     @Param('username') username: string,
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<UserFullInfoDto> {
-    const user = await this.usersService.findByUsername(username, currentUser);
+    const user = await this.usersService.findByUsername(username);
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    return new UserFullInfoDto(user);
+    return await this.usersService.getUserFullInfo(user, currentUser);
   }
 
   @Get(':username/followers')
@@ -241,9 +269,7 @@ export class UsersController {
     @Param('username') username: string,
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<UserClientDto[]> {
-    const followers = await this.usersService.followers(username, currentUser);
-
-    return followers.map((follower) => new UserClientDto(follower));
+    return await this.usersService.followers(username, currentUser);
   }
 
   @Get(':username/following')
@@ -255,9 +281,7 @@ export class UsersController {
     @Param('username') username: string,
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<UserClientDto[]> {
-    const followings = await this.usersService.following(username, currentUser);
-
-    return followings.map((following) => new UserClientDto(following));
+    return await this.usersService.following(username, currentUser);
   }
 
   @Get(':username/visits')
@@ -310,6 +334,9 @@ export class UsersController {
   }
 
   @Delete('profile-pic')
+  @ApiResponse({
+    description: 'Profile picture deleted successfully',
+  })
   @ApiBearerAuth()
   async deleteProfilePic(
     @CurrentUser() currentUser: UserFromJwt,

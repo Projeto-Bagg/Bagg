@@ -1,12 +1,7 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
+import { PaginationDto } from 'src/commons/entities/pagination';
 
-export class CitySearchDto {
+export class CitySearchDto extends PaginationDto {
   @ApiProperty()
   q: string;
-
-  @ApiPropertyOptional()
-  page?: number;
-
-  @ApiPropertyOptional()
-  count?: number;
 }

@@ -1,4 +1,4 @@
-import { PrismaModule } from 'src/prisma/prisma.module';
+import { PrismaModule } from '../../prisma/prisma.module';
 import { EmailsService } from './emails-service';
 import { Module } from '@nestjs/common';
 

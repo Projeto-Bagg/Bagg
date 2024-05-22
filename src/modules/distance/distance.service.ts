@@ -21,11 +21,6 @@ export interface PlacesDistanceComparedToId<T> {
   places: PlaceWithDistance<T>[];
 }
 
-export interface PlacesDistanceComparedToId {
-  id: number;
-  places: PlaceWithDistance[];
-}
-
 @Injectable()
 export class DistanceService {
   constructor(
@@ -87,25 +82,25 @@ export class DistanceService {
       });
     });
 
-
-    const placesDistanceComparisonForEachId: PlacesDistanceComparedToId[] =
-      await Promise.all(
-        lowestDistances.map(async (placesDistanceComparison) => {
-          const placeWithDistancesSorted = {
-            ...placesDistanceComparison,
-            places: placesDistanceComparison.places
-              .sort((a, b) => a.distance - b.distance)
-              .slice((page - 1) * count, (page - 1) * count + count),
-          };
-          if (cacheKey) {
-            await this.cache.set(
-              `${cacheKey}-${placesDistanceComparison.id}-${page}-${count}`,
-              JSON.stringify(placeWithDistancesSorted),
-            );
-          }
-          return placeWithDistancesSorted;
-        }),
-      );
+    const placesDistanceComparisonForEachId: PlacesDistanceComparedToId<
+      PlaceWithDistance<Place<T>>
+    >[] = await Promise.all(
+      lowestDistances.map(async (placesDistanceComparison) => {
+        const placeWithDistancesSorted = {
+          ...placesDistanceComparison,
+          places: placesDistanceComparison.places
+            .sort((a, b) => a.distance - b.distance)
+            .slice((page - 1) * count, (page - 1) * count + count),
+        };
+        if (cacheKey) {
+          await this.cache.set(
+            `${cacheKey}-${placesDistanceComparison.id}-${page}-${count}`,
+            JSON.stringify(placeWithDistancesSorted),
+          );
+        }
+        return placeWithDistancesSorted;
+      }),
+    );
 
     return placesDistanceComparisonForEachId;
   }
@@ -114,17 +109,26 @@ export class DistanceService {
     ids: number[],
     page = 1,
     count = 10,
-  ): Promise<PlacesDistanceComparedToId[]> {
+  ): Promise<
+    PlacesDistanceComparedToId<PlaceWithDistance<Place<CountryEntity>>>[]
+  > {
     const countries = await this.prisma.country.findMany();
-    return await this.getClosestPlaces(countries, ids, page, count);
+    return await this.getClosestPlaces<CountryEntity>(
+      countries,
+      ids,
+      page,
+      count,
+    );
   }
 
   async getClosestRegions(
     ids: number[],
     page = 1,
     count = 10,
-  ): Promise<PlacesDistanceComparedToId[]> {
-    const cachedValues = await this.getCachedValues(
+  ): Promise<
+    PlacesDistanceComparedToId<PlaceWithDistance<Place<RegionEntity>>>[]
+  > {
+    const cachedValues = await this.getCachedValues<RegionEntity>(
       ids,
       page,
       count,
@@ -146,7 +150,13 @@ export class DistanceService {
       },
     });
 
-    return await this.getClosestPlaces(regions, ids, page, count, 'regions');
+    return await this.getClosestPlaces<RegionEntity>(
+      regions,
+      ids,
+      page,
+      count,
+      'regions',
+    );
   }
 
   private async getCities(citiesId: number[]): Promise<CityEntity[]> {
@@ -170,8 +180,10 @@ export class DistanceService {
     ids: number[],
     page = 1,
     count = 10,
-  ): Promise<PlacesDistanceComparedToId[]> {
-    const cachedValues = await this.getCachedValues(
+  ): Promise<
+    PlacesDistanceComparedToId<PlaceWithDistance<Place<CityEntity>>>[]
+  > {
+    const cachedValues = await this.getCachedValues<CityEntity>(
       ids,
       page,
       count + 1,
@@ -205,7 +217,9 @@ export class DistanceService {
     ids: number[],
     page = 1,
     count = 10,
-  ): Promise<PlacesDistanceComparedToId[]> {
+  ): Promise<
+    PlacesDistanceComparedToId<PlaceWithDistance<Place<CityRegionCountryDto>>>[]
+  > {
     const citiesById = await this.getClosestCities(ids, page, count);
 
     return await Promise.all(
@@ -253,7 +267,6 @@ export class DistanceService {
           >(`${cacheKey}-${id}-${page}-${count}`),
       ),
     );
-
 
     cachedValues = cachedValues.filter(
       (cachedValue) => cachedValue !== undefined,

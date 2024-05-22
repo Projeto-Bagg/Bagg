@@ -28,6 +28,7 @@ import { PaginationDto } from 'src/commons/entities/pagination';
 import { RelevantTipsDto } from '../tip-words/dtos/relevant-tips-dto';
 import { SearchTipsDto } from './dtos/search-tips.dto';
 import { TipClientDto } from 'src/modules/tips/dtos/tip-client.dto';
+import { CreateTipReportDto } from 'src/modules/tips/dtos/create-tip-report.dto';
 
 @Controller('tips')
 @ApiTags('tips')

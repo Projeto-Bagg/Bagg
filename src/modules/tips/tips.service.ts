@@ -559,7 +559,6 @@ export class TipsService {
       },
       orderBy: {
         createdAt: 'desc',
-
       },
       include: {
         user: true,

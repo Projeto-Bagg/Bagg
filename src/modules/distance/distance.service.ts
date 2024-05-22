@@ -2,15 +2,23 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
 import { CityEntity } from 'src/modules/cities/entities/city.entity';
+import { CountryEntity } from 'src/modules/countries/entities/country.entity';
+import { RegionEntity } from 'src/modules/regions/entities/region.entity';
+import { CityRegionCountryDto } from 'src/modules/cities/dtos/city-region-country.dto';
 
-interface Place {
+type Place<T> = T & {
   id: number;
   latitude: number;
   longitude: number;
-}
+};
 
-export interface PlaceWithDistance extends Place {
+export type PlaceWithDistance<T> = T & {
   distance: number;
+};
+
+export interface PlacesDistanceComparedToId<T> {
+  id: number;
+  places: PlaceWithDistance<T>[];
 }
 
 export interface PlacesDistanceComparedToId {
@@ -25,24 +33,27 @@ export class DistanceService {
     private readonly cache: CacheService,
   ) {}
 
-  private async getClosestPlaces(
-    allPlaces: Place[],
+  private async getClosestPlaces<T>(
+    allPlaces: Place<T>[],
     ids: number[],
     page = 1,
     count = 10,
     cacheKey?: string,
-  ): Promise<PlacesDistanceComparedToId[]> {
-    const chosenPlaces: Place[] = ids
+  ): Promise<PlacesDistanceComparedToId<PlaceWithDistance<Place<T>>>[]> {
+    const chosenPlaces: Place<T>[] = ids
       .map((id) => allPlaces.find((place) => place.id == id))
-      .filter((place) => place !== undefined) as Place[];
+      .filter((place) => place !== undefined) as Place<T>[];
 
     const lowestCount = (page - 1) * count + count;
-    const lowestDistances: PlacesDistanceComparedToId[] = chosenPlaces.map(
-      (chosenPlace) => ({ places: [], id: chosenPlace.id }),
-    );
+    const lowestDistances: PlacesDistanceComparedToId<
+      PlaceWithDistance<Place<T>>
+    >[] = chosenPlaces.map((chosenPlace) => ({
+      places: [],
+      id: chosenPlace.id,
+    }));
 
     allPlaces.forEach((place) => {
-      chosenPlaces.forEach((chosenPlace: Place) => {
+      chosenPlaces.forEach((chosenPlace: Place<T>) => {
         const distance = this.calculateDistance(
           place.latitude,
           place.longitude,
@@ -75,6 +86,7 @@ export class DistanceService {
         }
       });
     });
+
 
     const placesDistanceComparisonForEachId: PlacesDistanceComparedToId[] =
       await Promise.all(
@@ -216,7 +228,7 @@ export class DistanceService {
 
             return {
               ...city,
-              region,
+              region: region!,
             };
           }),
         ),
@@ -224,27 +236,32 @@ export class DistanceService {
     );
   }
 
-  private async getCachedValues(
+  private async getCachedValues<T>(
     ids: number[],
     page: number,
     count: number,
     cacheKey: string,
-  ): Promise<PlacesDistanceComparedToId[]> {
-    let cachedValues: (PlacesDistanceComparedToId | undefined)[] =
-      await Promise.all(
-        ids.map(
-          async (id) =>
-            await this.cache.get<PlacesDistanceComparedToId>(
-              `${cacheKey}-${id}-${page}-${count}`,
-            ),
-        ),
-      );
+  ): Promise<PlacesDistanceComparedToId<PlaceWithDistance<Place<T>>>[]> {
+    let cachedValues: (
+      | PlacesDistanceComparedToId<PlaceWithDistance<Place<T>>>
+      | undefined
+    )[] = await Promise.all(
+      ids.map(
+        async (id) =>
+          await this.cache.get<
+            PlacesDistanceComparedToId<PlaceWithDistance<Place<T>>>
+          >(`${cacheKey}-${id}-${page}-${count}`),
+      ),
+    );
+
 
     cachedValues = cachedValues.filter(
       (cachedValue) => cachedValue !== undefined,
     );
 
-    return cachedValues as PlacesDistanceComparedToId[];
+    return cachedValues as PlacesDistanceComparedToId<
+      PlaceWithDistance<Place<T>>
+    >[];
   }
 
   private calculateDistance(

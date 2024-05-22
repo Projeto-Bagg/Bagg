@@ -116,7 +116,7 @@ export class CitiesController {
     @Query() query: PaginationDto,
     @CurrentUser() currentUser: UserFromJwt,
   ) {
-    return await this.citiesService.recommendNearbyCitiesByUserCityInterests(
+    return await this.citiesService.recommendCities(
       currentUser,
       query.page,
       query.count,

@@ -217,15 +217,28 @@ export class CitiesService {
     `;
   }
 
-  async recommendNearbyCitiesByUserCityInterests(
+  async recommendCities(
     currentUser: UserFromJwt,
     page = 1,
-    count = 10,
-  ) {
+    count = 40,
+  ): Promise<CityEntity[]> {
+    const NEARBY_TRENDING_RATIO = 0.8;
+    const MAX_NEARBY_CITIES = count * NEARBY_TRENDING_RATIO;
+    const MAX_TRENDING_CITIES = count - MAX_NEARBY_CITIES;
+
     const cities = (
       await this.prisma.user.findUnique({
         where: { id: currentUser.id },
-        include: { cityInterests: { include: { city: true } } },
+        include: {
+          cityInterests: {
+            include: { city: true },
+            take: MAX_NEARBY_CITIES,
+            skip: count * (page - 1),
+            orderBy: {
+              createdAt: 'desc',
+            },
+          },
+        },
       })
     )?.cityInterests.map((cityInterest) => cityInterest.city);
 
@@ -245,12 +258,33 @@ export class CitiesService {
       )
     ).flat();
 
-    return closestCitiesToInterestedCities
-      .slice((page - 1) * count, (page - 1) * count + count)
+    const trendingCities: CityEntity[] = [];
+
+    if (
+      closestCitiesToInterestedCities.length *
+        NEARBY_TRENDING_RATIO *
+        (cities?.length || 0) -
+        count *
+          closestCitiesToInterestedCities.length *
+          NEARBY_TRENDING_RATIO !==
+        0 ||
+      closestCitiesToInterestedCities.length === 0
+    ) {
+      await this.trending(
+        1,
+        MAX_TRENDING_CITIES +
+          (MAX_NEARBY_CITIES - closestCitiesToInterestedCities.length),
+      ).then((response) =>
+        response.cities.forEach((city) => trendingCities.push(city)),
+      );
+    }
+
+    return (closestCitiesToInterestedCities as CityEntity[])
+      .concat(trendingCities)
       .sort(() => Math.random() - 0.5);
   }
 
-  async trending(): Promise<TrendingCities> {
+  async trending(page = 1, count = 10): Promise<TrendingCities> {
     const today = new Date();
     const thirtyDaysAgo = new Date(
       today.getFullYear(),
@@ -275,7 +309,8 @@ export class CitiesService {
 
     const cityInterests = await this.prisma.cityInterest.groupBy({
       by: ['cityId'],
-      take: 10,
+      take: count,
+      skip: count * (page - 1),
       _count: {
         cityId: true,
       },
@@ -317,7 +352,8 @@ export class CitiesService {
 
     const cityInterests2MonthsAgo = await this.prisma.cityInterest.groupBy({
       by: ['cityId'],
-      take: 10,
+      take: count,
+      skip: count * (page - 1),
       _count: {
         cityId: true,
       },

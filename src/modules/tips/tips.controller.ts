@@ -25,7 +25,6 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import { UserClientDto } from 'src/modules/users/dtos/user-client.dto';
 import { FeedFilterDto } from '../tip-words/dtos/feed-filter.dto';
 import { PaginationDto } from 'src/commons/entities/pagination';
-import { CreateTipReportDto } from './dtos/create-tip-report.dto';
 import { RelevantTipsDto } from '../tip-words/dtos/relevant-tips-dto';
 import { SearchTipsDto } from './dtos/search-tips.dto';
 import { TipClientDto } from 'src/modules/tips/dtos/tip-client.dto';

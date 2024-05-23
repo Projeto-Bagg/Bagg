@@ -30,13 +30,15 @@ interface TipWithCreatedDateAtAsDate extends Tip {
   createdAtAsDate: string;
 }
 
-interface TipSortedByRelevancy extends Tip {
-  createdAtAsDate: string;
+interface NotFormatedTip extends Tip {
   city: CityRegionCountryDto;
   tipMedias: TipMediaEntity[];
   user: UserEntity;
   likedBy: TipLike[];
-  tipComments: TipComment[];
+}
+
+interface TipSortedByRelevancy extends NotFormatedTip {
+  createdAtAsDate: string;
 }
 
 @Injectable()
@@ -130,16 +132,7 @@ export class TipsService {
       throw new NotFoundException();
     }
 
-    const commentsAmount = await this.tipCommentsService.getTipCommentsAmount(
-      tip.id,
-    );
-
-    return {
-      ...tip,
-      isLiked: tip.likedBy.some((like) => like.userId === currentUser?.id),
-      likesAmount: tip.likedBy.length,
-      commentsAmount,
-    };
+    return this.formatTipClient(tip, currentUser);
   }
 
   async findByUsername(
@@ -148,7 +141,7 @@ export class TipsService {
     count = 10,
     currentUser?: UserFromJwt,
   ): Promise<TipClientDto[]> {
-    const posts = await this.prisma.tip.findMany({
+    const tips = await this.prisma.tip.findMany({
       where: {
         user: {
           username,
@@ -178,17 +171,7 @@ export class TipsService {
     });
 
     return await Promise.all(
-      posts.map(async (post) => {
-        const commentsAmount =
-          await this.tipCommentsService.getTipCommentsAmount(post.id);
-
-        return {
-          ...post,
-          isLiked: post.likedBy.some((like) => like.userId === currentUser?.id),
-          likesAmount: post.likedBy.length,
-          commentsAmount,
-        };
-      }),
+      tips.map(async (tip) => this.formatTipClient(tip, currentUser)),
     );
   }
 
@@ -278,17 +261,7 @@ export class TipsService {
     );
 
     return await Promise.all(
-      tips.map(async (tip) => {
-        const commentsAmount =
-          await this.tipCommentsService.getTipCommentsAmount(tip.id);
-
-        return {
-          ...tip,
-          isLiked: tip.likedBy.some((like) => like.userId === currentUser?.id),
-          likesAmount: tip.likedBy.length,
-          commentsAmount,
-        };
-      }),
+      tips.map(async (tip) => this.formatTipClient(tip, currentUser)),
     );
   }
 
@@ -526,17 +499,7 @@ export class TipsService {
     });
 
     return await Promise.all(
-      relevantTips.map(async (tip) => {
-        const commentsAmount =
-          await this.tipCommentsService.getTipCommentsAmount(tip.id);
-
-        return {
-          ...tip,
-          isLiked: tip.likedBy.some((like) => like.userId === currentUser?.id),
-          likesAmount: tip.likedBy.length,
-          commentsAmount,
-        };
-      }),
+      relevantTips.map(async (tip) => this.formatTipClient(tip, currentUser)),
     );
   }
 
@@ -544,6 +507,7 @@ export class TipsService {
     currentUser: UserFromJwt,
     page = 1,
     count = 10,
+    idsToIgnore?: number[],
   ): Promise<TipClientDto[]> {
     const ids = (
       await this.citiesService.recommendCities(currentUser, 1, 20)
@@ -552,7 +516,9 @@ export class TipsService {
     const tips = await this.prisma.tip.findMany({
       where: {
         AND: [
-          { cityId: { in: ids } },
+          {
+            AND: [{ cityId: { in: ids } }, { id: { notIn: idsToIgnore } }],
+          },
           { status: 'active' },
           { softDelete: false },
         ],
@@ -579,17 +545,7 @@ export class TipsService {
     });
 
     return await Promise.all(
-      tips.map(async (tip) => {
-        const commentsAmount =
-          await this.tipCommentsService.getTipCommentsAmount(tip.id);
-
-        return {
-          ...tip,
-          isLiked: tip.likedBy.some((like) => like.userId === currentUser?.id),
-          likesAmount: tip.likedBy.length,
-          commentsAmount,
-        };
-      }),
+      tips.map(async (tip) => this.formatTipClient(tip, currentUser)),
     );
   }
 
@@ -604,37 +560,26 @@ export class TipsService {
     page = 1,
     count = 10,
   ): Promise<TipClientDto[]> {
-    return (
-      await this.getRelevantTips(
-        currentUser,
-        wordCount,
-        startDate,
-        endDate,
-        tipStartDate,
-        page,
-        count / 2,
-      )
-    ).concat(
-      await this.getTipsFromRecommendedCities(currentUser, page, count / 2),
+    const relevantTips = await this.getRelevantTips(
+      currentUser,
+      wordCount,
+      startDate,
+      endDate,
+      tipStartDate,
+      page,
+      count / 2,
     );
-  }
 
-  private async calculateTipRelevancy(
-    tipId: number,
-    startDate: Date,
-    endDate: Date,
-  ) {
-    const tip = await this.prisma.tip.findUnique({
-      where: { id: tipId, softDelete: false, status: 'active' },
-      include: {
-        tipComments: { where: { createdAt: { gte: startDate, lte: endDate } } },
-        likedBy: { where: { createdAt: { gte: startDate, lte: endDate } } },
-      },
-    });
+    const relevantTipsIds = relevantTips.map((tips) => tips.id);
 
-    const relevancy =
-      tip && tip.likedBy.length * 0.3 * (tip.tipComments.length * 0.7);
-    return relevancy ?? 0;
+    const recommendCities = await this.getTipsFromRecommendedCities(
+      currentUser,
+      page,
+      count / 2,
+      relevantTipsIds,
+    );
+
+    return relevantTips.concat(recommendCities).sort(() => Math.random() - 0.5);
   }
 
   private calculateRelevancy(tip: TipWithCommentsAndLikes) {
@@ -720,17 +665,20 @@ export class TipsService {
     });
 
     return await Promise.all(
-      tips.map(async (tip) => {
-        const commentsAmount =
-          await this.tipCommentsService.getTipCommentsAmount(tip.id);
-
-        return {
-          ...tip,
-          isLiked: tip.likedBy.some((like) => like.userId === currentUser?.id),
-          likesAmount: tip.likedBy.length,
-          commentsAmount,
-        };
-      }),
+      tips.map(async (tip) => this.formatTipClient(tip, currentUser)),
     );
+  }
+
+  async formatTipClient(tip: NotFormatedTip, currentUser?: UserFromJwt) {
+    const commentsAmount = await this.tipCommentsService.getTipCommentsAmount(
+      tip.id,
+    );
+
+    return {
+      ...tip,
+      isLiked: tip.likedBy.some((like) => like.userId === currentUser?.id),
+      likesAmount: tip.likedBy.length,
+      commentsAmount,
+    };
   }
 }

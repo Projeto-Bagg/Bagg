@@ -89,6 +89,16 @@ export class CitiesService {
         )
       : null;
 
+    const positionInRatingRanking =
+      (await this.ratingRanking({ count: 100 })).findIndex(
+        (value) => value.id === city.id,
+      ) + 1;
+
+    const positionInVisitRanking =
+      (await this.visitRanking({ count: 100 })).findIndex(
+        (value) => value.id === city.id,
+      ) + 1;
+
     return {
       ...city,
       isInterested,
@@ -98,6 +108,8 @@ export class CitiesService {
       interestsCount,
       reviewsCount,
       residentsCount,
+      positionInRatingRanking: positionInRatingRanking || null,
+      positionInVisitRanking: positionInVisitRanking || null,
     };
   }
 

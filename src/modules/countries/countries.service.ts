@@ -52,6 +52,16 @@ export class CountriesService {
     const reviewsCount =
       await this.cityVisitsService.getCountryReviewsCountByIso2(country.iso2);
 
+    const positionInRatingRanking =
+      (await this.ratingRanking({ count: 20 })).findIndex(
+        (value) => value.iso2 === country.iso2,
+      ) + 1;
+
+    const positionInVisitRanking =
+      (await this.visitRanking({ count: 20 })).findIndex(
+        (value) => value.iso2 === country.iso2,
+      ) + 1;
+
     return {
       ...country,
       averageRating,
@@ -59,6 +69,8 @@ export class CountriesService {
       interestsCount,
       residentsCount,
       reviewsCount,
+      positionInRatingRanking: positionInRatingRanking || null,
+      positionInVisitRanking: positionInVisitRanking || null,
     };
   }
 

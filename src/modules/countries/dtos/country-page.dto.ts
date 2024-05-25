@@ -16,4 +16,10 @@ export class CountryPageDto extends CountryEntity {
 
   @ApiProperty()
   residentsCount: number;
+
+  @ApiProperty({ type: Number })
+  positionInRatingRanking: number | null;
+
+  @ApiProperty({ type: Number })
+  positionInVisitRanking: number | null;
 }

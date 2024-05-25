@@ -52,6 +52,16 @@ export class CountriesService {
     const reviewsCount =
       await this.cityVisitsService.getCountryReviewsCountByIso2(country.iso2);
 
+    const positionInRatingRanking =
+      (await this.ratingRanking({ count: 20 })).findIndex(
+        (value) => value.iso2 === country.iso2,
+      ) + 1;
+
+    const positionInVisitRanking =
+      (await this.visitRanking({ count: 20 })).findIndex(
+        (value) => value.iso2 === country.iso2,
+      ) + 1;
+
     return {
       ...country,
       averageRating,
@@ -59,6 +69,8 @@ export class CountriesService {
       interestsCount,
       residentsCount,
       reviewsCount,
+      positionInRatingRanking: positionInRatingRanking || null,
+      positionInVisitRanking: positionInVisitRanking || null,
     };
   }
 
@@ -89,12 +101,15 @@ export class CountriesService {
         cityRegionId: number;
         cityLatitude: number;
         cityLongitude: number;
+        type: 'diary-post' | 'tip';
+        postId: number;
+        message: string;
       })[]
     >`
       DECLARE @page INT = ${page};
       DECLARE @count INT = ${count};
 
-      (SELECT m.id, m.url, m.createdAt, td.userId, c.id as cityId, c.name as cityName, c.regionId as cityRegionId, c.latitude as cityLatitude, c.longitude as cityLongitude
+      (SELECT m.id, m.url, m.createdAt, td.userId, dp.message, dp.id as postId, c.id as cityId, c.name as cityName, c.regionId as cityRegionId, c.latitude as cityLatitude, c.longitude as cityLongitude, 'diary-post' as type
       FROM [dbo].[DiaryPostMedia] m
       JOIN [dbo].[DiaryPost] dp ON dp.id = m.diaryPostId
       JOIN [dbo].[TripDiary] td ON td.id = dp.tripDiaryId
@@ -103,7 +118,7 @@ export class CountriesService {
       JOIN [dbo].[Country] co ON r.countryId = co.id
       WHERE co.iso2 = ${iso2})
       UNION ALL
-      (SELECT m.id, m.url, m.createdAt, t.userId, c.id as cityId, c.name as cityName, c.regionId as cityRegionId, c.latitude as cityLatitude, c.longitude as cityLongitude
+      (SELECT m.id, m.url, m.createdAt, t.userId, t.message, t.id as postId, c.id as cityId, c.name as cityName, c.regionId as cityRegionId, c.latitude as cityLatitude, c.longitude as cityLongitude, 'tip' as type
       FROM [dbo].[TipMedia] m
       JOIN [dbo].[Tip] t ON t.id = m.tipId
       JOIN [dbo].[City] c ON t.cityId = c.id
@@ -125,6 +140,9 @@ export class CountriesService {
           url: image.url,
           userId: image.userId,
           user,
+          message: image.message,
+          postId: image.postId,
+          type: image.type,
           city: {
             id: image.cityId,
             name: image.cityName,

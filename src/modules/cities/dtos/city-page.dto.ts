@@ -24,6 +24,12 @@ export class CityPageDto extends CityEntity {
   @ApiProperty({ type: CityVisitEntity })
   userVisit: CityVisitEntity | null;
 
+  @ApiProperty({ type: Number })
+  positionInRatingRanking: number | null;
+
+  @ApiProperty({ type: Number })
+  positionInVisitRanking: number | null;
+
   constructor(partial: CityPageDto) {
     super();
     Object.assign(this, partial);

@@ -89,6 +89,16 @@ export class CitiesService {
         )
       : null;
 
+    const positionInRatingRanking =
+      (await this.ratingRanking({ count: 100 })).findIndex(
+        (value) => value.id === city.id,
+      ) + 1;
+
+    const positionInVisitRanking =
+      (await this.visitRanking({ count: 100 })).findIndex(
+        (value) => value.id === city.id,
+      ) + 1;
+
     return {
       ...city,
       isInterested,
@@ -98,6 +108,8 @@ export class CitiesService {
       interestsCount,
       reviewsCount,
       residentsCount,
+      positionInRatingRanking: positionInRatingRanking || null,
+      positionInVisitRanking: positionInVisitRanking || null,
     };
   }
 
@@ -107,19 +119,24 @@ export class CitiesService {
     count = 10,
   ): Promise<CityImageDto[]> {
     const images = await this.prisma.$queryRaw<
-      (MediaEntity & { userId: number })[]
+      (MediaEntity & {
+        userId: number;
+        type: 'tip' | 'diary-post';
+        message: string;
+        postId: number;
+      })[]
     >`
       DECLARE @page INT = ${page};
       DECLARE @count INT = ${count};
       DECLARE @cityId INT = ${cityId}
 
-      (SELECT m.id, m.url, m.createdAt, td.userId
+      (SELECT m.id, m.url, m.createdAt, dp.message, dp.id as postId, td.userId, 'diary-post' as type
       FROM [dbo].[DiaryPostMedia] m
       JOIN [dbo].[DiaryPost] dp ON dp.id = m.diaryPostId
       JOIN [dbo].[TripDiary] td ON td.id = dp.tripDiaryId
       WHERE td.cityId = @cityId AND softDelete = 0 AND status = 'active')
       UNION ALL
-      (SELECT m.id, m.url, m.createdAt, t.userId
+      (SELECT m.id, m.url, m.createdAt, t.message, t.id as postId, t.userId, 'tip' as type
       FROM [dbo].[TipMedia] m
       JOIN [dbo].[Tip] t ON t.id = m.tipId
       WHERE t.cityId = @cityId AND softDelete = 0 AND status = 'active')
@@ -217,15 +234,28 @@ export class CitiesService {
     `;
   }
 
-  async recommendNearbyCitiesByUserCityInterests(
+  async recommendCities(
     currentUser: UserFromJwt,
     page = 1,
-    count = 10,
-  ) {
+    count = 40,
+  ): Promise<CityEntity[]> {
+    const NEARBY_TRENDING_RATIO = 0.8;
+    const MAX_NEARBY_CITIES = count * NEARBY_TRENDING_RATIO;
+    const MAX_TRENDING_CITIES = count - MAX_NEARBY_CITIES;
+
     const cities = (
       await this.prisma.user.findUnique({
         where: { id: currentUser.id },
-        include: { cityInterests: { include: { city: true } } },
+        include: {
+          cityInterests: {
+            include: { city: true },
+            take: MAX_NEARBY_CITIES,
+            skip: count * (page - 1),
+            orderBy: {
+              createdAt: 'desc',
+            },
+          },
+        },
       })
     )?.cityInterests.map((cityInterest) => cityInterest.city);
 
@@ -245,12 +275,33 @@ export class CitiesService {
       )
     ).flat();
 
-    return closestCitiesToInterestedCities
-      .slice((page - 1) * count, (page - 1) * count + count)
+    const trendingCities: CityEntity[] = [];
+
+    if (
+      closestCitiesToInterestedCities.length *
+        NEARBY_TRENDING_RATIO *
+        (cities?.length || 0) -
+        count *
+          closestCitiesToInterestedCities.length *
+          NEARBY_TRENDING_RATIO !==
+        0 ||
+      closestCitiesToInterestedCities.length === 0
+    ) {
+      await this.trending(
+        1,
+        MAX_TRENDING_CITIES +
+          (MAX_NEARBY_CITIES - closestCitiesToInterestedCities.length),
+      ).then((response) =>
+        response.cities.forEach((city) => trendingCities.push(city)),
+      );
+    }
+
+    return (closestCitiesToInterestedCities as CityEntity[])
+      .concat(trendingCities)
       .sort(() => Math.random() - 0.5);
   }
 
-  async trending(): Promise<TrendingCities> {
+  async trending(page = 1, count = 10): Promise<TrendingCities> {
     const today = new Date();
     const thirtyDaysAgo = new Date(
       today.getFullYear(),
@@ -275,7 +326,8 @@ export class CitiesService {
 
     const cityInterests = await this.prisma.cityInterest.groupBy({
       by: ['cityId'],
-      take: 10,
+      take: count,
+      skip: count * (page - 1),
       _count: {
         cityId: true,
       },
@@ -317,7 +369,8 @@ export class CitiesService {
 
     const cityInterests2MonthsAgo = await this.prisma.cityInterest.groupBy({
       by: ['cityId'],
-      take: 10,
+      take: count,
+      skip: count * (page - 1),
       _count: {
         cityId: true,
       },

@@ -8,4 +8,13 @@ export class CityImageDto extends MediaEntity {
 
   @ApiProperty({ type: UserEntity })
   user: UserEntity;
+
+  @ApiProperty()
+  type: 'tip' | 'diary-post';
+
+  @ApiProperty()
+  message: string;
+
+  @ApiProperty()
+  postId: number;
 }

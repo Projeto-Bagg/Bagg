@@ -96,9 +96,7 @@ export class DiaryPostsController {
     @Param('id') id: number,
     @CurrentUser() currentUser: UserFromJwt,
   ): Promise<UserClientDto[]> {
-    const users = await this.diaryPostsService.likedBy(id, currentUser);
-
-    return users.map((user) => new UserClientDto(user));
+    return await this.diaryPostsService.likedBy(id, currentUser);
   }
 
   @Post('report/:id')

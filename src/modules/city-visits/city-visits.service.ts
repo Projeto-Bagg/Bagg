@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateCityVisitDto } from './dtos/create-city-visit.dto';
 import { UserFromJwt } from '../auth/models/UserFromJwt';
-import { CityInterestsService } from '../city-interests/city-interests.service';
 import { CityVisitEntity } from './entities/city-visit.entity';
 import { CityVisitClientDto } from './dtos/city-visit-client.dto';
 import { UpdateCityVisitDto } from './dtos/update-city-visit.dto';
@@ -11,56 +10,28 @@ import { CountryCityVisitDto } from './dtos/country-city-visit.dto';
 
 @Injectable()
 export class CityVisitsService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly cityInterestService: CityInterestsService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(
     createCityVisitDto: CreateCityVisitDto,
     currentUser: UserFromJwt,
   ): Promise<CityVisitClientDto> {
-    const isUserInterestedInCity =
-      await this.cityInterestService.isUserInterestedInCity(
-        createCityVisitDto.cityId,
-        currentUser.id,
-      );
-
-    if (isUserInterestedInCity) {
-      await this.cityInterestService.remove(
-        createCityVisitDto.cityId,
-        currentUser,
-      );
-    }
-
-    const cityVisit = await this.prisma.cityVisit.create({
+    return await this.prisma.cityVisit.create({
       data: {
         ...createCityVisitDto,
         userId: currentUser.id,
       },
       include: {
-        user: {
-          include: {
-            account: true,
-          },
-        },
+        user: true,
       },
     });
-
-    return {
-      ...cityVisit,
-      user: {
-        ...cityVisit.user,
-        ...cityVisit.user.account,
-      },
-    };
   }
 
   async update(
     updateCityVisitDto: UpdateCityVisitDto,
     currentUser: UserFromJwt,
   ): Promise<CityVisitClientDto> {
-    const cityVisit = await this.prisma.cityVisit.update({
+    return await this.prisma.cityVisit.update({
       where: {
         userId_cityId: {
           cityId: updateCityVisitDto.cityId,
@@ -72,21 +43,9 @@ export class CityVisitsService {
         rating: updateCityVisitDto.rating,
       },
       include: {
-        user: {
-          include: {
-            account: true,
-          },
-        },
+        user: true,
       },
     });
-
-    return {
-      ...cityVisit,
-      user: {
-        ...cityVisit.user,
-        ...cityVisit.user.account,
-      },
-    };
   }
 
   async getUserVisitByCityId(
@@ -189,7 +148,7 @@ export class CityVisitsService {
     page = 1,
     count = 5,
   ): Promise<CityVisitClientDto[]> {
-    const cityVisits = await this.prisma.cityVisit.findMany({
+    return await this.prisma.cityVisit.findMany({
       take: count,
       skip: (page - 1) * count,
       orderBy: {
@@ -200,22 +159,8 @@ export class CityVisitsService {
         NOT: [{ message: null }],
       },
       include: {
-        user: {
-          include: {
-            account: true,
-          },
-        },
+        user: true,
       },
-    });
-
-    return cityVisits.map((cityVisit) => {
-      return {
-        ...cityVisit,
-        user: {
-          ...cityVisit.user,
-          ...cityVisit.user.account,
-        },
-      };
     });
   }
 
@@ -224,7 +169,7 @@ export class CityVisitsService {
     page = 1,
     count = 5,
   ): Promise<CountryCityVisitDto[]> {
-    const cityVisits = await this.prisma.cityVisit.findMany({
+    return await this.prisma.cityVisit.findMany({
       take: count,
       skip: (page - 1) * count,
       orderBy: {
@@ -241,23 +186,9 @@ export class CityVisitsService {
         NOT: [{ message: null }],
       },
       include: {
-        user: {
-          include: {
-            account: true,
-          },
-        },
+        user: true,
         city: true,
       },
-    });
-
-    return cityVisits.map((cityVisit) => {
-      return {
-        ...cityVisit,
-        user: {
-          ...cityVisit.user,
-          ...cityVisit.user.account,
-        },
-      };
     });
   }
 

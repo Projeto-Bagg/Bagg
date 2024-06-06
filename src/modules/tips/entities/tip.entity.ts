@@ -46,6 +46,6 @@ export class TipEntity implements Tip {
   status: string;
 
   constructor(partial: TipEntity) {
-    Object.assign(this, { ...partial, user: new UserEntity(partial.user) });
+    Object.assign(this, partial);
   }
 }

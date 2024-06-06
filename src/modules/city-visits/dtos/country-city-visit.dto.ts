@@ -5,9 +5,4 @@ import { CityVisitClientDto } from './city-visit-client.dto';
 export class CountryCityVisitDto extends CityVisitClientDto {
   @ApiProperty({ type: CityEntity })
   city: CityEntity;
-
-  constructor(partial: CityVisitClientDto) {
-    super(partial);
-    Object.assign(this, partial);
-  }
 }

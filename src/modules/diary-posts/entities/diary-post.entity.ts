@@ -33,13 +33,13 @@ export class DiaryPostEntity implements DiaryPost {
   @Exclude()
   status: string;
 
-  @ApiProperty()
+  @Exclude()
   likedBy: DiaryPostLike[];
 
   @ApiProperty({ type: DiaryPostMediaEntity, isArray: true })
   diaryPostMedias: DiaryPostMediaEntity[];
 
   constructor(partial: DiaryPostEntity) {
-    Object.assign(this, { ...partial, user: new UserEntity(partial.user) });
+    Object.assign(this, partial);
   }
 }

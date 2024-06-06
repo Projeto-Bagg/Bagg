@@ -30,13 +30,15 @@ interface TipWithCreatedDateAtAsDate extends Tip {
   createdAtAsDate: string;
 }
 
-interface TipSortedByRelevancy extends Tip {
-  createdAtAsDate: string;
+interface NotFormatedTip extends Tip {
   city: CityRegionCountryDto;
   tipMedias: TipMediaEntity[];
   user: UserEntity;
   likedBy: TipLike[];
-  tipComments: TipComment[];
+}
+
+interface TipSortedByRelevancy extends NotFormatedTip {
+  createdAtAsDate: string;
 }
 
 @Injectable()
@@ -59,6 +61,7 @@ export class TipsService {
     const tip = await this.prisma.tip.create({
       data: {
         ...createTipDto,
+        tags: createTipDto.tags?.toLowerCase(),
         userId: currentUser.id,
       },
       include: {
@@ -129,16 +132,7 @@ export class TipsService {
       throw new NotFoundException();
     }
 
-    const commentsAmount = await this.tipCommentsService.getTipCommentsAmount(
-      tip.id,
-    );
-
-    return {
-      ...tip,
-      isLiked: tip.likedBy.some((like) => like.userId === currentUser?.id),
-      likesAmount: tip.likedBy.length,
-      commentsAmount,
-    };
+    return this.formatTipClient(tip, currentUser);
   }
 
   async findByUsername(
@@ -147,7 +141,7 @@ export class TipsService {
     count = 10,
     currentUser?: UserFromJwt,
   ): Promise<TipClientDto[]> {
-    const posts = await this.prisma.tip.findMany({
+    const tips = await this.prisma.tip.findMany({
       where: {
         user: {
           username,
@@ -177,117 +171,7 @@ export class TipsService {
     });
 
     return await Promise.all(
-      posts.map(async (post) => {
-        const commentsAmount =
-          await this.tipCommentsService.getTipCommentsAmount(post.id);
-
-        return {
-          ...post,
-          isLiked: post.likedBy.some((like) => like.userId === currentUser?.id),
-          likesAmount: post.likedBy.length,
-          commentsAmount,
-        };
-      }),
-    );
-  }
-
-  async getTipsFeed(
-    page = 1,
-    count = 10,
-    filter: FeedFilterDto,
-    currentUser?: UserFromJwt,
-  ): Promise<TipClientDto[]> {
-    const include = {
-      user: true,
-      tipMedias: true,
-      likedBy: true,
-      city: {
-        include: {
-          region: {
-            include: {
-              country: true,
-            },
-          },
-        },
-      },
-    };
-
-    const tipsByCityInterest = await this.prisma.tip.findMany({
-      where: {
-        ...(filter.cityInterest && {
-          city: { cityInterests: { some: { userId: currentUser?.id } } },
-        }),
-        softDelete: false,
-        status: 'active',
-      },
-      include,
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-
-    let tipsSortedByRelevancy: TipSortedByRelevancy[] = [];
-    if (filter.relevancy) {
-      //separa por dia e filtra por relevancia no dia
-      const tipsWithCreatedAtAsDate: TipWithCreatedDateAtAsDate[] =
-        tipsByCityInterest.map((tip) => ({
-          ...tip,
-          createdAtAsDate: tip.createdAt.toDateString(),
-        }));
-
-      const tipsSeparatedByDate: Tip[][] =
-        this.separateArrayByProperty<TipWithCreatedDateAtAsDate>(
-          tipsWithCreatedAtAsDate as TipWithCreatedDateAtAsDate[],
-          'createdAt',
-        );
-
-      tipsSortedByRelevancy = tipsSeparatedByDate.flatMap((tips: Tip[]) =>
-        tips.sort(
-          (a, b) =>
-            this.calculateRelevancy(a as TipWithCommentsAndLikes) -
-            this.calculateRelevancy(b as TipWithCommentsAndLikes),
-        ),
-      ) as TipSortedByRelevancy[];
-    }
-
-    const tipsByFollows = filter.follows
-      ? await this.prisma.tip.findMany({
-          where: {
-            id: { notIn: tipsSortedByRelevancy.map((tip) => tip.id) },
-            user: {
-              followers: { some: { followerId: currentUser?.id } },
-            },
-            softDelete: false,
-            status: 'active',
-          },
-          orderBy: {
-            createdAt: 'desc',
-          },
-          include,
-          skip: count * (page - 1),
-          take: count * 0.4,
-        })
-      : [];
-
-    const tips = tipsByFollows.concat(
-      (tipsSortedByRelevancy as TipSortedByRelevancy[]).slice(
-        (page - 1) * count * 0.6,
-        (page - 1) * count + count * 0.6,
-      ),
-    );
-
-    return await Promise.all(
-      tips.map(async (tip) => {
-        const commentsAmount =
-          await this.tipCommentsService.getTipCommentsAmount(tip.id);
-
-        return {
-          ...tip,
-          isLiked: tip.likedBy.some((like) => like.userId === currentUser?.id),
-          likesAmount: tip.likedBy.length,
-          commentsAmount,
-        };
-      }),
+      tips.map(async (tip) => this.formatTipClient(tip, currentUser)),
     );
   }
 
@@ -533,17 +417,7 @@ export class TipsService {
     });
 
     return await Promise.all(
-      relevantTips.map(async (tip) => {
-        const commentsAmount =
-          await this.tipCommentsService.getTipCommentsAmount(tip.id);
-
-        return {
-          ...tip,
-          isLiked: tip.likedBy.some((like) => like.userId === currentUser?.id),
-          likesAmount: tip.likedBy.length,
-          commentsAmount,
-        };
-      }),
+      relevantTips.map(async (tip) => this.formatTipClient(tip, currentUser)),
     );
   }
 
@@ -551,18 +425,30 @@ export class TipsService {
     currentUser: UserFromJwt,
     page = 1,
     count = 10,
+    idsToIgnore?: number[],
   ): Promise<TipClientDto[]> {
     const ids = (
-      await this.citiesService.recommendNearbyCitiesByUserCityInterests(
-        currentUser,
-        1,
-        5,
-      )
-    ).map((nearbyCityFromInterest) => nearbyCityFromInterest.id);
+      await this.citiesService.recommendCities(currentUser, 1, 20)
+    ).map((cityRecommendation) => cityRecommendation.id);
 
     const tips = await this.prisma.tip.findMany({
       where: {
-        AND: [{ id: { in: ids } }, { status: 'active' }, { softDelete: false }],
+        AND: [
+          {
+            AND: [
+              { cityId: { in: ids } },
+              { id: { notIn: idsToIgnore } },
+              {
+                NOT: { userId: currentUser.id },
+              },
+            ],
+          },
+          { status: 'active' },
+          { softDelete: false },
+        ],
+      },
+      orderBy: {
+        createdAt: 'desc',
       },
       include: {
         user: true,
@@ -583,17 +469,7 @@ export class TipsService {
     });
 
     return await Promise.all(
-      tips.map(async (tip) => {
-        const commentsAmount =
-          await this.tipCommentsService.getTipCommentsAmount(tip.id);
-
-        return {
-          ...tip,
-          isLiked: tip.likedBy.some((like) => like.userId === currentUser?.id),
-          likesAmount: tip.likedBy.length,
-          commentsAmount,
-        };
-      }),
+      tips.map(async (tip) => this.formatTipClient(tip, currentUser)),
     );
   }
 
@@ -608,37 +484,122 @@ export class TipsService {
     page = 1,
     count = 10,
   ): Promise<TipClientDto[]> {
-    return (
-      await this.getRelevantTips(
-        currentUser,
-        wordCount,
-        startDate,
-        endDate,
-        tipStartDate,
-        page,
-        count / 2,
-      )
-    ).concat(
-      await this.getTipsFromRecommendedCities(currentUser, page, count / 2),
+    const relevantTips = await this.getRelevantTips(
+      currentUser,
+      wordCount,
+      startDate,
+      endDate,
+      tipStartDate,
+      page,
+      count / 2,
     );
+
+    const relevantTipsIds = relevantTips.map((tips) => tips.id);
+
+    const recommendCities = await this.getTipsFromRecommendedCities(
+      currentUser,
+      page,
+      count / 2,
+      relevantTipsIds,
+    );
+
+    return relevantTips.concat(recommendCities).sort(() => Math.random() - 0.5);
   }
 
-  private async calculateTipRelevancy(
-    tipId: number,
-    startDate: Date,
-    endDate: Date,
-  ) {
-    const tip = await this.prisma.tip.findUnique({
-      where: { id: tipId, softDelete: false, status: 'active' },
-      include: {
-        tipComments: { where: { createdAt: { gte: startDate, lte: endDate } } },
-        likedBy: { where: { createdAt: { gte: startDate, lte: endDate } } },
+  async getTipsFeed(
+    page = 1,
+    count = 10,
+    filter: FeedFilterDto,
+    currentUser: UserFromJwt,
+  ): Promise<TipClientDto[]> {
+    const include = {
+      user: true,
+      tipMedias: true,
+      likedBy: true,
+      city: {
+        include: {
+          region: {
+            include: {
+              country: true,
+            },
+          },
+        },
+      },
+    };
+
+    const tipsByCityInterest = await this.prisma.tip.findMany({
+      where: {
+        ...(filter.cityInterest && {
+          city: { cityInterests: { some: { userId: currentUser?.id } } },
+        }),
+        softDelete: false,
+        status: 'active',
+        NOT: {
+          userId: currentUser.id,
+        },
+      },
+      include,
+      orderBy: {
+        createdAt: 'desc',
       },
     });
 
-    const relevancy =
-      tip && tip.likedBy.length * 0.3 * (tip.tipComments.length * 0.7);
-    return relevancy ?? 0;
+    let tipsSortedByRelevancy: TipSortedByRelevancy[] = [];
+    if (filter.relevancy) {
+      //separa por dia e filtra por relevancia no dia
+      const tipsWithCreatedAtAsDate: TipWithCreatedDateAtAsDate[] =
+        tipsByCityInterest.map((tip) => ({
+          ...tip,
+          createdAtAsDate: tip.createdAt.toDateString(),
+        }));
+
+      const tipsSeparatedByDate: Tip[][] =
+        this.separateArrayByProperty<TipWithCreatedDateAtAsDate>(
+          tipsWithCreatedAtAsDate as TipWithCreatedDateAtAsDate[],
+          'createdAt',
+        );
+
+      tipsSortedByRelevancy = tipsSeparatedByDate.flatMap((tips: Tip[]) =>
+        tips.sort(
+          (a, b) =>
+            this.calculateRelevancy(a as TipWithCommentsAndLikes) -
+            this.calculateRelevancy(b as TipWithCommentsAndLikes),
+        ),
+      ) as TipSortedByRelevancy[];
+    }
+
+    const tipsByFollows = filter.follows
+      ? await this.prisma.tip.findMany({
+          where: {
+            id: { notIn: tipsSortedByRelevancy.map((tip) => tip.id) },
+            user: {
+              followers: { some: { followerId: currentUser?.id } },
+            },
+            softDelete: false,
+            status: 'active',
+            NOT: {
+              userId: currentUser.id,
+            },
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+          include,
+          skip: count * (page - 1),
+          take: count * 0.4,
+        })
+      : [];
+
+    const tips = tipsByFollows.concat(
+      (tipsSortedByRelevancy as TipSortedByRelevancy[]).slice(
+        (page - 1) * count * 0.6,
+        (page - 1) * count + count * 0.6,
+      ),
+    );
+
+    return await Promise.all(
+      tips.map(async (tip) => this.formatTipClient(tip, currentUser)),
+    );
   }
 
   private calculateRelevancy(tip: TipWithCommentsAndLikes) {
@@ -676,11 +637,21 @@ export class TipsService {
         tags: { contains: tag },
       })) ?? [];
 
-    //n sei se funciona
+    const wordsInQuery = q
+      ?.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '')
+      .replace(/\s{2,}/g, ' ')
+      .split(' ');
+
     const tips = await this.prisma.tip.findMany({
       where: {
         AND: [
-          { message: { contains: q } },
+          {
+            AND: wordsInQuery?.map((word) => {
+              return {
+                message: { contains: word },
+              };
+            }),
+          },
           {
             OR: [...tagsAsQueries],
           },
@@ -697,6 +668,9 @@ export class TipsService {
       },
       skip: count * (page - 1),
       take: count,
+      orderBy: {
+        createdAt: 'desc',
+      },
       include: {
         user: true,
         tipMedias: true,
@@ -714,17 +688,20 @@ export class TipsService {
     });
 
     return await Promise.all(
-      tips.map(async (tip) => {
-        const commentsAmount =
-          await this.tipCommentsService.getTipCommentsAmount(tip.id);
-
-        return {
-          ...tip,
-          isLiked: tip.likedBy.some((like) => like.userId === currentUser?.id),
-          likesAmount: tip.likedBy.length,
-          commentsAmount,
-        };
-      }),
+      tips.map(async (tip) => this.formatTipClient(tip, currentUser)),
     );
+  }
+
+  async formatTipClient(tip: NotFormatedTip, currentUser?: UserFromJwt) {
+    const commentsAmount = await this.tipCommentsService.getTipCommentsAmount(
+      tip.id,
+    );
+
+    return {
+      ...tip,
+      isLiked: tip.likedBy.some((like) => like.userId === currentUser?.id),
+      likesAmount: tip.likedBy.length,
+      commentsAmount,
+    };
   }
 }

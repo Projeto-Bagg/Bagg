@@ -12,4 +12,13 @@ export class CountryImageDto extends MediaEntity {
 
   @ApiProperty()
   city: CityEntity;
+
+  @ApiProperty()
+  type: 'tip' | 'diary-post';
+
+  @ApiProperty()
+  message: string;
+
+  @ApiProperty()
+  postId: number;
 }

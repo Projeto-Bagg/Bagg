@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsString, MaxLength } from 'class-validator';
 
@@ -11,4 +11,7 @@ export class CreateTipDto {
   @ApiProperty()
   @Type(() => Number)
   cityId: number;
+
+  @ApiPropertyOptional()
+  tags?: string;
 }

@@ -79,7 +79,11 @@ export class TripDiariesService {
     return await Promise.all(
       tripDiaries.map(async (tripDiary) => {
         const postsAmount = await this.prisma.diaryPost.count({
-          where: { tripDiaryId: tripDiary.id },
+          where: {
+            tripDiaryId: tripDiary.id,
+            softDelete: false,
+            status: 'active',
+          },
         });
 
         return {
@@ -99,6 +103,8 @@ export class TripDiariesService {
     const posts = await this.prisma.diaryPost.findMany({
       where: {
         tripDiaryId: id,
+        status: 'active',
+        softDelete: false,
       },
       skip: count * (page - 1),
       take: count,

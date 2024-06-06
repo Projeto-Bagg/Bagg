@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class DistanceBodyDto {
-  @ApiProperty({ type: Array<number> })
+  @ApiProperty({ type: Number, isArray: true })
   ids: number[];
 }

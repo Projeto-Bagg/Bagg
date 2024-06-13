@@ -125,7 +125,17 @@ export class TipCommentsService {
   getTipCommentsAmount(tipId: number): Promise<number> {
     return this.prisma.tipComment.count({
       where: {
-        tipId,
+        AND: [
+          {
+            tipId,
+          },
+          {
+            status: 'active',
+          },
+          {
+            softDelete: false,
+          },
+        ],
       },
     });
   }

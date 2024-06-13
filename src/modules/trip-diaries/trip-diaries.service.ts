@@ -153,7 +153,17 @@ export class TripDiariesService {
 
     const postsAmount = await this.prisma.diaryPost.count({
       where: {
-        tripDiaryId: id,
+        AND: [
+          {
+            tripDiaryId: id,
+          },
+          {
+            status: 'active',
+          },
+          {
+            softDelete: false,
+          },
+        ],
       },
     });
 

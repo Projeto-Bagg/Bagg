@@ -660,6 +660,9 @@ export class TipsService {
       },
       skip: count * (page - 1),
       take: count,
+      orderBy: {
+        createdAt: 'desc',
+      },
       include: {
         user: true,
         tipMedias: true,
